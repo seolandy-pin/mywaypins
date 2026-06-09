@@ -9,38 +9,186 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SubmitRouteImport } from './routes/submit'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as MapRouteImport } from './routes/map'
+import { Route as FollowingRouteImport } from './routes/following'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProfileSavedRouteImport } from './routes/profile.saved'
+import { Route as ProfileCollectionsRouteImport } from './routes/profile.collections'
 
+const SubmitRoute = SubmitRouteImport.update({
+  id: '/submit',
+  path: '/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FollowingRoute = FollowingRouteImport.update({
+  id: '/following',
+  path: '/following',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileSavedRoute = ProfileSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => ProfileRoute,
+} as any)
+const ProfileCollectionsRoute = ProfileCollectionsRouteImport.update({
+  id: '/collections',
+  path: '/collections',
+  getParentRoute: () => ProfileRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/following': typeof FollowingRoute
+  '/map': typeof MapRoute
+  '/profile': typeof ProfileRouteWithChildren
+  '/search': typeof SearchRoute
+  '/submit': typeof SubmitRoute
+  '/profile/collections': typeof ProfileCollectionsRoute
+  '/profile/saved': typeof ProfileSavedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/following': typeof FollowingRoute
+  '/map': typeof MapRoute
+  '/profile': typeof ProfileRouteWithChildren
+  '/search': typeof SearchRoute
+  '/submit': typeof SubmitRoute
+  '/profile/collections': typeof ProfileCollectionsRoute
+  '/profile/saved': typeof ProfileSavedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/following': typeof FollowingRoute
+  '/map': typeof MapRoute
+  '/profile': typeof ProfileRouteWithChildren
+  '/search': typeof SearchRoute
+  '/submit': typeof SubmitRoute
+  '/profile/collections': typeof ProfileCollectionsRoute
+  '/profile/saved': typeof ProfileSavedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/following'
+    | '/map'
+    | '/profile'
+    | '/search'
+    | '/submit'
+    | '/profile/collections'
+    | '/profile/saved'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/following'
+    | '/map'
+    | '/profile'
+    | '/search'
+    | '/submit'
+    | '/profile/collections'
+    | '/profile/saved'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/following'
+    | '/map'
+    | '/profile'
+    | '/search'
+    | '/submit'
+    | '/profile/collections'
+    | '/profile/saved'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  FollowingRoute: typeof FollowingRoute
+  MapRoute: typeof MapRoute
+  ProfileRoute: typeof ProfileRouteWithChildren
+  SearchRoute: typeof SearchRoute
+  SubmitRoute: typeof SubmitRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/submit': {
+      id: '/submit'
+      path: '/submit'
+      fullPath: '/submit'
+      preLoaderRoute: typeof SubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/following': {
+      id: '/following'
+      path: '/following'
+      fullPath: '/following'
+      preLoaderRoute: typeof FollowingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +196,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile/saved': {
+      id: '/profile/saved'
+      path: '/saved'
+      fullPath: '/profile/saved'
+      preLoaderRoute: typeof ProfileSavedRouteImport
+      parentRoute: typeof ProfileRoute
+    }
+    '/profile/collections': {
+      id: '/profile/collections'
+      path: '/collections'
+      fullPath: '/profile/collections'
+      preLoaderRoute: typeof ProfileCollectionsRouteImport
+      parentRoute: typeof ProfileRoute
+    }
   }
 }
 
+interface ProfileRouteChildren {
+  ProfileCollectionsRoute: typeof ProfileCollectionsRoute
+  ProfileSavedRoute: typeof ProfileSavedRoute
+}
+
+const ProfileRouteChildren: ProfileRouteChildren = {
+  ProfileCollectionsRoute: ProfileCollectionsRoute,
+  ProfileSavedRoute: ProfileSavedRoute,
+}
+
+const ProfileRouteWithChildren =
+  ProfileRoute._addFileChildren(ProfileRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  FollowingRoute: FollowingRoute,
+  MapRoute: MapRoute,
+  ProfileRoute: ProfileRouteWithChildren,
+  SearchRoute: SearchRoute,
+  SubmitRoute: SubmitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
