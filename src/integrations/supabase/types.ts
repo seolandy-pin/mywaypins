@@ -14,7 +14,515 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      collection_items: {
+        Row: {
+          collection_id: string
+          created_at: string
+          id: string
+          note: string | null
+          place_id: string | null
+          video_id: string | null
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          place_id?: string | null
+          video_id?: string | null
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          place_id?: string | null
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_items_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_items_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collections: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          pin_id: string | null
+          place_id: string | null
+          target_type: string
+          user_id: string
+          video_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pin_id?: string | null
+          place_id?: string | null
+          target_type: string
+          user_id: string
+          video_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pin_id?: string | null
+          place_id?: string | null
+          target_type?: string
+          user_id?: string
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_pin_id_fkey"
+            columns: ["pin_id"]
+            isOneToOne: false
+            referencedRelation: "pins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      followers: {
+        Row: {
+          channel_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followers_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "youtube_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string | null
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pins: {
+        Row: {
+          channel_id: string | null
+          created_at: string
+          id: string
+          label: string | null
+          latitude: number
+          longitude: number
+          pin_type: string
+          place_id: string | null
+          sequence_order: number | null
+          video_id: string
+        }
+        Insert: {
+          channel_id?: string | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          latitude: number
+          longitude: number
+          pin_type?: string
+          place_id?: string | null
+          sequence_order?: number | null
+          video_id: string
+        }
+        Update: {
+          channel_id?: string | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          latitude?: number
+          longitude?: number
+          pin_type?: string
+          place_id?: string | null
+          sequence_order?: number | null
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pins_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "youtube_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pins_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pins_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      places: {
+        Row: {
+          city_name: string | null
+          country_code: string | null
+          country_name: string | null
+          created_at: string
+          id: string
+          kind: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+        }
+        Insert: {
+          city_name?: string | null
+          country_code?: string | null
+          country_name?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+        }
+        Update: {
+          city_name?: string | null
+          country_code?: string | null
+          country_name?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      submitted_channels: {
+        Row: {
+          channel_name: string | null
+          channel_url: string
+          created_at: string
+          id: string
+          notes: string | null
+          resolved_channel_id: string | null
+          status: string
+          submitted_by: string | null
+        }
+        Insert: {
+          channel_name?: string | null
+          channel_url: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          resolved_channel_id?: string | null
+          status?: string
+          submitted_by?: string | null
+        }
+        Update: {
+          channel_name?: string | null
+          channel_url?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          resolved_channel_id?: string | null
+          status?: string
+          submitted_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submitted_channels_resolved_channel_id_fkey"
+            columns: ["resolved_channel_id"]
+            isOneToOne: false
+            referencedRelation: "youtube_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      travel_routes: {
+        Row: {
+          created_at: string
+          geometry: Json | null
+          id: string
+          name: string | null
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          geometry?: Json | null
+          id?: string
+          name?: string | null
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          geometry?: Json | null
+          id?: string
+          name?: string | null
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_routes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      videos: {
+        Row: {
+          ai_processed: boolean | null
+          channel_id: string | null
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          like_count: number | null
+          published_at: string | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          view_count: number | null
+          youtube_video_id: string
+        }
+        Insert: {
+          ai_processed?: boolean | null
+          channel_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          like_count?: number | null
+          published_at?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          view_count?: number | null
+          youtube_video_id: string
+        }
+        Update: {
+          ai_processed?: boolean | null
+          channel_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          like_count?: number | null
+          published_at?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          view_count?: number | null
+          youtube_video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "youtube_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      youtube_channels: {
+        Row: {
+          channel_url: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          current_location: string | null
+          description: string | null
+          id: string
+          is_currently_traveling: boolean | null
+          is_featured: boolean | null
+          name: string
+          subscriber_count: number | null
+          thumbnail_url: string | null
+          updated_at: string
+          video_count: number | null
+          youtube_channel_id: string
+        }
+        Insert: {
+          channel_url?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          current_location?: string | null
+          description?: string | null
+          id?: string
+          is_currently_traveling?: boolean | null
+          is_featured?: boolean | null
+          name: string
+          subscriber_count?: number | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          video_count?: number | null
+          youtube_channel_id: string
+        }
+        Update: {
+          channel_url?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          current_location?: string | null
+          description?: string | null
+          id?: string
+          is_currently_traveling?: boolean | null
+          is_featured?: boolean | null
+          name?: string
+          subscriber_count?: number | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          video_count?: number | null
+          youtube_channel_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
