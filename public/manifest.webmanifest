@@ -1,0 +1,11 @@
+{
+  "name": "WanderPins",
+  "short_name": "WanderPins",
+  "description": "Discover travel videos on a world map.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1f2c",
+  "theme_color": "#1a1f2c",
+  "orientation": "portrait",
+  "icons": []
+}
