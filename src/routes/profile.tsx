@@ -14,7 +14,7 @@ export const Route = createFileRoute("/profile")({
 function ProfileScreen() {
   const { user, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<{ display_name?: string; avatar_url?: string } | null>(null);
+  const [profile, setProfile] = useState<{ display_name?: string | null; avatar_url?: string | null } | null>(null);
 
   useEffect(() => {
     if (!user) return;
