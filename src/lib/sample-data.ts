@@ -115,12 +115,23 @@ export const featuredDestinations = [
   { name: "Marrakech", country: "Morocco", image: "https://images.unsplash.com/photo-1597212618440-806262de4f6b?w=800&q=80", videos: 134 },
 ];
 
-export const popularCreators = [
-  { name: "Lost LeBlanc", subs: "1.8M", avatar: "https://i.pravatar.cc/150?img=12", traveling: "Vietnam" },
-  { name: "Kara and Nate", subs: "3.4M", avatar: "https://i.pravatar.cc/150?img=32", traveling: "Iceland" },
-  { name: "Eva zu Beck", subs: "920K", avatar: "https://i.pravatar.cc/150?img=47", traveling: "Bali" },
-  { name: "Drew Binsky", subs: "4.1M", avatar: "https://i.pravatar.cc/150?img=15", traveling: null },
-  { name: "Mark Wiens", subs: "10M", avatar: "https://i.pravatar.cc/150?img=68", traveling: "Bangkok" },
+export type PopularCreator = {
+  name: string;
+  subs: string;
+  avatar: string;
+  traveling: string | null;
+  handle?: string;
+  channelId?: string;
+};
+
+// Seed list — `handle` is the YouTube @handle used to fetch live data via the YouTube Data API.
+// `name`, `subs`, and `avatar` are fallbacks shown until/if the API call resolves.
+export const popularCreators: PopularCreator[] = [
+  { handle: "LostLeBlanc", name: "Lost LeBlanc", subs: "1.8M", avatar: "https://i.pravatar.cc/150?img=12", traveling: "Vietnam" },
+  { handle: "KaraandNate", name: "Kara and Nate", subs: "3.4M", avatar: "https://i.pravatar.cc/150?img=32", traveling: "Iceland" },
+  { handle: "evazubeck", name: "Eva zu Beck", subs: "920K", avatar: "https://i.pravatar.cc/150?img=47", traveling: "Bali" },
+  { handle: "drewbinsky", name: "Drew Binsky", subs: "4.1M", avatar: "https://i.pravatar.cc/150?img=15", traveling: null },
+  { handle: "MarkWiens", name: "Mark Wiens", subs: "10M", avatar: "https://i.pravatar.cc/150?img=68", traveling: "Bangkok" },
 ];
 
 export const PIN_TYPE_COLORS: Record<SamplePin["type"], string> = {
