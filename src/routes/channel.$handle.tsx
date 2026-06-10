@@ -134,10 +134,11 @@ function ChannelPage() {
         </div>
       </section>
 
-      {ch.snippet.description && (
+      {ch.description && (
         <section className="mt-8 px-5">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">About</h3>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">{ch.snippet.description}</p>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">{ch.description}</p>
+
         </section>
       )}
     </div>
