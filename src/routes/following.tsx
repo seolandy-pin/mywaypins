@@ -1,17 +1,31 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Bell, Users } from "lucide-react";
 
 import { useAuth } from "@/lib/auth/use-auth";
-import { popularCreators, samplePins } from "@/lib/sample-data";
 import { Button } from "@/components/ui/button";
-import { Bell, MapPin } from "lucide-react";
+import { listMyFollowedChannels } from "@/lib/follows.functions";
 
 export const Route = createFileRoute("/following")({
   head: () => ({ meta: [{ title: "Following — WanderPins" }] }),
   component: FollowingScreen,
 });
 
+function formatNum(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`;
+  return String(n);
+}
+
 function FollowingScreen() {
   const { isAuthenticated, loading } = useAuth();
+  const listFn = useServerFn(listMyFollowedChannels);
+  const followed = useQuery({
+    queryKey: ["my-followed-channels"],
+    enabled: isAuthenticated,
+    queryFn: () => listFn(),
+  });
 
   if (loading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
 
@@ -28,44 +42,58 @@ function FollowingScreen() {
     );
   }
 
+  const rows = (followed.data ?? []) as Array<{
+    created_at: string;
+    youtube_channels: {
+      id: string;
+      youtube_channel_id: string;
+      name: string;
+      thumbnail_url: string | null;
+      subscriber_count: number | null;
+      current_location: string | null;
+      is_currently_traveling: boolean | null;
+    } | null;
+  }>;
+
   return (
     <>
       <header className="safe-top px-5 pt-4">
         <h1 className="font-display text-2xl font-bold">Following</h1>
-        <p className="text-sm text-muted-foreground">Creators you follow and where they are right now.</p>
+        <p className="text-sm text-muted-foreground">Creators you follow.</p>
       </header>
 
       <section className="px-5 pt-5">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Now traveling</h2>
-        <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5">
-          {popularCreators.filter(c => c.traveling).map((c) => (
-            <div key={c.name} className="w-32 shrink-0 rounded-2xl bg-card p-3 text-center">
-              <img src={c.avatar} className="mx-auto size-14 rounded-full object-cover" alt="" />
-              <p className="mt-2 text-sm font-semibold">{c.name}</p>
-              <p className="flex items-center justify-center gap-1 text-xs text-pin-traveling">
-                <span className="size-1.5 animate-pulse rounded-full bg-pin-traveling" /> {c.traveling}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-5 pt-6">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Recent uploads</h2>
-        <ul className="space-y-3">
-          {samplePins.slice(0, 4).map((p) => (
-            <li key={p.id} className="flex gap-3 rounded-2xl bg-card p-3">
-              <img src={p.thumbnail} alt={p.title} className="size-20 shrink-0 rounded-xl object-cover" />
-              <div className="min-w-0">
-                <p className="line-clamp-2 text-sm font-semibold">{p.title}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{p.creator}</p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="size-3" /> {p.location} · {p.uploaded}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {followed.isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : rows.length === 0 ? (
+          <div className="rounded-2xl bg-card p-6 text-center">
+            <Users className="mx-auto size-8 text-primary" />
+            <p className="mt-3 text-sm font-semibold">You aren’t following anyone yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">Tap a creator on the home page to follow them.</p>
+            <Button asChild size="sm" className="mt-4"><Link to="/">Browse creators</Link></Button>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {rows.map((r) => {
+              const c = r.youtube_channels;
+              if (!c) return null;
+              return (
+                <li key={c.id} className="flex items-center gap-3 rounded-2xl bg-card p-3">
+                  {c.thumbnail_url && (
+                    <img src={c.thumbnail_url} alt={c.name} className="size-14 shrink-0 rounded-full object-cover" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-1 text-sm font-semibold">{c.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : "Subscribers hidden"}
+                      {c.is_currently_traveling && c.current_location ? ` · In ${c.current_location}` : ""}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
     </>
   );

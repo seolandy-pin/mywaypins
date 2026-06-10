@@ -105,18 +105,35 @@ function Home() {
 
       <Section title="Popular creators">
         <div className="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pb-4">
-          {popularCreators.map((c) => (
-            <div key={c.name} className="flex w-20 shrink-0 flex-col items-center text-center">
-              <div className="relative">
-                <img src={c.avatar} alt={c.name} className="size-16 rounded-full object-cover ring-2 ring-border" />
-                {c.traveling && (
-                  <span className="absolute -bottom-1 right-0 size-4 rounded-full border-2 border-background bg-pin-traveling" title={`In ${c.traveling}`} />
-                )}
-              </div>
-              <p className="mt-1.5 line-clamp-1 text-xs font-medium">{c.name}</p>
-              <p className="text-[10px] text-muted-foreground">{creatorsLoading ? "…" : `${c.subs} subs`}</p>
-            </div>
-          ))}
+          {popularCreators.map((c) => {
+            const inner = (
+              <>
+                <div className="relative">
+                  <img src={c.avatar} alt={c.name} className="size-16 rounded-full object-cover ring-2 ring-border" />
+                  {c.traveling && (
+                    <span className="absolute -bottom-1 right-0 size-4 rounded-full border-2 border-background bg-pin-traveling" title={`In ${c.traveling}`} />
+                  )}
+                </div>
+                <p className="mt-1.5 line-clamp-1 text-xs font-medium">{c.name}</p>
+                <p className="text-[10px] text-muted-foreground">{creatorsLoading ? "…" : `${c.subs} subs`}</p>
+              </>
+            );
+            if (c.handle) {
+              return (
+                <Link
+                  key={c.name}
+                  to="/channel/$handle"
+                  params={{ handle: c.handle }}
+                  className="flex w-20 shrink-0 flex-col items-center text-center active:scale-95"
+                >
+                  {inner}
+                </Link>
+              );
+            }
+            return (
+              <div key={c.name} className="flex w-20 shrink-0 flex-col items-center text-center">{inner}</div>
+            );
+          })}
         </div>
       </Section>
     </>
