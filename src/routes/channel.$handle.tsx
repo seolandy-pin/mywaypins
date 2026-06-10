@@ -100,9 +100,10 @@ function ChannelPage() {
       </header>
 
       <section className="flex flex-col items-center px-5 pt-6 text-center">
-        {avatar && <img src={avatar} alt={ch.snippet.title} className="size-24 rounded-full object-cover ring-2 ring-border" />}
+        {avatar && <img src={avatar} alt={ch.title} className="size-24 rounded-full object-cover ring-2 ring-border" />}
         <h2 className="mt-3 flex items-center gap-1 font-display text-2xl font-bold">
-          {ch.snippet.title}
+          {ch.title}
+
           <BadgeCheck className="size-5 text-primary" />
         </h2>
         <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
