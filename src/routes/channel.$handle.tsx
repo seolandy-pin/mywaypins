@@ -64,10 +64,18 @@ function ChannelPage() {
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["follow-status", ytId] });
       queryClient.invalidateQueries({ queryKey: ["my-followed-channels"] });
+      if (result && "ingestionStarted" in result && result.ingestionStarted) {
+        toast.success("Following — adding their travel locations to the map…", {
+          description: "Pins will appear shortly (usually under a minute).",
+        });
+      } else if (result && "following" in result && result.following) {
+        toast.success("Following");
+      }
     },
+
   });
 
   if (channelQuery.isLoading) {
