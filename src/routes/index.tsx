@@ -24,6 +24,7 @@ function Home() {
   const navigate = useNavigate();
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const { creators: popularCreators, loading: creatorsLoading } = usePopularCreators();
 
 
   return (
