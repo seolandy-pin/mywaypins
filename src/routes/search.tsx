@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MobileShell } from "@/components/layout/MobileShell";
+
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, MapPin } from "lucide-react";
 import { useState, useMemo } from "react";
@@ -29,7 +29,7 @@ function SearchScreen() {
   }, [q]);
 
   return (
-    <MobileShell>
+    <>
       <header className="safe-top px-5 pt-4">
         <h1 className="font-display text-2xl font-bold">Search</h1>
         <div className="relative mt-3">
@@ -82,7 +82,7 @@ function SearchScreen() {
           </Group>
         </div>
       )}
-    </MobileShell>
+    </>
   );
 }
 

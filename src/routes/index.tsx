@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { MobileShell } from "@/components/layout/MobileShell";
+
 import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
 import { featuredDestinations, samplePins, PIN_TYPE_COLORS } from "@/lib/sample-data";
@@ -28,7 +28,7 @@ function Home() {
 
 
   return (
-    <MobileShell>
+    <>
       <header className="safe-top flex items-center justify-between px-5 pb-2 pt-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Welcome to</p>
@@ -119,7 +119,7 @@ function Home() {
           ))}
         </div>
       </Section>
-    </MobileShell>
+    </>
   );
 }
 

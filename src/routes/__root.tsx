@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { MobileShell } from "@/components/layout/MobileShell";
 
 function NotFoundComponent() {
   return (
@@ -93,7 +94,9 @@ function RootComponent() {
   }, [router, queryClient]);
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <MobileShell>
+        <Outlet />
+      </MobileShell>
       <Toaster position="top-center" theme="dark" />
     </QueryClientProvider>
   );

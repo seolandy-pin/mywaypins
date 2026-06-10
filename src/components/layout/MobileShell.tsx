@@ -10,8 +10,21 @@ const tabs = [
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
-export function MobileShell({ children, hideNav = false }: { children: ReactNode; hideNav?: boolean }) {
+// Routes that should hide the bottom tab bar (full-screen flows).
+const HIDE_NAV_ROUTES = ["/auth"];
+
+/**
+ * MobileShell is now rendered ONCE at the root (see src/routes/__root.tsx)
+ * and wraps <Outlet />. Tab routes return their content directly — keeping
+ * the shell + bottom nav mounted across navigations eliminates the per-tab
+ * remount flicker (Mapbox singleton + React Query cache do the rest).
+ *
+ * The `children` prop is the route Outlet. `hideNav` is derived from the
+ * current pathname so a route can opt out (e.g. /auth).
+ */
+export function MobileShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const hideNav = HIDE_NAV_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-[520px] flex-col bg-background">
@@ -26,6 +39,7 @@ export function MobileShell({ children, hideNav = false }: { children: ReactNode
                 <li key={t.to}>
                   <Link
                     to={t.to}
+                    preload="intent"
                     className={`flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-colors ${
                       active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                     }`}

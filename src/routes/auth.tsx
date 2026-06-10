@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { MobileShell } from "@/components/layout/MobileShell";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,8 +49,7 @@ function AuthScreen() {
   }
 
   return (
-    <MobileShell hideNav>
-      <div className="safe-top flex min-h-screen flex-col items-center justify-center gap-6 px-6">
+    <div className="safe-top flex min-h-screen flex-col items-center justify-center gap-6 px-6">
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="rounded-2xl gradient-hero p-3 text-primary-foreground"><Compass className="size-7" /></div>
           <h1 className="font-display text-3xl font-bold">WanderPins</h1>
@@ -82,7 +81,6 @@ function AuthScreen() {
         <button onClick={() => setMode(mode === "signin" ? "signup" : "signin")} className="text-sm text-muted-foreground">
           {mode === "signin" ? "New here? Create an account" : "Have an account? Sign in"}
         </button>
-      </div>
-    </MobileShell>
+    </div>
   );
 }
