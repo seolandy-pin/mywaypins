@@ -6,6 +6,7 @@ import { ArrowLeft, BadgeCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/use-auth";
 import { followChannel, unfollowChannel, getFollowStatus } from "@/lib/follows.functions";
+import { getYouTubeChannelByHandleFn } from "@/lib/youtube.functions";
 
 export const Route = createFileRoute("/channel/$handle")({
   head: ({ params }) => ({
@@ -13,25 +14,6 @@ export const Route = createFileRoute("/channel/$handle")({
   }),
   component: ChannelPage,
 });
-
-type YTChannel = {
-  id: string;
-  snippet: {
-    title: string;
-    description: string;
-    customUrl?: string;
-    thumbnails: { high?: { url: string }; medium?: { url: string }; default?: { url: string } };
-  };
-  statistics: { subscriberCount?: string; videoCount?: string; hiddenSubscriberCount?: boolean };
-};
-
-async function fetchChannel(handle: string, apiKey: string): Promise<YTChannel | null> {
-  const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`YouTube API ${res.status}`);
-  const json = (await res.json()) as { items?: YTChannel[] };
-  return json.items?.[0] ?? null;
-}
 
 function formatNum(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
@@ -44,14 +26,14 @@ function ChannelPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY as string | undefined;
+  const fetchChannelFn = useServerFn(getYouTubeChannelByHandleFn);
 
   const channelQuery = useQuery({
     queryKey: ["yt-channel", handle],
-    enabled: Boolean(apiKey),
     staleTime: 1000 * 60 * 60,
-    queryFn: () => fetchChannel(handle, apiKey!),
+    queryFn: () => fetchChannelFn({ data: { handle } }),
   });
+
 
   const ytId = channelQuery.data?.id;
 
