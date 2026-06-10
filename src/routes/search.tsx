@@ -89,16 +89,13 @@ function SearchScreen() {
       {results && (
         <div className="mt-4 space-y-6 px-5 pb-6">
           <Group title="YouTube channels">
-            {!apiKey && <p className="text-xs text-muted-foreground">YouTube API key not configured.</p>}
-            {apiKey && debounced.length < 2 && <p className="text-xs text-muted-foreground">Type at least 2 characters…</p>}
-            {apiKey && debounced.length >= 2 && ytQuery.isLoading && <p className="text-sm text-muted-foreground">Searching…</p>}
-            {apiKey && ytQuery.error && <p className="text-sm text-destructive">Couldn't reach YouTube.</p>}
-            {apiKey && ytQuery.data && ytQuery.data.length === 0 && <Empty />}
-            {apiKey && ytQuery.data?.map((c) => {
-              const handle = c.snippet.customUrl?.replace(/^@/, "");
-              const avatar = c.snippet.thumbnails.medium?.url ?? c.snippet.thumbnails.default?.url ?? "";
-              const subs = c.statistics.hiddenSubscriberCount ? null : Number(c.statistics.subscriberCount ?? 0);
-              const subtitle = subs === null ? "Subscribers hidden" : `${formatNum(subs)} subscribers`;
+            {debounced.length < 2 && <p className="text-xs text-muted-foreground">Type at least 2 characters…</p>}
+            {debounced.length >= 2 && ytQuery.isLoading && <p className="text-sm text-muted-foreground">Searching…</p>}
+            {ytQuery.error && <p className="text-sm text-destructive">Couldn't reach YouTube.</p>}
+            {ytQuery.data && ytQuery.data.length === 0 && <Empty />}
+            {ytQuery.data?.map((c) => {
+              const handle = c.customUrl;
+              const subtitle = c.subscriberCount === null ? "Subscribers hidden" : `${formatNum(c.subscriberCount)} subscribers`;
               if (handle) {
                 return (
                   <Link
@@ -107,9 +104,9 @@ function SearchScreen() {
                     params={{ handle }}
                     className="flex items-center gap-3 rounded-2xl bg-card p-3 active:scale-[0.98]"
                   >
-                    <img src={avatar} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+                    <img src={c.thumbnail} alt="" className="size-12 shrink-0 rounded-full object-cover" />
                     <div className="min-w-0 flex-1">
-                      <p className="line-clamp-1 text-sm font-semibold">{c.snippet.title}</p>
+                      <p className="line-clamp-1 text-sm font-semibold">{c.title}</p>
                       <p className="line-clamp-1 text-xs text-muted-foreground">@{handle} · {subtitle}</p>
                     </div>
                   </Link>
@@ -123,15 +120,16 @@ function SearchScreen() {
                   rel="noreferrer"
                   className="flex items-center gap-3 rounded-2xl bg-card p-3 active:scale-[0.98]"
                 >
-                  <img src={avatar} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+                  <img src={c.thumbnail} alt="" className="size-12 shrink-0 rounded-full object-cover" />
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-1 text-sm font-semibold">{c.snippet.title}</p>
+                    <p className="line-clamp-1 text-sm font-semibold">{c.title}</p>
                     <p className="line-clamp-1 text-xs text-muted-foreground">Open on YouTube · {subtitle}</p>
                   </div>
                 </a>
               );
             })}
           </Group>
+
 
           <Group title="Places">
             {results.places.length === 0 && <Empty />}
