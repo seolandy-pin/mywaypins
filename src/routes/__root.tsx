@@ -93,7 +93,9 @@ function RootComponent() {
   }, [router, queryClient]);
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <MobileShell>
+        <Outlet />
+      </MobileShell>
       <Toaster position="top-center" theme="dark" />
     </QueryClientProvider>
   );
