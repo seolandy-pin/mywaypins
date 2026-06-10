@@ -5,6 +5,7 @@ import { VideoSheet } from "@/components/VideoSheet";
 import { useState } from "react";
 import type { SamplePin } from "@/lib/sample-data";
 import { PIN_TYPE_COLORS } from "@/lib/sample-data";
+import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 
 export const Route = createFileRoute("/map")({
   head: () => ({
@@ -19,10 +20,12 @@ export const Route = createFileRoute("/map")({
 function MapScreen() {
   const [active, setActive] = useState<SamplePin | null>(null);
   const [open, setOpen] = useState(false);
+  const { channelIds, isAuthenticated } = useFollowedChannels();
 
   return (
     <div className="relative h-[calc(100dvh-5rem)]">
       <MapView
+        followedChannelIds={isAuthenticated ? channelIds : undefined}
         onPinClick={(p) => {
           setActive(p);
           setOpen(true);
