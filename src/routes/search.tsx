@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, MapPin, Youtube } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { samplePins, featuredDestinations, popularCreators } from "@/lib/sample-data";
+import { searchYouTubeChannelsFn } from "@/lib/youtube.functions";
 
 export const Route = createFileRoute("/search")({
   head: () => ({
@@ -16,27 +18,6 @@ export const Route = createFileRoute("/search")({
   component: SearchScreen,
 });
 
-type YTSearchItem = { id: { channelId: string }; snippet: { title: string; thumbnails: { default?: { url: string }; medium?: { url: string } } } };
-type YTChannelDetail = {
-  id: string;
-  snippet: { title: string; customUrl?: string; thumbnails: { default?: { url: string }; medium?: { url: string }; high?: { url: string } } };
-  statistics: { subscriberCount?: string; hiddenSubscriberCount?: boolean };
-};
-
-async function searchYouTubeChannels(query: string, apiKey: string) {
-  const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=8&q=${encodeURIComponent(query)}&key=${apiKey}`;
-  const sRes = await fetch(searchUrl);
-  if (!sRes.ok) throw new Error(`YouTube search ${sRes.status}`);
-  const sJson = (await sRes.json()) as { items?: YTSearchItem[] };
-  const ids = (sJson.items ?? []).map((i) => i.id.channelId).filter(Boolean);
-  if (ids.length === 0) return [] as YTChannelDetail[];
-  const detailUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${ids.join(",")}&key=${apiKey}`;
-  const dRes = await fetch(detailUrl);
-  if (!dRes.ok) throw new Error(`YouTube channels ${dRes.status}`);
-  const dJson = (await dRes.json()) as { items?: YTChannelDetail[] };
-  return dJson.items ?? [];
-}
-
 function formatNum(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`;
@@ -46,7 +27,7 @@ function formatNum(n: number) {
 function SearchScreen() {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
-  const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY as string | undefined;
+  const ytSearch = useServerFn(searchYouTubeChannelsFn);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 400);
@@ -55,9 +36,9 @@ function SearchScreen() {
 
   const ytQuery = useQuery({
     queryKey: ["yt-search", debounced],
-    enabled: Boolean(apiKey) && debounced.length >= 2,
+    enabled: debounced.length >= 2,
     staleTime: 1000 * 60 * 10,
-    queryFn: () => searchYouTubeChannels(debounced, apiKey!),
+    queryFn: () => ytSearch({ data: { q: debounced } }),
   });
 
   const results = useMemo(() => {
@@ -108,16 +89,13 @@ function SearchScreen() {
       {results && (
         <div className="mt-4 space-y-6 px-5 pb-6">
           <Group title="YouTube channels">
-            {!apiKey && <p className="text-xs text-muted-foreground">YouTube API key not configured.</p>}
-            {apiKey && debounced.length < 2 && <p className="text-xs text-muted-foreground">Type at least 2 characters…</p>}
-            {apiKey && debounced.length >= 2 && ytQuery.isLoading && <p className="text-sm text-muted-foreground">Searching…</p>}
-            {apiKey && ytQuery.error && <p className="text-sm text-destructive">Couldn't reach YouTube.</p>}
-            {apiKey && ytQuery.data && ytQuery.data.length === 0 && <Empty />}
-            {apiKey && ytQuery.data?.map((c) => {
-              const handle = c.snippet.customUrl?.replace(/^@/, "");
-              const avatar = c.snippet.thumbnails.medium?.url ?? c.snippet.thumbnails.default?.url ?? "";
-              const subs = c.statistics.hiddenSubscriberCount ? null : Number(c.statistics.subscriberCount ?? 0);
-              const subtitle = subs === null ? "Subscribers hidden" : `${formatNum(subs)} subscribers`;
+            {debounced.length < 2 && <p className="text-xs text-muted-foreground">Type at least 2 characters…</p>}
+            {debounced.length >= 2 && ytQuery.isLoading && <p className="text-sm text-muted-foreground">Searching…</p>}
+            {ytQuery.error && <p className="text-sm text-destructive">Couldn't reach YouTube.</p>}
+            {ytQuery.data && ytQuery.data.length === 0 && <Empty />}
+            {ytQuery.data?.map((c) => {
+              const handle = c.customUrl;
+              const subtitle = c.subscriberCount === null ? "Subscribers hidden" : `${formatNum(c.subscriberCount)} subscribers`;
               if (handle) {
                 return (
                   <Link
@@ -126,9 +104,9 @@ function SearchScreen() {
                     params={{ handle }}
                     className="flex items-center gap-3 rounded-2xl bg-card p-3 active:scale-[0.98]"
                   >
-                    <img src={avatar} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+                    <img src={c.thumbnail} alt="" className="size-12 shrink-0 rounded-full object-cover" />
                     <div className="min-w-0 flex-1">
-                      <p className="line-clamp-1 text-sm font-semibold">{c.snippet.title}</p>
+                      <p className="line-clamp-1 text-sm font-semibold">{c.title}</p>
                       <p className="line-clamp-1 text-xs text-muted-foreground">@{handle} · {subtitle}</p>
                     </div>
                   </Link>
@@ -142,15 +120,16 @@ function SearchScreen() {
                   rel="noreferrer"
                   className="flex items-center gap-3 rounded-2xl bg-card p-3 active:scale-[0.98]"
                 >
-                  <img src={avatar} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+                  <img src={c.thumbnail} alt="" className="size-12 shrink-0 rounded-full object-cover" />
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-1 text-sm font-semibold">{c.snippet.title}</p>
+                    <p className="line-clamp-1 text-sm font-semibold">{c.title}</p>
                     <p className="line-clamp-1 text-xs text-muted-foreground">Open on YouTube · {subtitle}</p>
                   </div>
                 </a>
               );
             })}
           </Group>
+
 
           <Group title="Places">
             {results.places.length === 0 && <Empty />}
