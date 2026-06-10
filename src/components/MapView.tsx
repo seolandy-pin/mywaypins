@@ -10,7 +10,12 @@ const TOKEN_KEY = "wanderpins:mapbox_token";
 
 function getStoredToken(): string {
   if (typeof window === "undefined") return "";
-  return (import.meta.env.VITE_MAPBOX_TOKEN as string) || localStorage.getItem(TOKEN_KEY) || "";
+  return (
+    (import.meta.env.VITE_MAPBOX_ACCESS_TOKEN as string) ||
+    (import.meta.env.VITE_MAPBOX_TOKEN as string) ||
+    localStorage.getItem(TOKEN_KEY) ||
+    ""
+  );
 }
 
 export function MapView({ onPinClick }: { onPinClick: (pin: SamplePin) => void }) {

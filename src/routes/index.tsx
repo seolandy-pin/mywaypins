@@ -1,7 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { MobileShell } from "@/components/layout/MobileShell";
-import { featuredDestinations, popularCreators, samplePins } from "@/lib/sample-data";
-import { Compass, TrendingUp, Sparkles, MapPin, Plus } from "lucide-react";
+import { MapView } from "@/components/MapView";
+import { VideoSheet } from "@/components/VideoSheet";
+import { featuredDestinations, popularCreators, samplePins, PIN_TYPE_COLORS } from "@/lib/sample-data";
+import type { SamplePin } from "@/lib/sample-data";
+import { useState } from "react";
+import { Compass, TrendingUp, Sparkles, MapPin, Plus, Maximize2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,6 +20,11 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const navigate = useNavigate();
+  const [activePin, setActivePin] = useState<SamplePin | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+
   return (
     <MobileShell>
       <header className="safe-top flex items-center justify-between px-5 pb-2 pt-4">
@@ -28,15 +37,36 @@ function Home() {
         </Link>
       </header>
 
-      <Link to="/map" className="mx-5 mt-4 block overflow-hidden rounded-3xl gradient-hero p-5 text-primary-foreground active:scale-[0.98] transition">
-        <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-white/20 p-2.5"><Compass className="size-6" /></div>
-          <div>
-            <p className="text-xs font-medium opacity-90">Tap to explore</p>
-            <p className="font-display text-lg font-bold">Open the world map →</p>
+      <section className="mx-5 mt-4">
+        <div className="relative h-[55vh] min-h-[320px] w-full overflow-hidden rounded-3xl border border-border bg-surface-1 shadow-xl">
+          <MapView
+            onPinClick={(p) => {
+              setActivePin(p);
+              setSheetOpen(true);
+            }}
+          />
+          <div className="glass pointer-events-none absolute inset-x-3 top-3 flex items-center gap-2 rounded-2xl border border-border/60 px-3 py-2">
+            <Compass className="size-4 text-primary" />
+            <span className="font-display text-sm font-semibold">Explore the world</span>
+            <div className="ml-auto flex items-center gap-2 text-[10px]">
+              {(["trending", "new", "featured", "traveling"] as const).map((t) => (
+                <span key={t} className="flex items-center gap-1 capitalize text-muted-foreground">
+                  <span className="size-2 rounded-full" style={{ background: PIN_TYPE_COLORS[t] }} />
+                  {t}
+                </span>
+              ))}
+            </div>
           </div>
+          <button
+            onClick={() => navigate({ to: "/map" })}
+            className="glass absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-2 text-xs font-semibold active:scale-95"
+          >
+            <Maximize2 className="size-3.5" /> Full map
+          </button>
         </div>
-      </Link>
+        <VideoSheet pin={activePin} open={sheetOpen} onOpenChange={setSheetOpen} />
+      </section>
+
 
       <Section title="Featured destinations" icon={Sparkles}>
         <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5">
