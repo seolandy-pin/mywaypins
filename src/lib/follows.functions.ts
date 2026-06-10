@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { processSubmission } from "@/lib/api/channels.functions";
 
 type ChannelInput = {
   youtubeChannelId: string;
@@ -24,7 +25,7 @@ export const followChannel = createServerFn({ method: "POST" })
         },
         { onConflict: "youtube_channel_id" },
       )
-      .select("id")
+      .select("id, video_count")
       .single();
     if (upsertErr) throw upsertErr;
 
@@ -32,8 +33,34 @@ export const followChannel = createServerFn({ method: "POST" })
       .from("followers")
       .insert({ user_id: userId, channel_id: ch.id });
     if (followErr && followErr.code !== "23505") throw followErr;
-    return { channelId: ch.id, following: true };
+
+    // Auto-ingest: if channel has no videos yet, kick off the same pipeline as Submit.
+    let ingestionStarted = false;
+    if (!ch.video_count && data.channelUrl) {
+      try {
+        const { data: sub, error: subErr } = await supabase
+          .from("submitted_channels")
+          .insert({
+            submitted_by: userId,
+            channel_url: data.channelUrl,
+            channel_name: data.name,
+          })
+          .select("id")
+          .single();
+        if (!subErr && sub) {
+          ingestionStarted = true;
+          // Fire-and-forget; client doesn't wait for AI extraction.
+          processSubmission({ data: { submission_id: sub.id } }).catch((e) =>
+            console.error("Auto-ingest failed:", e),
+          );
+        }
+      } catch (e) {
+        console.error("Auto-ingest kickoff failed:", e);
+      }
+    }
+    return { channelId: ch.id, following: true, ingestionStarted };
   });
+
 
 export const unfollowChannel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
