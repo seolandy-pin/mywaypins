@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
-import { featuredDestinations, popularCreators, samplePins, PIN_TYPE_COLORS } from "@/lib/sample-data";
+import { featuredDestinations, samplePins, PIN_TYPE_COLORS } from "@/lib/sample-data";
+import { usePopularCreators } from "@/lib/hooks/use-youtube-creators";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
 import { Compass, TrendingUp, Sparkles, MapPin, Plus, Maximize2 } from "lucide-react";
@@ -23,6 +24,7 @@ function Home() {
   const navigate = useNavigate();
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const { creators: popularCreators, loading: creatorsLoading } = usePopularCreators();
 
 
   return (
@@ -112,7 +114,7 @@ function Home() {
                 )}
               </div>
               <p className="mt-1.5 line-clamp-1 text-xs font-medium">{c.name}</p>
-              <p className="text-[10px] text-muted-foreground">{c.subs}</p>
+              <p className="text-[10px] text-muted-foreground">{creatorsLoading ? "…" : `${c.subs} subs`}</p>
             </div>
           ))}
         </div>
