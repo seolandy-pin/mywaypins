@@ -5,8 +5,42 @@ import { samplePins, PIN_TYPE_COLORS, type SamplePin } from "@/lib/sample-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Key } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const TOKEN_KEY = "wanderpins:mapbox_token";
+
+type PinType = SamplePin["type"];
+const ALLOWED_PIN_TYPES: PinType[] = ["trending", "new", "featured", "traveling"];
+
+async function fetchIngestedPins(): Promise<SamplePin[]> {
+  const { data, error } = await supabase
+    .from("pins")
+    .select(
+      "id, latitude, longitude, label, pin_type, videos(youtube_video_id, title, thumbnail_url, published_at, youtube_channels(name)), places(city_name, country_name)",
+    )
+    .limit(500);
+  if (error || !data) return [];
+  return data
+    .filter((p) => typeof p.latitude === "number" && typeof p.longitude === "number")
+    .map((p): SamplePin => {
+      const v = (p as { videos: { youtube_video_id?: string; title?: string; thumbnail_url?: string; published_at?: string; youtube_channels?: { name?: string } | null } | null }).videos;
+      const place = (p as { places: { city_name?: string; country_name?: string } | null }).places;
+      const type = (ALLOWED_PIN_TYPES as string[]).includes(p.pin_type) ? (p.pin_type as PinType) : "new";
+      return {
+        id: p.id,
+        lat: p.latitude as number,
+        lng: p.longitude as number,
+        type,
+        title: v?.title ?? p.label ?? "Untitled",
+        creator: v?.youtube_channels?.name ?? "Unknown",
+        thumbnail: v?.thumbnail_url ?? "",
+        location: [place?.city_name, place?.country_name].filter(Boolean).join(", ") || (p.label ?? ""),
+        views: "",
+        uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
+        youtubeId: v?.youtube_video_id ?? "",
+      };
+    });
+}
 
 function getStoredToken(): string {
   if (typeof window === "undefined") return "";
