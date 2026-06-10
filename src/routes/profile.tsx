@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { MobileShell } from "@/components/layout/MobileShell";
+
 import { useAuth } from "@/lib/auth/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,25 +23,23 @@ function ProfileScreen() {
     });
   }, [user]);
 
-  if (loading) return <MobileShell><div className="p-6 text-sm text-muted-foreground">Loading…</div></MobileShell>;
+  if (loading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
 
   if (!isAuthenticated) {
     return (
-      <MobileShell>
-        <div className="safe-top flex min-h-[70vh] flex-col items-center justify-center gap-3 px-6 text-center">
-          <div className="rounded-full bg-surface-2 p-4"><UserIcon className="size-8 text-primary" /></div>
-          <h2 className="font-display text-2xl font-bold">Your travel passport</h2>
-          <p className="text-sm text-muted-foreground text-balance">
-            Sign in to save places, build travel collections, and follow creators.
-          </p>
-          <Button asChild size="lg" className="mt-2"><Link to="/auth">Sign in or create account</Link></Button>
-        </div>
-      </MobileShell>
+      <div className="safe-top flex min-h-[70vh] flex-col items-center justify-center gap-3 px-6 text-center">
+        <div className="rounded-full bg-surface-2 p-4"><UserIcon className="size-8 text-primary" /></div>
+        <h2 className="font-display text-2xl font-bold">Your travel passport</h2>
+        <p className="text-sm text-muted-foreground text-balance">
+          Sign in to save places, build travel collections, and follow creators.
+        </p>
+        <Button asChild size="lg" className="mt-2"><Link to="/auth">Sign in or create account</Link></Button>
+      </div>
     );
   }
 
   return (
-    <MobileShell>
+    <>
       <header className="safe-top flex items-center gap-4 px-5 pt-6">
         <div className="size-16 overflow-hidden rounded-full bg-surface-2 ring-2 ring-border">
           {profile?.avatar_url ? (
@@ -82,7 +80,7 @@ function ProfileScreen() {
           <LogOut className="size-4" /> Sign out
         </Button>
       </div>
-    </MobileShell>
+    </>
   );
 }
 

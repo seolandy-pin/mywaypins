@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { MobileShell } from "@/components/layout/MobileShell";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,17 +23,15 @@ function SubmitScreen() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (loading) return <MobileShell><div className="p-6 text-sm text-muted-foreground">Loading…</div></MobileShell>;
+  if (loading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
 
   if (!isAuthenticated) {
     return (
-      <MobileShell>
-        <div className="safe-top flex min-h-[70vh] flex-col items-center justify-center gap-3 px-6 text-center">
-          <Youtube className="size-10 text-primary" />
-          <h2 className="font-display text-2xl font-bold">Sign in to submit a channel</h2>
-          <Button asChild size="lg"><Link to="/auth">Sign in</Link></Button>
-        </div>
-      </MobileShell>
+      <div className="safe-top flex min-h-[70vh] flex-col items-center justify-center gap-3 px-6 text-center">
+        <Youtube className="size-10 text-primary" />
+        <h2 className="font-display text-2xl font-bold">Sign in to submit a channel</h2>
+        <Button asChild size="lg"><Link to="/auth">Sign in</Link></Button>
+      </div>
     );
   }
 
@@ -52,7 +50,7 @@ function SubmitScreen() {
   }
 
   return (
-    <MobileShell>
+    <>
       <header className="safe-top flex items-center gap-2 px-5 pt-4">
         <Link to="/" className="rounded-full p-1 active:bg-surface-1"><ChevronLeft className="size-5" /></Link>
         <h1 className="font-display text-xl font-bold">Submit a channel</h1>
@@ -74,6 +72,6 @@ function SubmitScreen() {
         </div>
         <Button type="submit" size="lg" className="w-full" disabled={busy || !url}>{busy ? "Submitting…" : "Submit channel"}</Button>
       </form>
-    </MobileShell>
+    </>
   );
 }

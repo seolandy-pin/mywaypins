@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MobileShell } from "@/components/layout/MobileShell";
+
 import { useAuth } from "@/lib/auth/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -18,7 +18,7 @@ function SavedScreen() {
     supabase.from("favorites").select("*").eq("user_id", user.id).then(({ data }) => setItems(data ?? []));
   }, [user]);
   return (
-    <MobileShell>
+    <>
       <header className="safe-top flex items-center gap-2 px-5 pt-4">
         <Link to="/profile" className="rounded-full p-1 active:bg-surface-1"><ChevronLeft className="size-5" /></Link>
         <h1 className="font-display text-xl font-bold">Saved</h1>
@@ -31,6 +31,6 @@ function SavedScreen() {
       ) : (
         <div className="px-5">{items.length} items</div>
       )}
-    </MobileShell>
+    </>
   );
 }

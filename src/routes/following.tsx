@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MobileShell } from "@/components/layout/MobileShell";
+
 import { useAuth } from "@/lib/auth/use-auth";
 import { popularCreators, samplePins } from "@/lib/sample-data";
 import { Button } from "@/components/ui/button";
@@ -13,25 +13,23 @@ export const Route = createFileRoute("/following")({
 function FollowingScreen() {
   const { isAuthenticated, loading } = useAuth();
 
-  if (loading) return <MobileShell><div className="p-6 text-sm text-muted-foreground">Loading…</div></MobileShell>;
+  if (loading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
 
   if (!isAuthenticated) {
     return (
-      <MobileShell>
-        <div className="safe-top flex min-h-[70vh] flex-col items-center justify-center gap-3 px-6 text-center">
-          <Bell className="size-10 text-primary" />
-          <h2 className="font-display text-2xl font-bold">Follow your favorite creators</h2>
-          <p className="text-sm text-muted-foreground text-balance">
-            Sign in to follow travel creators and get notified about new uploads from places you love.
-          </p>
-          <Button asChild size="lg" className="mt-2"><Link to="/auth">Sign in</Link></Button>
-        </div>
-      </MobileShell>
+      <div className="safe-top flex min-h-[70vh] flex-col items-center justify-center gap-3 px-6 text-center">
+        <Bell className="size-10 text-primary" />
+        <h2 className="font-display text-2xl font-bold">Follow your favorite creators</h2>
+        <p className="text-sm text-muted-foreground text-balance">
+          Sign in to follow travel creators and get notified about new uploads from places you love.
+        </p>
+        <Button asChild size="lg" className="mt-2"><Link to="/auth">Sign in</Link></Button>
+      </div>
     );
   }
 
   return (
-    <MobileShell>
+    <>
       <header className="safe-top px-5 pt-4">
         <h1 className="font-display text-2xl font-bold">Following</h1>
         <p className="text-sm text-muted-foreground">Creators you follow and where they are right now.</p>
@@ -69,6 +67,6 @@ function FollowingScreen() {
           ))}
         </ul>
       </section>
-    </MobileShell>
+    </>
   );
 }
