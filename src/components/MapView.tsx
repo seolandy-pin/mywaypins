@@ -12,13 +12,17 @@ const TOKEN_KEY = "wanderpins:mapbox_token";
 type PinType = SamplePin["type"];
 const ALLOWED_PIN_TYPES: PinType[] = ["trending", "new", "featured", "traveling"];
 
-async function fetchIngestedPins(): Promise<SamplePin[]> {
-  const { data, error } = await supabase
+async function fetchIngestedPins(channelIds?: string[]): Promise<SamplePin[]> {
+  let q = supabase
     .from("pins")
     .select(
-      "id, latitude, longitude, label, pin_type, videos(youtube_video_id, title, thumbnail_url, published_at, youtube_channels(name)), places(city_name, country_name)",
+      "id, latitude, longitude, label, pin_type, channel_id, videos(youtube_video_id, title, thumbnail_url, published_at, youtube_channels(name)), places(city_name, country_name)",
     )
-    .limit(500);
+    .limit(1000);
+  if (channelIds && channelIds.length > 0) {
+    q = q.in("channel_id", channelIds);
+  }
+  const { data, error } = await q;
   if (error || !data) return [];
   return data
     .filter((p) => typeof p.latitude === "number" && typeof p.longitude === "number")
@@ -56,7 +60,44 @@ function getStoredToken(): string {
 type PinHandler = (p: SamplePin) => void;
 let sharedDiv: HTMLDivElement | null = null;
 let sharedMap: mapboxgl.Map | null = null;
-let sharedHandlerRef: { current: PinHandler } = { current: () => {} };
+const sharedHandlerRef: { current: PinHandler } = { current: () => {} };
+let currentMarkers: mapboxgl.Marker[] = [];
+
+function clearMarkers() {
+  currentMarkers.forEach((m) => m.remove());
+  currentMarkers = [];
+}
+
+function addMarker(map: mapboxgl.Map, pin: SamplePin) {
+  const el = document.createElement("button");
+  el.className = "wanderpin-marker";
+  el.style.cssText = `
+    width: 26px; height: 26px; border-radius: 50%;
+    background: ${PIN_TYPE_COLORS[pin.type]};
+    border: 3px solid white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    cursor: pointer; transition: transform 0.2s;
+  `;
+  el.onmouseenter = () => (el.style.transform = "scale(1.3)");
+  el.onmouseleave = () => (el.style.transform = "scale(1)");
+  el.onclick = (e) => {
+    e.stopPropagation();
+    sharedHandlerRef.current(pin);
+  };
+  const marker = new mapboxgl.Marker({ element: el }).setLngLat([pin.lng, pin.lat]).addTo(map);
+  currentMarkers.push(marker);
+}
+
+function renderPins(map: mapboxgl.Map, channelIds?: string[]) {
+  clearMarkers();
+  // When filtering by followed channels, hide sample/demo pins.
+  if (!channelIds) {
+    samplePins.forEach((p) => addMarker(map, p));
+  }
+  fetchIngestedPins(channelIds)
+    .then((pins) => pins.forEach((p) => addMarker(map, p)))
+    .catch((e) => console.warn("[map] failed to load ingested pins", e));
+}
 
 function ensureSharedMap(token: string) {
   if (sharedDiv && sharedMap) return { div: sharedDiv, map: sharedMap };
@@ -64,10 +105,8 @@ function ensureSharedMap(token: string) {
 
   const div = document.createElement("div");
   div.style.cssText = "width:100%;height:100%;";
-  // Park it off-DOM until first host attaches.
   sharedDiv = div;
 
-  // Map needs the container in the DOM during init for sizing; attach hidden first.
   const hiddenHost = document.createElement("div");
   hiddenHost.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;";
   hiddenHost.appendChild(div);
@@ -82,46 +121,26 @@ function ensureSharedMap(token: string) {
   });
   map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
-  function addMarker(pin: SamplePin) {
-    const el = document.createElement("button");
-    el.className = "wanderpin-marker";
-    el.style.cssText = `
-      width: 26px; height: 26px; border-radius: 50%;
-      background: ${PIN_TYPE_COLORS[pin.type]};
-      border: 3px solid white;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      cursor: pointer; transition: transform 0.2s;
-    `;
-    el.onmouseenter = () => (el.style.transform = "scale(1.3)");
-    el.onmouseleave = () => (el.style.transform = "scale(1)");
-    el.onclick = (e) => {
-      e.stopPropagation();
-      sharedHandlerRef.current(pin);
-    };
-    new mapboxgl.Marker({ element: el }).setLngLat([pin.lng, pin.lat]).addTo(map);
-  }
-
-  map.on("load", () => {
-    samplePins.forEach(addMarker);
-    // Load real ingested pins from the database (public select policy).
-    fetchIngestedPins()
-      .then((pins) => pins.forEach(addMarker))
-      .catch((e) => console.warn("[map] failed to load ingested pins", e));
-  });
   sharedMap = map;
   return { div, map };
 }
 
-export function MapView({ onPinClick }: { onPinClick: (pin: SamplePin) => void }) {
+export function MapView({
+  onPinClick,
+  followedChannelIds,
+}: {
+  onPinClick: (pin: SamplePin) => void;
+  followedChannelIds?: string[];
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [token, setToken] = useState<string>("");
   const [tokenInput, setTokenInput] = useState("");
+  const loadedRef = useRef(false);
 
   useEffect(() => {
     setToken(getStoredToken());
   }, []);
 
-  // Keep handler ref current without re-initing map.
   useEffect(() => {
     sharedHandlerRef.current = onPinClick;
   }, [onPinClick]);
@@ -131,14 +150,23 @@ export function MapView({ onPinClick }: { onPinClick: (pin: SamplePin) => void }
     const { div, map } = ensureSharedMap(token);
     const host = hostRef.current;
     host.appendChild(div);
-    // Resize after reparent so the canvas matches the new container.
     requestAnimationFrame(() => map.resize());
 
+    const render = () => renderPins(map, followedChannelIds);
+    if (!loadedRef.current && !map.loaded()) {
+      map.once("load", () => {
+        loadedRef.current = true;
+        render();
+      });
+    } else {
+      loadedRef.current = true;
+      render();
+    }
+
     return () => {
-      // Detach but keep alive in memory for next mount.
       if (div.parentElement === host) host.removeChild(div);
     };
-  }, [token]);
+  }, [token, followedChannelIds?.join(",")]);
 
   if (!token) {
     return (
