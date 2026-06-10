@@ -14,20 +14,44 @@ export const followChannel = createServerFn({ method: "POST" })
   .inputValidator((d: ChannelInput) => d)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: ch, error: upsertErr } = await supabase
+    let ch: { id: string; video_count: number | null } | null = null;
+
+    const { data: existingChannel, error: selectErr } = await supabase
       .from("youtube_channels")
-      .upsert(
-        {
+      .select("id, video_count")
+      .eq("youtube_channel_id", data.youtubeChannelId)
+      .maybeSingle();
+    if (selectErr) throw selectErr;
+
+    if (existingChannel) {
+      ch = existingChannel;
+    } else {
+      const { data: insertedChannel, error: insertErr } = await supabase
+      .from("youtube_channels")
+        .insert({
           youtube_channel_id: data.youtubeChannelId,
           name: data.name,
           thumbnail_url: data.thumbnailUrl ?? null,
           channel_url: data.channelUrl ?? null,
-        },
-        { onConflict: "youtube_channel_id" },
-      )
+        })
       .select("id, video_count")
       .single();
-    if (upsertErr) throw upsertErr;
+      if (insertErr) {
+        if (insertErr.code !== "23505") throw insertErr;
+
+        const { data: racedChannel, error: racedErr } = await supabase
+          .from("youtube_channels")
+          .select("id, video_count")
+          .eq("youtube_channel_id", data.youtubeChannelId)
+          .single();
+        if (racedErr) throw racedErr;
+        ch = racedChannel;
+      } else {
+        ch = insertedChannel;
+      }
+    }
+
+    if (!ch) throw new Error("Unable to find or create channel");
 
     const { error: followErr } = await supabase
       .from("followers")
