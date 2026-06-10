@@ -18,6 +18,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileSavedRouteImport } from './routes/profile.saved'
 import { Route as ProfileCollectionsRouteImport } from './routes/profile.collections'
+import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
@@ -64,6 +65,11 @@ const ProfileCollectionsRoute = ProfileCollectionsRouteImport.update({
   path: '/collections',
   getParentRoute: () => ProfileRoute,
 } as any)
+const ChannelHandleRoute = ChannelHandleRouteImport.update({
+  id: '/channel/$handle',
+  path: '/channel/$handle',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRouteWithChildren
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
+  '/channel/$handle': typeof ChannelHandleRoute
   '/profile/collections': typeof ProfileCollectionsRoute
   '/profile/saved': typeof ProfileSavedRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRouteWithChildren
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
+  '/channel/$handle': typeof ChannelHandleRoute
   '/profile/collections': typeof ProfileCollectionsRoute
   '/profile/saved': typeof ProfileSavedRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRouteWithChildren
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
+  '/channel/$handle': typeof ChannelHandleRoute
   '/profile/collections': typeof ProfileCollectionsRoute
   '/profile/saved': typeof ProfileSavedRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/search'
     | '/submit'
+    | '/channel/$handle'
     | '/profile/collections'
     | '/profile/saved'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/search'
     | '/submit'
+    | '/channel/$handle'
     | '/profile/collections'
     | '/profile/saved'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/search'
     | '/submit'
+    | '/channel/$handle'
     | '/profile/collections'
     | '/profile/saved'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRouteWithChildren
   SearchRoute: typeof SearchRoute
   SubmitRoute: typeof SubmitRoute
+  ChannelHandleRoute: typeof ChannelHandleRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -210,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileCollectionsRouteImport
       parentRoute: typeof ProfileRoute
     }
+    '/channel/$handle': {
+      id: '/channel/$handle'
+      path: '/channel/$handle'
+      fullPath: '/channel/$handle'
+      preLoaderRoute: typeof ChannelHandleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -234,7 +254,18 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRouteWithChildren,
   SearchRoute: SearchRoute,
   SubmitRoute: SubmitRoute,
+  ChannelHandleRoute: ChannelHandleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
