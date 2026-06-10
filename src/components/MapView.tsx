@@ -81,25 +81,32 @@ function ensureSharedMap(token: string) {
     attributionControl: false,
   });
   map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+
+  function addMarker(pin: SamplePin) {
+    const el = document.createElement("button");
+    el.className = "wanderpin-marker";
+    el.style.cssText = `
+      width: 26px; height: 26px; border-radius: 50%;
+      background: ${PIN_TYPE_COLORS[pin.type]};
+      border: 3px solid white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      cursor: pointer; transition: transform 0.2s;
+    `;
+    el.onmouseenter = () => (el.style.transform = "scale(1.3)");
+    el.onmouseleave = () => (el.style.transform = "scale(1)");
+    el.onclick = (e) => {
+      e.stopPropagation();
+      sharedHandlerRef.current(pin);
+    };
+    new mapboxgl.Marker({ element: el }).setLngLat([pin.lng, pin.lat]).addTo(map);
+  }
+
   map.on("load", () => {
-    samplePins.forEach((pin) => {
-      const el = document.createElement("button");
-      el.className = "wanderpin-marker";
-      el.style.cssText = `
-        width: 26px; height: 26px; border-radius: 50%;
-        background: ${PIN_TYPE_COLORS[pin.type]};
-        border: 3px solid white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        cursor: pointer; transition: transform 0.2s;
-      `;
-      el.onmouseenter = () => (el.style.transform = "scale(1.3)");
-      el.onmouseleave = () => (el.style.transform = "scale(1)");
-      el.onclick = (e) => {
-        e.stopPropagation();
-        sharedHandlerRef.current(pin);
-      };
-      new mapboxgl.Marker({ element: el }).setLngLat([pin.lng, pin.lat]).addTo(map);
-    });
+    samplePins.forEach(addMarker);
+    // Load real ingested pins from the database (public select policy).
+    fetchIngestedPins()
+      .then((pins) => pins.forEach(addMarker))
+      .catch((e) => console.warn("[map] failed to load ingested pins", e));
   });
   sharedMap = map;
   return { div, map };
