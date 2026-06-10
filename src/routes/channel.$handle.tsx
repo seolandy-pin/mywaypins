@@ -58,9 +58,9 @@ function ChannelPage() {
       return followFn({
         data: {
           youtubeChannelId: ch.id,
-          name: ch.snippet.title,
-          thumbnailUrl: ch.snippet.thumbnails.high?.url ?? ch.snippet.thumbnails.medium?.url ?? ch.snippet.thumbnails.default?.url ?? null,
-          channelUrl: ch.snippet.customUrl ? `https://www.youtube.com/${ch.snippet.customUrl}` : `https://www.youtube.com/channel/${ch.id}`,
+          name: ch.title,
+          thumbnailUrl: ch.avatar || null,
+          channelUrl: ch.customUrl ? `https://www.youtube.com/@${ch.customUrl}` : `https://www.youtube.com/channel/${ch.id}`,
         },
       });
     },
@@ -69,10 +69,6 @@ function ChannelPage() {
       queryClient.invalidateQueries({ queryKey: ["my-followed-channels"] });
     },
   });
-
-  if (!apiKey) {
-    return <div className="safe-top p-6 text-sm text-muted-foreground">YouTube API key not configured.</div>;
-  }
 
   if (channelQuery.isLoading) {
     return <div className="safe-top p-6 text-sm text-muted-foreground">Loading channel…</div>;
@@ -84,14 +80,15 @@ function ChannelPage() {
         <button onClick={() => router.history.back()} className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
           <ArrowLeft className="size-4" /> Back
         </button>
-        <p className="text-sm">Couldn’t find channel @{handle}.</p>
+        <p className="text-sm">Couldn't find channel @{handle}.</p>
       </div>
     );
   }
 
   const ch = channelQuery.data;
-  const avatar = ch.snippet.thumbnails.high?.url ?? ch.snippet.thumbnails.medium?.url ?? ch.snippet.thumbnails.default?.url;
-  const subs = ch.statistics.hiddenSubscriberCount ? null : Number(ch.statistics.subscriberCount ?? 0);
+  const avatar = ch.avatar;
+  const subs = ch.subscriberCount;
+
 
   return (
     <div className="safe-top pb-10">
