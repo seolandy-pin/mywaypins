@@ -114,7 +114,7 @@ function Home() {
                 )}
               </div>
               <p className="mt-1.5 line-clamp-1 text-xs font-medium">{c.name}</p>
-              <p className="text-[10px] text-muted-foreground">{c.subs}</p>
+              <p className="text-[10px] text-muted-foreground">{creatorsLoading ? "…" : `${c.subs} subs`}</p>
             </div>
           ))}
         </div>
