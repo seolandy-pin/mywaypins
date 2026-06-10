@@ -20,7 +20,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  return (
+  const navigate = useNavigate();
+  const [activePin, setActivePin] = useState<SamplePin | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
     <MobileShell>
       <header className="safe-top flex items-center justify-between px-5 pb-2 pt-4">
         <div>
