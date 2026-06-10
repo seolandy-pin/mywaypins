@@ -1,7 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { MobileShell } from "@/components/layout/MobileShell";
-import { featuredDestinations, popularCreators, samplePins } from "@/lib/sample-data";
-import { Compass, TrendingUp, Sparkles, MapPin, Plus } from "lucide-react";
+import { MapView } from "@/components/MapView";
+import { VideoSheet } from "@/components/VideoSheet";
+import { featuredDestinations, popularCreators, samplePins, PIN_TYPE_COLORS } from "@/lib/sample-data";
+import type { SamplePin } from "@/lib/sample-data";
+import { useState } from "react";
+import { Compass, TrendingUp, Sparkles, MapPin, Plus, Maximize2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
