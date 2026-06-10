@@ -2,11 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 
 import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
-import { featuredDestinations, samplePins, PIN_TYPE_COLORS } from "@/lib/sample-data";
-import { usePopularCreators } from "@/lib/hooks/use-youtube-creators";
+import { featuredDestinations, PIN_TYPE_COLORS } from "@/lib/sample-data";
+import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
-import { Compass, TrendingUp, Sparkles, MapPin, Plus, Maximize2 } from "lucide-react";
+import { Compass, Sparkles, Plus, Maximize2, Users } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,12 +20,20 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+function formatNum(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`;
+  return String(n);
+}
+
 function Home() {
   const navigate = useNavigate();
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const { creators: popularCreators, loading: creatorsLoading } = usePopularCreators();
+  const { channels: followed, channelIds, isAuthenticated, loading } = useFollowedChannels();
 
+  // When signed in, only show pins from followed channels. Otherwise show all.
+  const mapFilter = isAuthenticated ? channelIds : undefined;
 
   return (
     <>
@@ -42,6 +50,7 @@ function Home() {
       <section className="mx-5 mt-4">
         <div className="relative h-[55vh] min-h-[320px] w-full overflow-hidden rounded-3xl border border-border bg-surface-1 shadow-xl">
           <MapView
+            followedChannelIds={mapFilter}
             onPinClick={(p) => {
               setActivePin(p);
               setSheetOpen(true);
@@ -49,7 +58,9 @@ function Home() {
           />
           <div className="glass pointer-events-none absolute inset-x-3 top-3 flex items-center gap-2 rounded-2xl border border-border/60 px-3 py-2">
             <Compass className="size-4 text-primary" />
-            <span className="font-display text-sm font-semibold">Explore the world</span>
+            <span className="font-display text-sm font-semibold">
+              {isAuthenticated ? "Channels you follow" : "Explore the world"}
+            </span>
             <div className="ml-auto flex items-center gap-2 text-[10px]">
               {(["trending", "new", "featured", "traveling"] as const).map((t) => (
                 <span key={t} className="flex items-center gap-1 capitalize text-muted-foreground">
@@ -59,6 +70,11 @@ function Home() {
               ))}
             </div>
           </div>
+          {isAuthenticated && !loading && followed.length === 0 && (
+            <div className="glass absolute inset-x-6 bottom-14 rounded-2xl border border-border/60 p-4 text-center text-xs">
+              You aren't following any channels yet. Search and follow creators to populate your map.
+            </div>
+          )}
           <button
             onClick={() => navigate({ to: "/map" })}
             className="glass absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-2 text-xs font-semibold active:scale-95"
@@ -69,6 +85,40 @@ function Home() {
         <VideoSheet pin={activePin} open={sheetOpen} onOpenChange={setSheetOpen} />
       </section>
 
+      {isAuthenticated && (
+        <Section title="Channels you follow" icon={Users}>
+          {followed.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              You aren't following anyone yet.{" "}
+              <Link to="/search" className="text-primary underline">Find creators</Link>.
+            </p>
+          ) : (
+            <div className="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pb-4">
+              {followed.map((c) => {
+                const handle = c.youtube_channel_id;
+                return (
+                  <Link
+                    key={c.id}
+                    to="/channel/$handle"
+                    params={{ handle }}
+                    className="flex w-20 shrink-0 flex-col items-center text-center active:scale-95"
+                  >
+                    {c.thumbnail_url ? (
+                      <img src={c.thumbnail_url} alt={c.name} className="size-16 rounded-full object-cover ring-2 ring-border" />
+                    ) : (
+                      <div className="size-16 rounded-full bg-surface-2 ring-2 ring-border" />
+                    )}
+                    <p className="mt-1.5 line-clamp-1 text-xs font-medium">{c.name}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : ""}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </Section>
+      )}
 
       <Section title="Featured destinations" icon={Sparkles}>
         <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5">
@@ -83,57 +133,6 @@ function Home() {
               </div>
             </article>
           ))}
-        </div>
-      </Section>
-
-      <Section title="Trending now" icon={TrendingUp}>
-        <ul className="space-y-3">
-          {samplePins.slice(0, 3).map((p) => (
-            <li key={p.id} className="flex gap-3 rounded-2xl bg-card p-3">
-              <img src={p.thumbnail} alt={p.title} className="size-20 shrink-0 rounded-xl object-cover" />
-              <div className="min-w-0 flex-1">
-                <h3 className="line-clamp-2 text-sm font-semibold leading-snug">{p.title}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{p.creator}</p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="size-3" /> {p.location} · {p.views}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Section>
-
-      <Section title="Popular creators">
-        <div className="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pb-4">
-          {popularCreators.map((c) => {
-            const inner = (
-              <>
-                <div className="relative">
-                  <img src={c.avatar} alt={c.name} className="size-16 rounded-full object-cover ring-2 ring-border" />
-                  {c.traveling && (
-                    <span className="absolute -bottom-1 right-0 size-4 rounded-full border-2 border-background bg-pin-traveling" title={`In ${c.traveling}`} />
-                  )}
-                </div>
-                <p className="mt-1.5 line-clamp-1 text-xs font-medium">{c.name}</p>
-                <p className="text-[10px] text-muted-foreground">{creatorsLoading ? "…" : `${c.subs} subs`}</p>
-              </>
-            );
-            if (c.handle) {
-              return (
-                <Link
-                  key={c.name}
-                  to="/channel/$handle"
-                  params={{ handle: c.handle }}
-                  className="flex w-20 shrink-0 flex-col items-center text-center active:scale-95"
-                >
-                  {inner}
-                </Link>
-              );
-            }
-            return (
-              <div key={c.name} className="flex w-20 shrink-0 flex-col items-center text-center">{inner}</div>
-            );
-          })}
         </div>
       </Section>
     </>

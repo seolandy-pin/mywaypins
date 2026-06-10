@@ -60,7 +60,11 @@ export const getYouTubeChannelByHandleFn = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<YTChannelDetail | null> => {
     const apiKey = process.env.YOUTUBE_API_KEY;
     if (!apiKey) throw new Error("YOUTUBE_API_KEY not configured");
-    const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&forHandle=${encodeURIComponent(data.handle)}&key=${apiKey}`;
+    // Accept either an @handle or a channel ID (starts with "UC").
+    const isChannelId = /^UC[\w-]{20,}$/.test(data.handle);
+    const url = isChannelId
+      ? `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${encodeURIComponent(data.handle)}&key=${apiKey}`
+      : `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&forHandle=${encodeURIComponent(data.handle)}&key=${apiKey}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`YouTube API ${res.status}`);
     const json = (await res.json()) as {
