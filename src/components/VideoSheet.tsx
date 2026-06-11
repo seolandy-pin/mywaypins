@@ -19,6 +19,24 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
       toast.error("Sign in to save places", { action: { label: "Sign in", onClick: () => (window.location.href = "/auth") } });
       return;
     }
+    // Real ingested pins have UUID ids; sample pins ("1","2"...) can't be saved.
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pin.id);
+    if (!isUuid) {
+      toast.error("This is a sample pin and can't be saved yet.");
+      return;
+    }
+    const { error } = await supabase
+      .from("favorites")
+      .insert({ user_id: user.id, target_type: "pin", pin_id: pin.id });
+    if (error) {
+      if (error.code === "23505") {
+        toast.success("Already in your saved places");
+      } else {
+        console.error(error);
+        toast.error("Couldn't save — please try again");
+      }
+      return;
+    }
     toast.success("Saved to your places");
   }
 
