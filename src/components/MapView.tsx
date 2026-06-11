@@ -143,7 +143,7 @@ function setupPinLayers(map: mapboxgl.Map) {
     const src = map.getSource(PIN_SOURCE_ID) as mapboxgl.GeoJSONSource;
     if (clusterId == null) return;
     src.getClusterExpansionZoom(clusterId, (err, zoom) => {
-      if (err) return;
+      if (err || zoom == null) return;
       const coords = (features[0].geometry as GeoJSON.Point).coordinates as [number, number];
       map.easeTo({ center: coords, zoom });
     });
