@@ -139,7 +139,7 @@ function SavedScreen() {
                 <div className="flex justify-end border-t border-border px-2 py-1">
                   <button
                     onClick={() => remove(r.id)}
-                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground active:bg-surface-1"
+                    className="flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground active:bg-surface-1"
                   >
                     <Trash2 className="size-3.5" /> Remove
                   </button>
