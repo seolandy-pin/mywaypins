@@ -135,7 +135,7 @@ function Home() {
             <div className="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pb-4">
               <button
                 onClick={() => setSelectedChannelId(null)}
-                className={`flex w-20 shrink-0 flex-col items-center text-center active:scale-95 ${selectedChannelId === null ? "" : "opacity-60"}`}
+                className={`flex w-20 shrink-0 cursor-pointer flex-col items-center text-center active:scale-95 ${selectedChannelId === null ? "" : "opacity-60"}`}
               >
                 <div className={`flex size-16 items-center justify-center rounded-full bg-surface-2 ring-2 ${selectedChannelId === null ? "ring-primary" : "ring-border"}`}>
                   <Users className="size-6 text-primary" />
@@ -149,7 +149,7 @@ function Home() {
                   <button
                     key={c.id}
                     onClick={() => setSelectedChannelId(isSelected ? null : c.id)}
-                    className={`flex w-20 shrink-0 flex-col items-center text-center active:scale-95 ${isSelected || selectedChannelId === null ? "" : "opacity-60"}`}
+                    className={`flex w-20 shrink-0 cursor-pointer flex-col items-center text-center active:scale-95 ${isSelected || selectedChannelId === null ? "" : "opacity-60"}`}
                   >
                     {c.thumbnail_url ? (
                       <img
