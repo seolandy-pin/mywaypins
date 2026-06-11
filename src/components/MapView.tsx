@@ -8,9 +8,22 @@ import { Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const TOKEN_KEY = "wanderpins:mapbox_token";
+export const SAVED_PIN_COLOR = "#facc15";
+export const FAVORITES_CHANGED_EVENT = "wanderpins:favorites-changed";
 
 type PinType = SamplePin["type"];
 const ALLOWED_PIN_TYPES: PinType[] = ["trending", "new", "featured", "traveling"];
+
+async function fetchSavedPinIds(): Promise<Set<string>> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return new Set();
+  const { data } = await supabase
+    .from("favorites")
+    .select("pin_id")
+    .eq("user_id", user.id)
+    .eq("target_type", "pin");
+  return new Set(((data ?? []).map((r) => r.pin_id).filter(Boolean)) as string[]);
+}
 
 async function fetchIngestedPins(channelIds?: string[]): Promise<SamplePin[]> {
   if (channelIds && channelIds.length === 0) return [];
@@ -63,27 +76,33 @@ let sharedDiv: HTMLDivElement | null = null;
 let sharedMap: mapboxgl.Map | null = null;
 const sharedHandlerRef: { current: PinHandler } = { current: () => {} };
 let currentPins: SamplePin[] = [];
+let currentSavedIds: Set<string> = new Set();
 const PIN_SOURCE_ID = "wanderpins-source";
 
-function pinsToGeoJSON(pins: SamplePin[]): GeoJSON.FeatureCollection {
+function pinsToGeoJSON(pins: SamplePin[], savedIds: Set<string>): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
-    features: pins.map((p) => ({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [p.lng, p.lat] },
-      properties: {
-        id: p.id,
-        color: PIN_TYPE_COLORS[p.type],
-        pin: JSON.stringify(p),
-      },
-    })),
+    features: pins.map((p) => {
+      const saved = savedIds.has(p.id);
+      return {
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
+        properties: {
+          id: p.id,
+          color: saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type],
+          saved,
+          pin: JSON.stringify(p),
+        },
+      };
+    }),
   };
 }
 
-function setPinData(map: mapboxgl.Map, pins: SamplePin[]) {
+function setPinData(map: mapboxgl.Map, pins: SamplePin[], savedIds?: Set<string>) {
   currentPins = pins;
+  if (savedIds) currentSavedIds = savedIds;
   const src = map.getSource(PIN_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
-  if (src) src.setData(pinsToGeoJSON(pins));
+  if (src) src.setData(pinsToGeoJSON(pins, currentSavedIds));
 }
 
 function setupPinLayers(map: mapboxgl.Map) {
