@@ -92,8 +92,8 @@ function setupPinLayers(map: mapboxgl.Map) {
     type: "geojson",
     data: pinsToGeoJSON([]),
     cluster: true,
-    clusterRadius: 45,
-    clusterMaxZoom: 12,
+    clusterRadius: 30,
+    clusterMaxZoom: 6,
   });
 
   // Cluster bubbles
@@ -104,10 +104,10 @@ function setupPinLayers(map: mapboxgl.Map) {
     filter: ["has", "point_count"],
     paint: {
       "circle-color": "#5b8def",
-      "circle-opacity": 0.85,
+      "circle-opacity": 0.9,
       "circle-stroke-color": "#ffffff",
       "circle-stroke-width": 2,
-      "circle-radius": ["step", ["get", "point_count"], 16, 10, 22, 50, 28],
+      "circle-radius": ["step", ["get", "point_count"], 18, 10, 24, 50, 30],
     },
   });
   map.addLayer({
@@ -118,12 +118,26 @@ function setupPinLayers(map: mapboxgl.Map) {
     layout: {
       "text-field": ["get", "point_count_abbreviated"],
       "text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
-      "text-size": 12,
+      "text-size": 13,
+      "text-allow-overlap": true,
     },
     paint: { "text-color": "#ffffff" },
   });
 
-  // Unclustered single pins
+  // Invisible larger hit target for easier tapping on mobile
+  map.addLayer({
+    id: "wp-pin-hit",
+    type: "circle",
+    source: PIN_SOURCE_ID,
+    filter: ["!", ["has", "point_count"]],
+    paint: {
+      "circle-color": "#000",
+      "circle-opacity": 0,
+      "circle-radius": 18,
+    },
+  });
+
+  // Visible single pins
   map.addLayer({
     id: "wp-pin",
     type: "circle",
@@ -131,9 +145,9 @@ function setupPinLayers(map: mapboxgl.Map) {
     filter: ["!", ["has", "point_count"]],
     paint: {
       "circle-color": ["get", "color"],
-      "circle-radius": 7,
+      "circle-radius": 9,
       "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": 2,
+      "circle-stroke-width": 2.5,
     },
   });
 
@@ -145,24 +159,26 @@ function setupPinLayers(map: mapboxgl.Map) {
     src.getClusterExpansionZoom(clusterId, (err, zoom) => {
       if (err || zoom == null) return;
       const coords = (features[0].geometry as GeoJSON.Point).coordinates as [number, number];
-      map.easeTo({ center: coords, zoom });
+      map.easeTo({ center: coords, zoom: Math.max(zoom, map.getZoom() + 1.5) });
     });
   });
 
-  map.on("click", "wp-pin", (e) => {
+  const handlePinClick = (e: mapboxgl.MapMouseEvent & { features?: mapboxgl.MapboxGeoJSONFeature[] }) => {
     const f = e.features?.[0];
     if (!f) return;
     try {
       const pin = JSON.parse(f.properties?.pin as string) as SamplePin;
       sharedHandlerRef.current(pin);
     } catch {/* noop */}
-  });
+  };
+  map.on("click", "wp-pin", handlePinClick);
+  map.on("click", "wp-pin-hit", handlePinClick);
 
   const setCursor = (c: string) => () => (map.getCanvas().style.cursor = c);
   map.on("mouseenter", "wp-clusters", setCursor("pointer"));
   map.on("mouseleave", "wp-clusters", setCursor(""));
-  map.on("mouseenter", "wp-pin", setCursor("pointer"));
-  map.on("mouseleave", "wp-pin", setCursor(""));
+  map.on("mouseenter", "wp-pin-hit", setCursor("pointer"));
+  map.on("mouseleave", "wp-pin-hit", setCursor(""));
 }
 
 function boostLabelLegibility(map: mapboxgl.Map) {
@@ -188,7 +204,9 @@ function boostLabelLegibility(map: mapboxgl.Map) {
 
 function renderPins(map: mapboxgl.Map, channelIds?: string[]) {
   const base = !channelIds ? [...samplePins] : [];
-  setPinData(map, base);
+  // Only seed with base if there is no data yet — avoids clearing existing
+  // ingested pins (causing a flicker) when the followed-channels query refetches.
+  if (currentPins.length === 0) setPinData(map, base);
   fetchIngestedPins(channelIds)
     .then((pins) => setPinData(map, [...base, ...pins]))
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
