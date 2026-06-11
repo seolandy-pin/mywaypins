@@ -172,24 +172,10 @@ function Home() {
         </Section>
       )}
 
-      <Section title="Featured destinations" icon={Sparkles}>
-        <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5">
-          {featuredDestinations.map((d) => (
-            <article key={d.name} className="w-44 shrink-0 overflow-hidden rounded-2xl bg-card">
-              <div className="aspect-[4/5] overflow-hidden">
-                <img src={d.image} alt={d.name} loading="lazy" className="size-full object-cover transition hover:scale-105" />
-              </div>
-              <div className="p-3">
-                <h3 className="font-display text-base font-bold leading-tight">{d.name}</h3>
-                <p className="text-xs text-muted-foreground">{d.country} · {d.videos} videos</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </Section>
     </>
   );
 }
+
 
 function Section({ title, icon: Icon, children }: { title: string; icon?: typeof Sparkles; children: React.ReactNode }) {
   return (
