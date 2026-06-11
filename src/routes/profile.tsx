@@ -15,11 +15,19 @@ function ProfileScreen() {
   const { user, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ display_name?: string | null; avatar_url?: string | null } | null>(null);
+  const [stats, setStats] = useState({ saved: 0, collections: 0, following: 0 });
 
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("display_name, avatar_url").eq("id", user.id).maybeSingle().then(({ data }) => {
       if (data) setProfile(data);
+    });
+    Promise.all([
+      supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+      supabase.from("collections").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+      supabase.from("followers").select("user_id", { count: "exact", head: true }).eq("user_id", user.id),
+    ]).then(([a, b, c]) => {
+      setStats({ saved: a.count ?? 0, collections: b.count ?? 0, following: c.count ?? 0 });
     });
   }, [user]);
 
@@ -56,9 +64,9 @@ function ProfileScreen() {
       </header>
 
       <section className="mx-5 mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-card p-2 text-center">
-        <Stat n={0} label="Saved" />
-        <Stat n={0} label="Collections" />
-        <Stat n={0} label="Following" />
+        <Link to="/profile/saved" className="rounded-xl active:bg-surface-1"><Stat n={stats.saved} label="Saved" /></Link>
+        <Link to="/profile/collections" className="rounded-xl active:bg-surface-1"><Stat n={stats.collections} label="Collections" /></Link>
+        <Link to="/following" className="rounded-xl active:bg-surface-1"><Stat n={stats.following} label="Following" /></Link>
       </section>
 
       <nav className="mt-5 px-5">

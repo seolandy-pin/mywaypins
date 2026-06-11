@@ -16,8 +16,8 @@ import { Route as MapRouteImport } from './routes/map'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProfileSavedRouteImport } from './routes/profile.saved'
-import { Route as ProfileCollectionsRouteImport } from './routes/profile.collections'
+import { Route as ProfileSavedRouteImport } from './routes/profile_.saved'
+import { Route as ProfileCollectionsRouteImport } from './routes/profile_.collections'
 import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 
 const SubmitRoute = SubmitRouteImport.update({
@@ -56,14 +56,14 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileSavedRoute = ProfileSavedRouteImport.update({
-  id: '/saved',
-  path: '/saved',
-  getParentRoute: () => ProfileRoute,
+  id: '/profile_/saved',
+  path: '/profile/saved',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileCollectionsRoute = ProfileCollectionsRouteImport.update({
-  id: '/collections',
-  path: '/collections',
-  getParentRoute: () => ProfileRoute,
+  id: '/profile_/collections',
+  path: '/profile/collections',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ChannelHandleRoute = ChannelHandleRouteImport.update({
   id: '/channel/$handle',
@@ -76,7 +76,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/following': typeof FollowingRoute
   '/map': typeof MapRoute
-  '/profile': typeof ProfileRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
   '/channel/$handle': typeof ChannelHandleRoute
@@ -88,7 +88,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/following': typeof FollowingRoute
   '/map': typeof MapRoute
-  '/profile': typeof ProfileRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
   '/channel/$handle': typeof ChannelHandleRoute
@@ -101,12 +101,12 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/following': typeof FollowingRoute
   '/map': typeof MapRoute
-  '/profile': typeof ProfileRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
   '/channel/$handle': typeof ChannelHandleRoute
-  '/profile/collections': typeof ProfileCollectionsRoute
-  '/profile/saved': typeof ProfileSavedRoute
+  '/profile_/collections': typeof ProfileCollectionsRoute
+  '/profile_/saved': typeof ProfileSavedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -143,8 +143,8 @@ export interface FileRouteTypes {
     | '/search'
     | '/submit'
     | '/channel/$handle'
-    | '/profile/collections'
-    | '/profile/saved'
+    | '/profile_/collections'
+    | '/profile_/saved'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -152,10 +152,12 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   FollowingRoute: typeof FollowingRoute
   MapRoute: typeof MapRoute
-  ProfileRoute: typeof ProfileRouteWithChildren
+  ProfileRoute: typeof ProfileRoute
   SearchRoute: typeof SearchRoute
   SubmitRoute: typeof SubmitRoute
   ChannelHandleRoute: typeof ChannelHandleRoute
+  ProfileCollectionsRoute: typeof ProfileCollectionsRoute
+  ProfileSavedRoute: typeof ProfileSavedRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -209,19 +211,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile/saved': {
-      id: '/profile/saved'
-      path: '/saved'
+    '/profile_/saved': {
+      id: '/profile_/saved'
+      path: '/profile/saved'
       fullPath: '/profile/saved'
       preLoaderRoute: typeof ProfileSavedRouteImport
-      parentRoute: typeof ProfileRoute
+      parentRoute: typeof rootRouteImport
     }
-    '/profile/collections': {
-      id: '/profile/collections'
-      path: '/collections'
+    '/profile_/collections': {
+      id: '/profile_/collections'
+      path: '/profile/collections'
       fullPath: '/profile/collections'
       preLoaderRoute: typeof ProfileCollectionsRouteImport
-      parentRoute: typeof ProfileRoute
+      parentRoute: typeof rootRouteImport
     }
     '/channel/$handle': {
       id: '/channel/$handle'
@@ -233,29 +235,28 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ProfileRouteChildren {
-  ProfileCollectionsRoute: typeof ProfileCollectionsRoute
-  ProfileSavedRoute: typeof ProfileSavedRoute
-}
-
-const ProfileRouteChildren: ProfileRouteChildren = {
-  ProfileCollectionsRoute: ProfileCollectionsRoute,
-  ProfileSavedRoute: ProfileSavedRoute,
-}
-
-const ProfileRouteWithChildren =
-  ProfileRoute._addFileChildren(ProfileRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   FollowingRoute: FollowingRoute,
   MapRoute: MapRoute,
-  ProfileRoute: ProfileRouteWithChildren,
+  ProfileRoute: ProfileRoute,
   SearchRoute: SearchRoute,
   SubmitRoute: SubmitRoute,
   ChannelHandleRoute: ChannelHandleRoute,
+  ProfileCollectionsRoute: ProfileCollectionsRoute,
+  ProfileSavedRoute: ProfileSavedRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

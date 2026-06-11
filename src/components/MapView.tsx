@@ -8,9 +8,22 @@ import { Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const TOKEN_KEY = "wanderpins:mapbox_token";
+export const SAVED_PIN_COLOR = "#facc15";
+export const FAVORITES_CHANGED_EVENT = "wanderpins:favorites-changed";
 
 type PinType = SamplePin["type"];
 const ALLOWED_PIN_TYPES: PinType[] = ["trending", "new", "featured", "traveling"];
+
+async function fetchSavedPinIds(): Promise<Set<string>> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return new Set();
+  const { data } = await supabase
+    .from("favorites")
+    .select("pin_id")
+    .eq("user_id", user.id)
+    .eq("target_type", "pin");
+  return new Set(((data ?? []).map((r) => r.pin_id).filter(Boolean)) as string[]);
+}
 
 async function fetchIngestedPins(channelIds?: string[]): Promise<SamplePin[]> {
   if (channelIds && channelIds.length === 0) return [];
@@ -63,27 +76,33 @@ let sharedDiv: HTMLDivElement | null = null;
 let sharedMap: mapboxgl.Map | null = null;
 const sharedHandlerRef: { current: PinHandler } = { current: () => {} };
 let currentPins: SamplePin[] = [];
+let currentSavedIds: Set<string> = new Set();
 const PIN_SOURCE_ID = "wanderpins-source";
 
-function pinsToGeoJSON(pins: SamplePin[]): GeoJSON.FeatureCollection {
+function pinsToGeoJSON(pins: SamplePin[], savedIds: Set<string>): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
-    features: pins.map((p) => ({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [p.lng, p.lat] },
-      properties: {
-        id: p.id,
-        color: PIN_TYPE_COLORS[p.type],
-        pin: JSON.stringify(p),
-      },
-    })),
+    features: pins.map((p) => {
+      const saved = savedIds.has(p.id);
+      return {
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
+        properties: {
+          id: p.id,
+          color: saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type],
+          saved,
+          pin: JSON.stringify(p),
+        },
+      };
+    }),
   };
 }
 
-function setPinData(map: mapboxgl.Map, pins: SamplePin[]) {
+function setPinData(map: mapboxgl.Map, pins: SamplePin[], savedIds?: Set<string>) {
   currentPins = pins;
+  if (savedIds) currentSavedIds = savedIds;
   const src = map.getSource(PIN_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
-  if (src) src.setData(pinsToGeoJSON(pins));
+  if (src) src.setData(pinsToGeoJSON(pins, currentSavedIds));
 }
 
 function setupPinLayers(map: mapboxgl.Map) {
@@ -91,7 +110,7 @@ function setupPinLayers(map: mapboxgl.Map) {
 
   map.addSource(PIN_SOURCE_ID, {
     type: "geojson",
-    data: pinsToGeoJSON([]),
+    data: pinsToGeoJSON([], new Set()),
     cluster: true,
     clusterRadius: 30,
     clusterMaxZoom: 6,
@@ -138,7 +157,7 @@ function setupPinLayers(map: mapboxgl.Map) {
     },
   });
 
-  // Visible single pins
+  // Visible single pins (saved pins are gold with a stronger ring)
   map.addLayer({
     id: "wp-pin",
     type: "circle",
@@ -146,9 +165,9 @@ function setupPinLayers(map: mapboxgl.Map) {
     filter: ["!", ["has", "point_count"]],
     paint: {
       "circle-color": ["get", "color"],
-      "circle-radius": 9,
-      "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": 2.5,
+      "circle-radius": ["case", ["==", ["get", "saved"], true], 11, 9],
+      "circle-stroke-color": ["case", ["==", ["get", "saved"], true], "#fef9c3", "#ffffff"],
+      "circle-stroke-width": ["case", ["==", ["get", "saved"], true], 3.5, 2.5],
     },
   });
 
@@ -208,9 +227,15 @@ function renderPins(map: mapboxgl.Map, channelIds?: string[]) {
   // Only seed with base if there is no data yet — avoids clearing existing
   // ingested pins (causing a flicker) when the followed-channels query refetches.
   if (currentPins.length === 0 || channelIds?.length === 0) setPinData(map, base);
-  fetchIngestedPins(channelIds)
-    .then((pins) => setPinData(map, [...base, ...pins]))
+  Promise.all([fetchIngestedPins(channelIds), fetchSavedPinIds()])
+    .then(([pins, savedIds]) => setPinData(map, [...base, ...pins], savedIds))
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
+}
+
+function refreshSavedHighlight(map: mapboxgl.Map) {
+  fetchSavedPinIds()
+    .then((savedIds) => setPinData(map, currentPins, savedIds))
+    .catch(() => {/* noop */});
 }
 
 function ensureSharedMap(token: string) {
@@ -298,7 +323,11 @@ export function MapView({
       render();
     }
 
+    const onFavoritesChanged = () => refreshSavedHighlight(map);
+    window.addEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
+
     return () => {
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
       if (div.parentElement === host) host.removeChild(div);
     };
   }, [token, followedChannelIds?.join(","), pinsRefreshKey]);

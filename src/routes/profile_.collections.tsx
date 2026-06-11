@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ChevronLeft, FolderHeart, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/profile/collections")({
+export const Route = createFileRoute("/profile_/collections")({
   head: () => ({ meta: [{ title: "Collections — WanderPins" }] }),
   component: CollectionsScreen,
 });
