@@ -134,9 +134,13 @@ export const popularCreators: PopularCreator[] = [
   { handle: "MarkWiens", name: "Mark Wiens", subs: "10M", avatar: "https://i.pravatar.cc/150?img=68", traveling: "Bangkok" },
 ];
 
+// NOTE: Mapbox GL cannot parse CSS custom properties (var(--…)) inside
+// paint expressions — it throws "Could not parse color" on every render
+// frame, which causes the visible flicker. Use concrete color strings here
+// and keep them in sync with the --pin-* tokens in src/styles.css.
 export const PIN_TYPE_COLORS: Record<SamplePin["type"], string> = {
-  trending: "var(--pin-trending)",
-  new: "var(--pin-new)",
-  featured: "var(--pin-featured)",
-  traveling: "var(--pin-traveling)",
+  trending: "#ef4444", // red
+  new: "#5b8def",      // blue
+  featured: "#f5b301", // gold
+  traveling: "#22c55e",// green
 };
