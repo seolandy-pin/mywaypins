@@ -41,6 +41,10 @@ function MapScreen() {
               {t}
             </span>
           ))}
+          <span className="flex items-center gap-1 capitalize text-muted-foreground">
+            <span className="size-2 rounded-full" style={{ background: "#facc15" }} />
+            saved
+          </span>
         </div>
       </div>
       <VideoSheet pin={active} open={open} onOpenChange={setOpen} />

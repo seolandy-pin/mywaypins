@@ -64,6 +64,7 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
         return;
       }
       setSaved(false);
+      window.dispatchEvent(new Event("wanderpins:favorites-changed"));
       toast.success("Removed from your saved places");
       return;
     }
@@ -77,6 +78,7 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
       return;
     }
     setSaved(true);
+    window.dispatchEvent(new Event("wanderpins:favorites-changed"));
     toast.success("Saved to your places");
   }
 
