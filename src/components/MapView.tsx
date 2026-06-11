@@ -110,7 +110,7 @@ function setupPinLayers(map: mapboxgl.Map) {
 
   map.addSource(PIN_SOURCE_ID, {
     type: "geojson",
-    data: pinsToGeoJSON([]),
+    data: pinsToGeoJSON([], new Set()),
     cluster: true,
     clusterRadius: 30,
     clusterMaxZoom: 6,
@@ -157,7 +157,7 @@ function setupPinLayers(map: mapboxgl.Map) {
     },
   });
 
-  // Visible single pins
+  // Visible single pins (saved pins are gold with a stronger ring)
   map.addLayer({
     id: "wp-pin",
     type: "circle",
@@ -165,9 +165,9 @@ function setupPinLayers(map: mapboxgl.Map) {
     filter: ["!", ["has", "point_count"]],
     paint: {
       "circle-color": ["get", "color"],
-      "circle-radius": 9,
-      "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": 2.5,
+      "circle-radius": ["case", ["==", ["get", "saved"], true], 11, 9],
+      "circle-stroke-color": ["case", ["==", ["get", "saved"], true], "#fef9c3", "#ffffff"],
+      "circle-stroke-width": ["case", ["==", ["get", "saved"], true], 3.5, 2.5],
     },
   });
 
