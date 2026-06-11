@@ -1,42 +1,82 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Bookmark, MapPin, Eye, Calendar, Play } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SamplePin } from "@/lib/sample-data";
 import { PIN_TYPE_COLORS } from "@/lib/sample-data";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null; open: boolean; onOpenChange: (o: boolean) => void }) {
   const [playing, setPlaying] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const pinId = pin?.id ?? null;
+
+  // Check whether this pin is already saved when the sheet opens
+  useEffect(() => {
+    let cancelled = false;
+    setSaved(false);
+    if (!open || !pinId || !UUID_RE.test(pinId)) return;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      const { data } = await supabase
+        .from("favorites")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("target_type", "pin")
+        .eq("pin_id", pinId)
+        .maybeSingle();
+      if (!cancelled) setSaved(!!data);
+    })();
+    return () => { cancelled = true; };
+  }, [open, pinId]);
 
   if (!pin) return null;
 
   async function handleSave() {
-    if (!pin) return;
+    if (!pin || saving) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast.error("Sign in to save places", { action: { label: "Sign in", onClick: () => (window.location.href = "/auth") } });
       return;
     }
     // Real ingested pins have UUID ids; sample pins ("1","2"...) can't be saved.
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pin.id);
-    if (!isUuid) {
+    if (!UUID_RE.test(pin.id)) {
       toast.error("This is a sample pin and can't be saved yet.");
+      return;
+    }
+    setSaving(true);
+    if (saved) {
+      const { error } = await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("target_type", "pin")
+        .eq("pin_id", pin.id);
+      setSaving(false);
+      if (error) {
+        console.error(error);
+        toast.error("Couldn't remove — please try again");
+        return;
+      }
+      setSaved(false);
+      toast.success("Removed from your saved places");
       return;
     }
     const { error } = await supabase
       .from("favorites")
       .insert({ user_id: user.id, target_type: "pin", pin_id: pin.id });
-    if (error) {
-      if (error.code === "23505") {
-        toast.success("Already in your saved places");
-      } else {
-        console.error(error);
-        toast.error("Couldn't save — please try again");
-      }
+    setSaving(false);
+    if (error && error.code !== "23505") {
+      console.error(error);
+      toast.error("Couldn't save — please try again");
       return;
     }
+    setSaved(true);
     toast.success("Saved to your places");
   }
 
@@ -91,8 +131,14 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
             <Button className="flex-1" size="lg" onClick={() => setPlaying(true)}>
               <Play className="size-4" /> Watch Video
             </Button>
-            <Button variant="outline" size="lg" onClick={handleSave}>
-              <Bookmark className="size-4" />
+            <Button
+              variant={saved ? "default" : "outline"}
+              size="lg"
+              onClick={handleSave}
+              disabled={saving}
+              aria-label={saved ? "Remove from saved" : "Save place"}
+            >
+              <Bookmark className={saved ? "size-4 fill-current" : "size-4"} />
             </Button>
           </div>
         </div>
