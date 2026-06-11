@@ -83,11 +83,6 @@ export const processSubmission = createServerFn({ method: "POST" })
       .select()
       .single();
 
-    await supabaseAdmin
-      .from("submitted_channels")
-      .update({ status: "processed", resolved_channel_id: chRow!.id })
-      .eq("id", sub.id);
-
     // Fetch latest videos and store (limit 10 for MVP)
     const vidsRes = await fetch(
       `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ch.id}&maxResults=10&order=date&type=video&key=${YT_KEY}`,
@@ -132,6 +127,11 @@ export const processSubmission = createServerFn({ method: "POST" })
       }
       return sum + (result.value?.pins ?? 0);
     }, 0);
+
+    await supabaseAdmin
+      .from("submitted_channels")
+      .update({ status: "processed", resolved_channel_id: chRow!.id })
+      .eq("id", sub.id);
 
     return { ok: true, channel_id: chRow!.id, videos: vidsJson.items?.length ?? 0, pins: extractedPins };
   });
