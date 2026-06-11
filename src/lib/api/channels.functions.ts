@@ -152,7 +152,7 @@ export const extractLocations = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!video) throw new Error("Video not found");
 
-    const prompt = `Extract travel locations from this YouTube travel video. Return JSON with shape: { "locations": [ { "name": "...", "city": "...", "country": "...", "latitude": <num>, "longitude": <num> } ] }. Only include real, specific locations the video is about. If none, return empty array.\n\nTitle: ${video.title}\n\nDescription: ${(video.description ?? "").slice(0, 2000)}`;
+    const prompt = `Extract every real-world geographic location mentioned in this YouTube travel video — pay special attention to place names, city names, region names, and country names that appear in the TITLE (titles are the most reliable signal). Also include locations from the description. Translate non-English place names to their common English form. For COUNTRY-only mentions, use the country's capital or most iconic city coordinates and set city=country capital. Return JSON: { "locations": [ { "name": "...", "city": "...", "country": "...", "latitude": <num>, "longitude": <num> } ] }. Deduplicate. If truly none, return an empty array.\n\nTitle: ${video.title}\n\nDescription: ${(video.description ?? "").slice(0, 2000)}`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
