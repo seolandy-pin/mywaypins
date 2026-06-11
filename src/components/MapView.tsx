@@ -13,13 +13,14 @@ type PinType = SamplePin["type"];
 const ALLOWED_PIN_TYPES: PinType[] = ["trending", "new", "featured", "traveling"];
 
 async function fetchIngestedPins(channelIds?: string[]): Promise<SamplePin[]> {
+  if (channelIds && channelIds.length === 0) return [];
   let q = supabase
     .from("pins")
     .select(
       "id, latitude, longitude, label, pin_type, channel_id, videos(youtube_video_id, title, thumbnail_url, published_at, youtube_channels(name)), places(city_name, country_name)",
     )
     .limit(1000);
-  if (channelIds && channelIds.length > 0) {
+  if (channelIds) {
     q = q.in("channel_id", channelIds);
   }
   const { data, error } = await q;
@@ -206,7 +207,7 @@ function renderPins(map: mapboxgl.Map, channelIds?: string[]) {
   const base = !channelIds ? [...samplePins] : [];
   // Only seed with base if there is no data yet — avoids clearing existing
   // ingested pins (causing a flicker) when the followed-channels query refetches.
-  if (currentPins.length === 0) setPinData(map, base);
+  if (currentPins.length === 0 || channelIds?.length === 0) setPinData(map, base);
   fetchIngestedPins(channelIds)
     .then((pins) => setPinData(map, [...base, ...pins]))
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
@@ -246,9 +247,11 @@ function ensureSharedMap(token: string) {
 export function MapView({
   onPinClick,
   followedChannelIds,
+  pinsRefreshKey = 0,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
+  pinsRefreshKey?: number;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [token, setToken] = useState<string>("");
@@ -287,7 +290,7 @@ export function MapView({
     return () => {
       if (div.parentElement === host) host.removeChild(div);
     };
-  }, [token, followedChannelIds?.join(",")]);
+  }, [token, followedChannelIds?.join(","), pinsRefreshKey]);
 
   if (!token) {
     return (

@@ -83,11 +83,6 @@ export const processSubmission = createServerFn({ method: "POST" })
       .select()
       .single();
 
-    await supabaseAdmin
-      .from("submitted_channels")
-      .update({ status: "processed", resolved_channel_id: chRow!.id })
-      .eq("id", sub.id);
-
     // Fetch latest videos and store (limit 10 for MVP)
     const vidsRes = await fetch(
       `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ch.id}&maxResults=10&order=date&type=video&key=${YT_KEY}`,
@@ -99,6 +94,7 @@ export const processSubmission = createServerFn({ method: "POST" })
       }>;
     };
 
+    const videoIdsToExtract: string[] = [];
     for (const v of vidsJson.items ?? []) {
       const { data: vidRow } = await supabaseAdmin
         .from("videos")
@@ -116,12 +112,28 @@ export const processSubmission = createServerFn({ method: "POST" })
         .select()
         .single();
       if (vidRow) {
-        // Fire-and-forget AI extraction
-        extractLocations({ data: { video_id: vidRow.id } }).catch((e) => console.error("AI extract failed:", e));
+        videoIdsToExtract.push(vidRow.id);
       }
     }
 
-    return { ok: true, channel_id: chRow!.id, videos: vidsJson.items?.length ?? 0 };
+    // Await extraction so map pins exist before the processing request finishes.
+    const extractionResults = await Promise.allSettled(
+      videoIdsToExtract.map((videoId) => extractLocations({ data: { video_id: videoId } })),
+    );
+    const extractedPins = extractionResults.reduce((sum, result) => {
+      if (result.status === "rejected") {
+        console.error("AI extract failed:", result.reason);
+        return sum;
+      }
+      return sum + (result.value?.pins ?? 0);
+    }, 0);
+
+    await supabaseAdmin
+      .from("submitted_channels")
+      .update({ status: "processed", resolved_channel_id: chRow!.id })
+      .eq("id", sub.id);
+
+    return { ok: true, channel_id: chRow!.id, videos: vidsJson.items?.length ?? 0, pins: extractedPins };
   });
 
 const ExtractInput = z.object({ video_id: z.string().uuid() });
@@ -173,6 +185,14 @@ export const extractLocations = createServerFn({ method: "POST" })
         })
         .select()
         .single();
+      const { data: existingPin } = await supabaseAdmin
+        .from("pins")
+        .select("id")
+        .eq("video_id", video.id)
+        .eq("label", l.name)
+        .maybeSingle();
+      if (existingPin) continue;
+
       await supabaseAdmin.from("pins").insert({
         video_id: video.id,
         channel_id: video.channel_id,
@@ -190,12 +210,21 @@ export const extractLocations = createServerFn({ method: "POST" })
   });
 
 async function resolveYoutubeChannelId(url: string, apiKey: string): Promise<string | null> {
-  const channelMatch = url.match(/\/channel\/([A-Za-z0-9_-]+)/);
+  const channelMatch = url.match(/\/channel\/([^/?#]+)/u);
   if (channelMatch) return channelMatch[1];
-  const handleMatch = url.match(/\/@([A-Za-z0-9_.-]+)/);
-  const customMatch = url.match(/\/c\/([A-Za-z0-9_.-]+)/);
-  const query = handleMatch?.[1] ?? customMatch?.[1];
+  const handleMatch = url.match(/\/@([^/?#]+)/u);
+  const customMatch = url.match(/\/c\/([^/?#]+)/u);
+  const query = decodeURIComponent(handleMatch?.[1] ?? customMatch?.[1] ?? "");
   if (!query) return null;
+  if (handleMatch) {
+    const handle = query.startsWith("@") ? query : `@${query}`;
+    const handleRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`,
+    );
+    const handleJson = (await handleRes.json()) as { items?: Array<{ id?: string }> };
+    const id = handleJson.items?.[0]?.id;
+    if (id) return id;
+  }
   const res = await fetch(
     `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=1&key=${apiKey}`,
   );
