@@ -61,41 +61,136 @@ type PinHandler = (p: SamplePin) => void;
 let sharedDiv: HTMLDivElement | null = null;
 let sharedMap: mapboxgl.Map | null = null;
 const sharedHandlerRef: { current: PinHandler } = { current: () => {} };
-let currentMarkers: mapboxgl.Marker[] = [];
+let currentPins: SamplePin[] = [];
+const PIN_SOURCE_ID = "wanderpins-source";
 
-function clearMarkers() {
-  currentMarkers.forEach((m) => m.remove());
-  currentMarkers = [];
+function pinsToGeoJSON(pins: SamplePin[]): GeoJSON.FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: pins.map((p) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+      properties: {
+        id: p.id,
+        color: PIN_TYPE_COLORS[p.type],
+        pin: JSON.stringify(p),
+      },
+    })),
+  };
 }
 
-function addMarker(map: mapboxgl.Map, pin: SamplePin) {
-  const el = document.createElement("button");
-  el.className = "wanderpin-marker";
-  el.style.cssText = `
-    width: 26px; height: 26px; border-radius: 50%;
-    background: ${PIN_TYPE_COLORS[pin.type]};
-    border: 3px solid white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    cursor: pointer; transition: transform 0.2s;
-  `;
-  el.onmouseenter = () => (el.style.transform = "scale(1.3)");
-  el.onmouseleave = () => (el.style.transform = "scale(1)");
-  el.onclick = (e) => {
-    e.stopPropagation();
-    sharedHandlerRef.current(pin);
-  };
-  const marker = new mapboxgl.Marker({ element: el }).setLngLat([pin.lng, pin.lat]).addTo(map);
-  currentMarkers.push(marker);
+function setPinData(map: mapboxgl.Map, pins: SamplePin[]) {
+  currentPins = pins;
+  const src = map.getSource(PIN_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+  if (src) src.setData(pinsToGeoJSON(pins));
+}
+
+function setupPinLayers(map: mapboxgl.Map) {
+  if (map.getSource(PIN_SOURCE_ID)) return;
+
+  map.addSource(PIN_SOURCE_ID, {
+    type: "geojson",
+    data: pinsToGeoJSON([]),
+    cluster: true,
+    clusterRadius: 45,
+    clusterMaxZoom: 12,
+  });
+
+  // Cluster bubbles
+  map.addLayer({
+    id: "wp-clusters",
+    type: "circle",
+    source: PIN_SOURCE_ID,
+    filter: ["has", "point_count"],
+    paint: {
+      "circle-color": "#5b8def",
+      "circle-opacity": 0.85,
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 2,
+      "circle-radius": ["step", ["get", "point_count"], 16, 10, 22, 50, 28],
+    },
+  });
+  map.addLayer({
+    id: "wp-cluster-count",
+    type: "symbol",
+    source: PIN_SOURCE_ID,
+    filter: ["has", "point_count"],
+    layout: {
+      "text-field": ["get", "point_count_abbreviated"],
+      "text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
+      "text-size": 12,
+    },
+    paint: { "text-color": "#ffffff" },
+  });
+
+  // Unclustered single pins
+  map.addLayer({
+    id: "wp-pin",
+    type: "circle",
+    source: PIN_SOURCE_ID,
+    filter: ["!", ["has", "point_count"]],
+    paint: {
+      "circle-color": ["get", "color"],
+      "circle-radius": 7,
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 2,
+    },
+  });
+
+  map.on("click", "wp-clusters", (e) => {
+    const features = map.queryRenderedFeatures(e.point, { layers: ["wp-clusters"] });
+    const clusterId = features[0]?.properties?.cluster_id;
+    const src = map.getSource(PIN_SOURCE_ID) as mapboxgl.GeoJSONSource;
+    if (clusterId == null) return;
+    src.getClusterExpansionZoom(clusterId, (err, zoom) => {
+      if (err) return;
+      const coords = (features[0].geometry as GeoJSON.Point).coordinates as [number, number];
+      map.easeTo({ center: coords, zoom });
+    });
+  });
+
+  map.on("click", "wp-pin", (e) => {
+    const f = e.features?.[0];
+    if (!f) return;
+    try {
+      const pin = JSON.parse(f.properties?.pin as string) as SamplePin;
+      sharedHandlerRef.current(pin);
+    } catch {/* noop */}
+  });
+
+  const setCursor = (c: string) => () => (map.getCanvas().style.cursor = c);
+  map.on("mouseenter", "wp-clusters", setCursor("pointer"));
+  map.on("mouseleave", "wp-clusters", setCursor(""));
+  map.on("mouseenter", "wp-pin", setCursor("pointer"));
+  map.on("mouseleave", "wp-pin", setCursor(""));
+}
+
+function boostLabelLegibility(map: mapboxgl.Map) {
+  const style = map.getStyle();
+  style?.layers?.forEach((layer) => {
+    if (layer.type !== "symbol") return;
+    const id = layer.id;
+    if (id.includes("country-label")) {
+      map.setLayoutProperty(id, "text-size", [
+        "interpolate", ["linear"], ["zoom"],
+        1, 12, 4, 18, 6, 22,
+      ]);
+      map.setPaintProperty(id, "text-color", "#ffffff");
+      map.setPaintProperty(id, "text-halo-color", "#0b0d12");
+      map.setPaintProperty(id, "text-halo-width", 1.6);
+    } else if (id.includes("state-label") || id.includes("settlement-major-label")) {
+      map.setPaintProperty(id, "text-color", "#e6e8ee");
+      map.setPaintProperty(id, "text-halo-color", "#0b0d12");
+      map.setPaintProperty(id, "text-halo-width", 1.4);
+    }
+  });
 }
 
 function renderPins(map: mapboxgl.Map, channelIds?: string[]) {
-  clearMarkers();
-  // When filtering by followed channels, hide sample/demo pins.
-  if (!channelIds) {
-    samplePins.forEach((p) => addMarker(map, p));
-  }
+  const base = !channelIds ? [...samplePins] : [];
+  setPinData(map, base);
   fetchIngestedPins(channelIds)
-    .then((pins) => pins.forEach((p) => addMarker(map, p)))
+    .then((pins) => setPinData(map, [...base, ...pins]))
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
 }
 
@@ -120,6 +215,11 @@ function ensureSharedMap(token: string) {
     attributionControl: false,
   });
   map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+
+  map.on("load", () => {
+    boostLabelLegibility(map);
+    setupPinLayers(map);
+  });
 
   sharedMap = map;
   return { div, map };
@@ -152,7 +252,10 @@ export function MapView({
     host.appendChild(div);
     requestAnimationFrame(() => map.resize());
 
-    const render = () => renderPins(map, followedChannelIds);
+    const render = () => {
+      setupPinLayers(map);
+      renderPins(map, followedChannelIds);
+    };
     if (!loadedRef.current && !map.loaded()) {
       map.once("load", () => {
         loadedRef.current = true;
