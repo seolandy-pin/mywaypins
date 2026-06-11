@@ -78,17 +78,23 @@ function FollowingScreen() {
               const c = r.youtube_channels;
               if (!c) return null;
               return (
-                <li key={c.id} className="flex items-center gap-3 rounded-2xl bg-card p-3">
-                  {c.thumbnail_url && (
-                    <img src={c.thumbnail_url} alt={c.name} className="size-14 shrink-0 rounded-full object-cover" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="line-clamp-1 text-sm font-semibold">{c.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : "Subscribers hidden"}
-                      {c.is_currently_traveling && c.current_location ? ` · In ${c.current_location}` : ""}
-                    </p>
-                  </div>
+                <li key={c.id}>
+                  <Link
+                    to="/channel/$handle"
+                    params={{ handle: c.youtube_channel_id }}
+                    className="flex cursor-pointer items-center gap-3 rounded-2xl bg-card p-3 transition-colors hover:bg-accent"
+                  >
+                    {c.thumbnail_url && (
+                      <img src={c.thumbnail_url} alt={c.name} className="size-14 shrink-0 rounded-full object-cover" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-1 text-sm font-semibold">{c.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : "Subscribers hidden"}
+                        {c.is_currently_traveling && c.current_location ? ` · In ${c.current_location}` : ""}
+                      </p>
+                    </div>
+                  </Link>
                 </li>
               );
             })}
