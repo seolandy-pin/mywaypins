@@ -228,12 +228,23 @@ function ensureSharedMap(token: string) {
 
   const map = new mapboxgl.Map({
     container: div,
-    style: "mapbox://styles/mapbox/dark-v11",
+    style: "mapbox://styles/mapbox/satellite-streets-v12",
     center: [20, 30],
     zoom: 1.6,
+    projection: { name: "globe" },
     attributionControl: false,
   });
   map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+
+  map.on("style.load", () => {
+    map.setFog({
+      color: "rgb(186, 210, 235)",
+      "high-color": "rgb(36, 92, 223)",
+      "horizon-blend": 0.02,
+      "space-color": "rgb(11, 13, 18)",
+      "star-intensity": 0.6,
+    });
+  });
 
   map.on("load", () => {
     boostLabelLegibility(map);
