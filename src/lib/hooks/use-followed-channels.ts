@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth/use-auth";
@@ -18,6 +18,7 @@ export function useFollowedChannels() {
   const { isAuthenticated } = useAuth();
   const listFn = useServerFn(listMyFollowedChannels);
   const processPendingFn = useServerFn(processMyPendingSubmissions);
+  const [pinsVersion, setPinsVersion] = useState(0);
   const q = useQuery({
     queryKey: ["my-followed-channels"],
     enabled: isAuthenticated,
@@ -34,6 +35,7 @@ export function useFollowedChannels() {
     triedRef.current = true;
     processPendingFn().then((r) => {
       if (r?.processed && r.processed > 0) {
+        setPinsVersion((v) => v + 1);
         q.refetch();
       }
     }).catch(() => {/* noop */});
@@ -42,6 +44,7 @@ export function useFollowedChannels() {
   return {
     channels,
     channelIds: channels.map((c) => c.id),
+    pinsVersion,
     isAuthenticated,
     loading: q.isLoading,
   };

@@ -246,9 +246,11 @@ function ensureSharedMap(token: string) {
 export function MapView({
   onPinClick,
   followedChannelIds,
+  pinsRefreshKey = 0,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
+  pinsRefreshKey?: number;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [token, setToken] = useState<string>("");
@@ -287,7 +289,7 @@ export function MapView({
     return () => {
       if (div.parentElement === host) host.removeChild(div);
     };
-  }, [token, followedChannelIds?.join(",")]);
+  }, [token, followedChannelIds?.join(","), pinsRefreshKey]);
 
   if (!token) {
     return (
