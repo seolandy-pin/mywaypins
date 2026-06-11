@@ -20,12 +20,13 @@ export const Route = createFileRoute("/map")({
 function MapScreen() {
   const [active, setActive] = useState<SamplePin | null>(null);
   const [open, setOpen] = useState(false);
-  const { channelIds, isAuthenticated } = useFollowedChannels();
+  const { channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
 
   return (
     <div className="relative h-[calc(100dvh-5rem)]">
       <MapView
         followedChannelIds={isAuthenticated ? channelIds : undefined}
+        pinsRefreshKey={pinsVersion}
         onPinClick={(p) => {
           setActive(p);
           setOpen(true);

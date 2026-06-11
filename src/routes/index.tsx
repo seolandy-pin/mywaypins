@@ -30,7 +30,7 @@ function Home() {
   const navigate = useNavigate();
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const { channels: followed, channelIds, isAuthenticated, loading } = useFollowedChannels();
+  const { channels: followed, channelIds, pinsVersion, isAuthenticated, loading } = useFollowedChannels();
 
   // When signed in, only show pins from followed channels. Otherwise show all.
   const mapFilter = isAuthenticated ? channelIds : undefined;
@@ -51,6 +51,7 @@ function Home() {
         <div className="relative h-[55vh] min-h-[320px] w-full overflow-hidden rounded-3xl border border-border bg-surface-1 shadow-xl">
           <MapView
             followedChannelIds={mapFilter}
+            pinsRefreshKey={pinsVersion}
             onPinClick={(p) => {
               setActivePin(p);
               setSheetOpen(true);
