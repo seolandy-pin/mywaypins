@@ -227,9 +227,15 @@ function renderPins(map: mapboxgl.Map, channelIds?: string[]) {
   // Only seed with base if there is no data yet — avoids clearing existing
   // ingested pins (causing a flicker) when the followed-channels query refetches.
   if (currentPins.length === 0 || channelIds?.length === 0) setPinData(map, base);
-  fetchIngestedPins(channelIds)
-    .then((pins) => setPinData(map, [...base, ...pins]))
+  Promise.all([fetchIngestedPins(channelIds), fetchSavedPinIds()])
+    .then(([pins, savedIds]) => setPinData(map, [...base, ...pins], savedIds))
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
+}
+
+function refreshSavedHighlight(map: mapboxgl.Map) {
+  fetchSavedPinIds()
+    .then((savedIds) => setPinData(map, currentPins, savedIds))
+    .catch(() => {/* noop */});
 }
 
 function ensureSharedMap(token: string) {
@@ -317,7 +323,11 @@ export function MapView({
       render();
     }
 
+    const onFavoritesChanged = () => refreshSavedHighlight(map);
+    window.addEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
+
     return () => {
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
       if (div.parentElement === host) host.removeChild(div);
     };
   }, [token, followedChannelIds?.join(","), pinsRefreshKey]);
