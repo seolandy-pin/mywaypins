@@ -73,10 +73,13 @@ export const followChannel = createServerFn({ method: "POST" })
           .single();
         if (!subErr && sub) {
           ingestionStarted = true;
-          // Fire-and-forget; client doesn't wait for AI extraction.
-          processSubmission({ data: { submission_id: sub.id } }).catch((e) =>
-            console.error("Auto-ingest failed:", e),
-          );
+          // Await so ingestion runs to completion before the request returns —
+          // Cloudflare Workers cancel pending promises after the response is sent.
+          try {
+            await processSubmission({ data: { submission_id: sub.id } });
+          } catch (e) {
+            console.error("Auto-ingest failed:", e);
+          }
         }
       } catch (e) {
         console.error("Auto-ingest kickoff failed:", e);
@@ -136,4 +139,30 @@ export const listMyFollowedChannels = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data ?? [];
+  });
+
+// Process any pending submissions belonging to the current user. Used to
+// recover from fire-and-forget ingestion that got cancelled by the worker
+// when the original follow request returned.
+export const processMyPendingSubmissions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: pending } = await supabase
+      .from("submitted_channels")
+      .select("id")
+      .eq("submitted_by", userId)
+      .eq("status", "pending")
+      .limit(5);
+    if (!pending || pending.length === 0) return { processed: 0 };
+    let processed = 0;
+    for (const row of pending) {
+      try {
+        await processSubmission({ data: { submission_id: row.id } });
+        processed++;
+      } catch (e) {
+        console.error("processMyPendingSubmissions failed", row.id, e);
+      }
+    }
+    return { processed };
   });

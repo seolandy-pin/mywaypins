@@ -1,4 +1,4 @@
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Bookmark, MapPin, Eye, Calendar, Play } from "lucide-react";
 import { useState } from "react";
@@ -58,6 +58,7 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
             </div>
             <div className="px-5 pt-4 text-left">
               <DrawerTitle className="font-display text-xl leading-tight">{pin.title}</DrawerTitle>
+              <DrawerDescription className="sr-only">{pin.location || pin.creator}</DrawerDescription>
               <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">{pin.creator}</span>
               </div>
