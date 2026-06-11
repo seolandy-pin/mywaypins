@@ -99,7 +99,7 @@ export const processSubmission = createServerFn({ method: "POST" })
       }>;
     };
 
-    let extractedPins = 0;
+    const videoIdsToExtract: string[] = [];
     for (const v of vidsJson.items ?? []) {
       const { data: vidRow } = await supabaseAdmin
         .from("videos")
@@ -117,15 +117,21 @@ export const processSubmission = createServerFn({ method: "POST" })
         .select()
         .single();
       if (vidRow) {
-        // Await extraction so map pins exist before the processing request finishes.
-        try {
-          const result = await extractLocations({ data: { video_id: vidRow.id } });
-          extractedPins += result?.pins ?? 0;
-        } catch (e) {
-          console.error("AI extract failed:", e);
-        }
+        videoIdsToExtract.push(vidRow.id);
       }
     }
+
+    // Await extraction so map pins exist before the processing request finishes.
+    const extractionResults = await Promise.allSettled(
+      videoIdsToExtract.map((videoId) => extractLocations({ data: { video_id: videoId } })),
+    );
+    const extractedPins = extractionResults.reduce((sum, result) => {
+      if (result.status === "rejected") {
+        console.error("AI extract failed:", result.reason);
+        return sum;
+      }
+      return sum + (result.value?.pins ?? 0);
+    }, 0);
 
     return { ok: true, channel_id: chRow!.id, videos: vidsJson.items?.length ?? 0, pins: extractedPins };
   });
