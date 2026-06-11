@@ -133,25 +133,38 @@ function Home() {
             </p>
           ) : (
             <div className="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pb-4">
+              <button
+                onClick={() => setSelectedChannelId(null)}
+                className={`flex w-20 shrink-0 flex-col items-center text-center active:scale-95 ${selectedChannelId === null ? "" : "opacity-60"}`}
+              >
+                <div className={`flex size-16 items-center justify-center rounded-full bg-surface-2 ring-2 ${selectedChannelId === null ? "ring-primary" : "ring-border"}`}>
+                  <Users className="size-6 text-primary" />
+                </div>
+                <p className="mt-1.5 line-clamp-1 text-xs font-medium">All</p>
+                <p className="text-[10px] text-muted-foreground">{followed.length} channels</p>
+              </button>
               {followed.map((c) => {
-                const handle = c.youtube_channel_id;
+                const isSelected = selectedChannelId === c.id;
                 return (
-                  <Link
+                  <button
                     key={c.id}
-                    to="/channel/$handle"
-                    params={{ handle }}
-                    className="flex w-20 shrink-0 flex-col items-center text-center active:scale-95"
+                    onClick={() => setSelectedChannelId(isSelected ? null : c.id)}
+                    className={`flex w-20 shrink-0 flex-col items-center text-center active:scale-95 ${isSelected || selectedChannelId === null ? "" : "opacity-60"}`}
                   >
                     {c.thumbnail_url ? (
-                      <img src={c.thumbnail_url} alt={c.name} className="size-16 rounded-full object-cover ring-2 ring-border" />
+                      <img
+                        src={c.thumbnail_url}
+                        alt={c.name}
+                        className={`size-16 rounded-full object-cover ring-2 ${isSelected ? "ring-primary" : "ring-border"}`}
+                      />
                     ) : (
-                      <div className="size-16 rounded-full bg-surface-2 ring-2 ring-border" />
+                      <div className={`size-16 rounded-full bg-surface-2 ring-2 ${isSelected ? "ring-primary" : "ring-border"}`} />
                     )}
                     <p className="mt-1.5 line-clamp-1 text-xs font-medium">{c.name}</p>
                     <p className="text-[10px] text-muted-foreground">
                       {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : ""}
                     </p>
-                  </Link>
+                  </button>
                 );
               })}
             </div>
