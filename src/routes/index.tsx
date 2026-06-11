@@ -2,11 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 
 import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
-import { featuredDestinations, PIN_TYPE_COLORS } from "@/lib/sample-data";
+import { PIN_TYPE_COLORS } from "@/lib/sample-data";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
-import { Compass, Sparkles, Plus, Maximize2, Users } from "lucide-react";
+import { Compass, Plus, Maximize2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -123,81 +123,6 @@ function Home() {
         </div>
         <VideoSheet pin={activePin} open={sheetOpen} onOpenChange={setSheetOpen} />
       </section>
-
-      {isAuthenticated && (
-        <Section title="Channels you follow" icon={Users}>
-          {followed.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              You aren't following anyone yet.{" "}
-              <Link to="/search" className="text-primary underline">Find creators</Link>.
-            </p>
-          ) : (
-            <div className="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pb-4">
-              <button
-                onClick={() => setSelectedChannelId(null)}
-                className={`flex w-20 shrink-0 flex-col items-center text-center active:scale-95 ${selectedChannelId === null ? "" : "opacity-60"}`}
-              >
-                <div className={`flex size-16 items-center justify-center rounded-full bg-surface-2 ring-2 ${selectedChannelId === null ? "ring-primary" : "ring-border"}`}>
-                  <Users className="size-6 text-primary" />
-                </div>
-                <p className="mt-1.5 line-clamp-1 text-xs font-medium">All</p>
-                <p className="text-[10px] text-muted-foreground">{followed.length} channels</p>
-              </button>
-              {followed.map((c) => {
-                const isSelected = selectedChannelId === c.id;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedChannelId(isSelected ? null : c.id)}
-                    className={`flex w-20 shrink-0 flex-col items-center text-center active:scale-95 ${isSelected || selectedChannelId === null ? "" : "opacity-60"}`}
-                  >
-                    {c.thumbnail_url ? (
-                      <img
-                        src={c.thumbnail_url}
-                        alt={c.name}
-                        className={`size-16 rounded-full object-cover ring-2 ${isSelected ? "ring-primary" : "ring-border"}`}
-                      />
-                    ) : (
-                      <div className={`size-16 rounded-full bg-surface-2 ring-2 ${isSelected ? "ring-primary" : "ring-border"}`} />
-                    )}
-                    <p className="mt-1.5 line-clamp-1 text-xs font-medium">{c.name}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : ""}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </Section>
-      )}
-
-      <Section title="Featured destinations" icon={Sparkles}>
-        <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5">
-          {featuredDestinations.map((d) => (
-            <article key={d.name} className="w-44 shrink-0 overflow-hidden rounded-2xl bg-card">
-              <div className="aspect-[4/5] overflow-hidden">
-                <img src={d.image} alt={d.name} loading="lazy" className="size-full object-cover transition hover:scale-105" />
-              </div>
-              <div className="p-3">
-                <h3 className="font-display text-base font-bold leading-tight">{d.name}</h3>
-                <p className="text-xs text-muted-foreground">{d.country} · {d.videos} videos</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </Section>
     </>
-  );
-}
-
-function Section({ title, icon: Icon, children }: { title: string; icon?: typeof Sparkles; children: React.ReactNode }) {
-  return (
-    <section className="mt-6 px-5">
-      <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold">
-        {Icon && <Icon className="size-4 text-primary" />} {title}
-      </h2>
-      {children}
-    </section>
   );
 }
