@@ -9,7 +9,7 @@ import type { SamplePin } from "@/lib/sample-data";
 import { PIN_TYPE_COLORS } from "@/lib/sample-data";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/profile/saved")({
+export const Route = createFileRoute("/profile_/saved")({
   head: () => ({ meta: [{ title: "Saved — WanderPins" }] }),
   component: SavedScreen,
 });
