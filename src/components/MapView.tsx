@@ -13,13 +13,14 @@ type PinType = SamplePin["type"];
 const ALLOWED_PIN_TYPES: PinType[] = ["trending", "new", "featured", "traveling"];
 
 async function fetchIngestedPins(channelIds?: string[]): Promise<SamplePin[]> {
+  if (channelIds && channelIds.length === 0) return [];
   let q = supabase
     .from("pins")
     .select(
       "id, latitude, longitude, label, pin_type, channel_id, videos(youtube_video_id, title, thumbnail_url, published_at, youtube_channels(name)), places(city_name, country_name)",
     )
     .limit(1000);
-  if (channelIds && channelIds.length > 0) {
+  if (channelIds) {
     q = q.in("channel_id", channelIds);
   }
   const { data, error } = await q;
