@@ -131,8 +131,14 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
             <Button className="flex-1" size="lg" onClick={() => setPlaying(true)}>
               <Play className="size-4" /> Watch Video
             </Button>
-            <Button variant="outline" size="lg" onClick={handleSave}>
-              <Bookmark className="size-4" />
+            <Button
+              variant={saved ? "default" : "outline"}
+              size="lg"
+              onClick={handleSave}
+              disabled={saving}
+              aria-label={saved ? "Remove from saved" : "Save place"}
+            >
+              <Bookmark className={saved ? "size-4 fill-current" : "size-4"} />
             </Button>
           </div>
         </div>
