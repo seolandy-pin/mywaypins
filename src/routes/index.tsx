@@ -3,18 +3,19 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
+import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
+import { useNewVideoCount, markVideosSeen } from "@/lib/hooks/use-new-video-count";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
-import { Sparkles, Plus, Maximize2, Users } from "lucide-react";
-
+import { Plus, Maximize2, Search, Bell, MapPin, Plane, Bookmark, Youtube } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MyWayPins — Discover travel through the map" },
-      { name: "description", content: "Explore travel YouTube videos pinned to real places around the world." },
+      { title: "MyWayPins — Your Travel YouTube Collection" },
+      { name: "description", content: "Follow travel YouTubers and watch their videos pinned to real places around the world." },
       { property: "og:title", content: "MyWayPins" },
-      { property: "og:description", content: "Google Maps meets YouTube for travel discovery." },
+      { property: "og:description", content: "Your Travel YouTube Collection." },
     ],
   }),
   component: Home,
@@ -31,147 +32,154 @@ function Home() {
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
-  const { channels: followed, channelIds, pinsVersion, isAuthenticated, loading } = useFollowedChannels();
+  const { channels: followed, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
 
-  // When signed in, show pins for followed channels (or just the selected one).
   const mapFilter = isAuthenticated
-    ? selectedChannelId
-      ? [selectedChannelId]
-      : channelIds
+    ? selectedChannelId ? [selectedChannelId] : channelIds
     : undefined;
-  const selectedChannel = selectedChannelId
-    ? followed.find((c) => c.id === selectedChannelId) ?? null
-    : null;
+
+  const markersQuery = useChannelMarkers(followed);
+  const allMarkers = markersQuery.data ?? [];
+  const visibleMarkers = selectedChannelId
+    ? allMarkers.filter((m) => m.channelId === selectedChannelId)
+    : allMarkers;
+
+  const { count: newCount, refresh: refreshSeen } = useNewVideoCount(channelIds);
+
+  const handleBell = () => {
+    markVideosSeen();
+    refreshSeen();
+    navigate({ to: "/following" });
+  };
 
   return (
     <>
-      <header className="safe-top flex items-center justify-between px-5 pb-2 pt-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold leading-none">MyWayPins</h1>
+      <header className="safe-top px-4 pb-3 pt-3">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="font-display text-3xl font-bold leading-none">
+              <span className="text-foreground">MyWay</span>
+              <span className="text-primary">Pins</span>
+              <MapPin className="ml-0.5 inline size-5 -translate-y-1 fill-primary text-primary" />
+            </h1>
+            <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+              Your Travel YouTube Collection
+              <Plane className="size-3" />
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/search"
+              aria-label="Search creators"
+              className="flex size-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-surface-1 active:scale-95"
+            >
+              <Search className="size-[18px]" />
+            </Link>
+            <button
+              type="button"
+              onClick={handleBell}
+              aria-label="Notifications"
+              className="relative flex size-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-surface-1 active:scale-95"
+            >
+              <Bell className="size-[18px]" />
+              {newCount > 0 && (
+                <span className="absolute right-1 top-1 size-2 rounded-full bg-primary ring-2 ring-background" />
+              )}
+            </button>
+            <Link
+              to="/submit"
+              aria-label="Add channel"
+              className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-95"
+            >
+              <Plus className="size-[18px]" />
+            </Link>
+          </div>
         </div>
-        <Link to="/submit" className="flex size-10 items-center justify-center rounded-full bg-surface-1 active:scale-95">
-          <Plus className="size-5" />
-        </Link>
       </header>
 
-      <section className="mx-5 mt-4">
-        <div className="relative h-[55vh] min-h-[320px] w-full overflow-hidden rounded-3xl border border-border bg-surface-1 shadow-xl">
+      <section className="mx-4">
+        <div className="relative h-[58vh] min-h-[340px] w-full overflow-hidden rounded-3xl border border-border bg-surface-1 shadow-xl">
           <MapView
             followedChannelIds={mapFilter}
             pinsRefreshKey={pinsVersion}
+            channelMarkers={visibleMarkers}
+            onChannelMarkerClick={(id) => setSelectedChannelId((cur) => (cur === id ? null : id))}
             onPinClick={(p) => {
               setActivePin(p);
               setSheetOpen(true);
             }}
           />
 
-
-          {selectedChannel && (
-            <div className="glass absolute inset-x-3 bottom-14 flex items-center gap-3 rounded-2xl border border-border/60 p-2.5">
-              {selectedChannel.thumbnail_url ? (
-                <img src={selectedChannel.thumbnail_url} alt={selectedChannel.name} className="size-10 rounded-full object-cover" />
-              ) : (
-                <div className="size-10 rounded-full bg-surface-2" />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-1 font-display text-sm font-bold">{selectedChannel.name}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {selectedChannel.subscriber_count ? `${formatNum(Number(selectedChannel.subscriber_count))} subs` : ""}
-                  {selectedChannel.current_location ? ` · ${selectedChannel.current_location}` : ""}
-                </p>
-              </div>
-              <Link
-                to="/channel/$handle"
-                params={{ handle: selectedChannel.youtube_channel_id }}
-                className="rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground active:scale-95"
-              >
-                View
-              </Link>
-              <button
-                onClick={() => setSelectedChannelId(null)}
-                className="rounded-full bg-surface-2 px-2.5 py-1.5 text-[11px] font-semibold active:scale-95"
-                aria-label="Clear selection"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-          {isAuthenticated && !loading && followed.length === 0 && (
-            <div className="glass absolute inset-x-6 bottom-14 rounded-2xl border border-border/60 p-4 text-center text-xs">
-              You aren't following any channels yet. Search and follow creators to populate your map.
-            </div>
-          )}
           <button
+            type="button"
             onClick={() => navigate({ to: "/map" })}
-            className="glass absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-2 text-xs font-semibold active:scale-95"
+            className="glass absolute bottom-3 left-3 flex cursor-pointer items-center gap-1.5 rounded-full border border-border/60 px-3 py-2 text-xs font-semibold active:scale-95"
           >
-            <Maximize2 className="size-3.5" /> Full map
+            <Maximize2 className="size-3.5" /> Explore Full Map
           </button>
         </div>
         <VideoSheet pin={activePin} open={sheetOpen} onOpenChange={setSheetOpen} />
       </section>
 
-      {isAuthenticated && (
-        <Section title="Channels you follow" icon={Users}>
-          {followed.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              You aren't following anyone yet.{" "}
-              <Link to="/search" className="text-primary underline">Find creators</Link>.
-            </p>
-          ) : (
-            <div className="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pb-4">
-              <button
-                onClick={() => setSelectedChannelId(null)}
-                className={`flex w-20 shrink-0 cursor-pointer flex-col items-center text-center active:scale-95 ${selectedChannelId === null ? "" : "opacity-60"}`}
+      <section className="mt-5 px-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 font-display text-base font-bold">
+            <span className="flex size-6 items-center justify-center rounded-md bg-primary/15 text-primary">
+              <Youtube className="size-4" />
+            </span>
+            Recently Saved Channels
+          </h2>
+          <Link to="/following" className="flex cursor-pointer items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+            View All ›
+          </Link>
+        </div>
+
+        {!isAuthenticated ? (
+          <p className="text-sm text-muted-foreground">
+            <Link to="/auth" className="text-primary underline">Sign in</Link> to follow your favorite travel channels.
+          </p>
+        ) : followed.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No channels yet. <Link to="/search" className="text-primary underline">Find creators</Link>.
+          </p>
+        ) : (
+          <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-4">
+            {followed.slice(0, 12).map((c) => (
+              <Link
+                key={c.id}
+                to="/channel/$handle"
+                params={{ handle: c.youtube_channel_id }}
+                className="group relative flex w-[140px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-2xl bg-surface-1 ring-1 ring-border active:scale-95"
               >
-                <div className={`flex size-16 items-center justify-center rounded-xl bg-surface-2 ring-2 ${selectedChannelId === null ? "ring-primary" : "ring-border"}`}>
-                  <Users className="size-6 text-primary" />
+                <div className="relative aspect-square w-full overflow-hidden bg-surface-2">
+                  {c.thumbnail_url ? (
+                    <img src={c.thumbnail_url} alt={c.name} className="size-full object-cover" />
+                  ) : (
+                    <div className="flex size-full items-center justify-center text-muted-foreground">
+                      <Youtube className="size-8" />
+                    </div>
+                  )}
+                  <span className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-md bg-background/70 text-foreground backdrop-blur-sm">
+                    <Bookmark className="size-3.5 fill-current" />
+                  </span>
                 </div>
-                <p className="mt-1.5 line-clamp-1 text-xs font-medium">All</p>
-                <p className="text-[10px] text-muted-foreground">{followed.length} channels</p>
-              </button>
-              {followed.map((c) => {
-                const isSelected = selectedChannelId === c.id;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedChannelId(isSelected ? null : c.id)}
-                    className={`flex w-20 shrink-0 cursor-pointer flex-col items-center text-center active:scale-95 ${isSelected || selectedChannelId === null ? "" : "opacity-60"}`}
-                  >
-                    {c.thumbnail_url ? (
-                      <img
-                        src={c.thumbnail_url}
-                        alt={c.name}
-                        className={`size-16 rounded-xl object-cover ring-2 ${isSelected ? "ring-primary" : "ring-border"}`}
-                      />
-                    ) : (
-                      <div className={`size-16 rounded-xl bg-surface-2 ring-2 ${isSelected ? "ring-primary" : "ring-border"}`} />
-                    )}
-
-                    <p className="mt-1.5 line-clamp-1 text-xs font-medium">{c.name}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : ""}
+                <div className="p-2.5">
+                  <p className="line-clamp-1 text-[13px] font-semibold">{c.name}</p>
+                  <p className="line-clamp-1 text-[11px] text-muted-foreground">
+                    {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subscribers` : "—"}
+                  </p>
+                  {c.current_location && (
+                    <p className="mt-0.5 flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                      <MapPin className="size-3" />
+                      <span className="line-clamp-1">{c.current_location}</span>
                     </p>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </Section>
-      )}
-
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
     </>
-  );
-}
-
-
-function Section({ title, icon: Icon, children }: { title: string; icon?: typeof Sparkles; children: React.ReactNode }) {
-  return (
-    <section className="mt-6 px-5">
-      <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
-        {Icon && <Icon className="size-4 text-primary" />} {title}
-      </h2>
-      {children}
-    </section>
   );
 }

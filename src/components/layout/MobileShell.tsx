@@ -1,27 +1,17 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Map, Search, Users, User } from "lucide-react";
+import { Home, Map, Search, Bookmark, User } from "lucide-react";
 import type { ReactNode } from "react";
 
 const tabs = [
-  { to: "/", label: "Home", icon: Home },
-  { to: "/map", label: "Map", icon: Map },
-  { to: "/search", label: "Search", icon: Search },
-  { to: "/following", label: "Following", icon: Users },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/", label: "Home", icon: Home, match: (p: string) => p === "/" },
+  { to: "/map", label: "Map", icon: Map, match: (p: string) => p.startsWith("/map") },
+  { to: "/search", label: "Discover", icon: Search, match: (p: string) => p.startsWith("/search") },
+  { to: "/profile/saved", label: "Saved", icon: Bookmark, match: (p: string) => p.startsWith("/profile/saved") || p.startsWith("/profile_/saved") },
+  { to: "/profile", label: "Profile", icon: User, match: (p: string) => p === "/profile" || (p.startsWith("/profile") && !p.includes("/saved")) },
 ] as const;
 
-// Routes that should hide the bottom tab bar (full-screen flows).
 const HIDE_NAV_ROUTES = ["/auth"];
 
-/**
- * MobileShell is now rendered ONCE at the root (see src/routes/__root.tsx)
- * and wraps <Outlet />. Tab routes return their content directly — keeping
- * the shell + bottom nav mounted across navigations eliminates the per-tab
- * remount flicker (Mapbox singleton + React Query cache do the rest).
- *
- * The `children` prop is the route Outlet. `hideNav` is derived from the
- * current pathname so a route can opt out (e.g. /auth).
- */
 export function MobileShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const hideNav = HIDE_NAV_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/"));
@@ -34,13 +24,13 @@ export function MobileShell({ children }: { children: ReactNode }) {
           <ul className="grid grid-cols-5 px-2 pt-2">
             {tabs.map((t) => {
               const Icon = t.icon;
-              const active = t.to === "/" ? pathname === "/" : pathname.startsWith(t.to);
+              const active = t.match(pathname);
               return (
                 <li key={t.to}>
                   <Link
                     to={t.to}
                     preload="intent"
-                    className={`flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-colors ${
+                    className={`flex cursor-pointer flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-colors ${
                       active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
