@@ -387,7 +387,7 @@ export function MapView({
         e.stopPropagation();
         onChannelMarkerClickRef.current?.(cm.channelId);
       });
-      const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+      const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
         .setLngLat([cm.lng, cm.lat])
         .addTo(map);
       channelMarkersRef.current.push(marker);
