@@ -2,13 +2,11 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useEffect, useRef, useState } from "react";
 import { samplePins, PIN_TYPE_COLORS, type SamplePin } from "@/lib/sample-data";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMapboxToken } from "@/lib/mapbox.functions";
 
-const TOKEN_KEY = "wanderpins:mapbox_token";
+
 export const SAVED_PIN_COLOR = "#ff7350";
 export const FAVORITES_CHANGED_EVENT = "wanderpins:favorites-changed";
 
