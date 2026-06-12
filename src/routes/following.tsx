@@ -6,6 +6,7 @@ import { Bell, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth/use-auth";
 import { Button } from "@/components/ui/button";
 import { listMyFollowedChannels } from "@/lib/follows.functions";
+import { useNewVideosByChannel, markChannelSeen } from "@/lib/hooks/use-new-videos-by-channel";
 
 export const Route = createFileRoute("/following")({
   head: () => ({ meta: [{ title: "Following — WanderPins" }] }),
@@ -55,6 +56,9 @@ function FollowingScreen() {
     } | null;
   }>;
 
+  const channelIds = rows.map((r) => r.youtube_channels?.id).filter((v): v is string => Boolean(v));
+  const { newChannelIds } = useNewVideosByChannel(channelIds);
+
   return (
     <>
       <header className="safe-top px-5 pt-4">
@@ -77,18 +81,32 @@ function FollowingScreen() {
             {rows.map((r) => {
               const c = r.youtube_channels;
               if (!c) return null;
+              const hasNew = newChannelIds.has(c.id);
               return (
                 <li key={c.id}>
                   <Link
                     to="/channel/$handle"
                     params={{ handle: c.youtube_channel_id }}
+                    onClick={() => markChannelSeen(c.id)}
                     className="flex cursor-pointer items-center gap-3 rounded-2xl bg-card p-3 transition-colors hover:bg-accent"
                   >
                     {c.thumbnail_url && (
-                      <img src={c.thumbnail_url} alt={c.name} className="size-14 shrink-0 rounded-full object-cover" />
+                      <div className="relative shrink-0">
+                        <img src={c.thumbnail_url} alt={c.name} className="size-14 rounded-full object-cover" />
+                        {hasNew && (
+                          <span className="absolute -right-0.5 -top-0.5 size-3 rounded-full bg-red-500 ring-2 ring-card" />
+                        )}
+                      </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="line-clamp-1 text-sm font-semibold">{c.name}</p>
+                      <p className="line-clamp-1 text-sm font-semibold">
+                        {c.name}
+                        {hasNew && (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-red-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-red-500">
+                            NEW
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : "Subscribers hidden"}
                         {c.is_currently_traveling && c.current_location ? ` · In ${c.current_location}` : ""}

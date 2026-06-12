@@ -26,7 +26,7 @@ async function fetchSavedPinIds(): Promise<Set<string>> {
 }
 
 // Pin enriched with the owning channel's avatar so map markers can show it.
-export type MapPin = SamplePin & { avatar?: string | null };
+export type MapPin = SamplePin & { avatar?: string | null; isNew?: boolean };
 
 async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
   if (channelIds && channelIds.length === 0) return [];
@@ -48,6 +48,8 @@ async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
       const ch = (p as { youtube_channels: { name?: string; thumbnail_url?: string } | null }).youtube_channels;
       const place = (p as { places: { city_name?: string; country_name?: string } | null }).places;
       const type = (ALLOWED_PIN_TYPES as string[]).includes(p.pin_type) ? (p.pin_type as PinType) : "new";
+      const publishedMs = v?.published_at ? new Date(v.published_at).getTime() : 0;
+      const isNew = publishedMs > Date.now() - 24 * 3600 * 1000;
       return {
         id: p.id,
         lat: p.latitude as number,
@@ -61,6 +63,7 @@ async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
         uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
         youtubeId: v?.youtube_video_id ?? "",
         avatar: ch?.thumbnail_url ?? null,
+        isNew,
       };
     });
 }
@@ -123,10 +126,13 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
     const el = document.createElement("button");
     el.type = "button";
     el.className = "wp-channel-marker";
-    el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
-    el.innerHTML = p.avatar
+    el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;position:relative;";
+    const newDot = p.isNew
+      ? `<span style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:#ef4444;border:2px solid #0b0d12;box-shadow:0 0 0 1px #ef4444;"></span>`
+      : "";
+    el.innerHTML = (p.avatar
       ? `<div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid ${border};box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;"><img src="${p.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
-      : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`;
+      : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`) + newDot;
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       sharedHandlerRef.current(p);
