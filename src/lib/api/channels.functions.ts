@@ -156,7 +156,7 @@ export const processSubmission = createServerFn({ method: "POST" })
       .update({ status: "processed", resolved_channel_id: chRow!.id })
       .eq("id", sub.id);
 
-    return { ok: true, channel_id: chRow!.id, videos: vidsJson.items?.length ?? 0, pins: extractedPins };
+    return { ok: true, channel_id: chRow!.id, videos: allVideos.length, pins: extractedPins };
   });
 
 const ExtractInput = z.object({ video_id: z.string().uuid() });
