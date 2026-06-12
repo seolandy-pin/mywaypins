@@ -116,39 +116,64 @@ function setPinData(map: mapboxgl.Map, pins: MapPin[], savedIds?: Set<string>) {
 
 // Every pin is rendered as an HTML marker showing the channel's avatar
 // (falls back to a small colored dot when no avatar exists).
-let htmlMarkers: mapboxgl.Marker[] = [];
-let lastMarkerSig = "";
-function markerSig(): string {
-  return currentPins.map((p) => `${p.id}:${currentSavedIds.has(p.id) ? 1 : 0}`).join("|");
+type MarkerEntry = { marker: mapboxgl.Marker; el: HTMLButtonElement; saved: boolean; pin: MapPin };
+const htmlMarkerMap = new Map<string, MarkerEntry>();
+
+function buildMarkerHtml(p: MapPin, saved: boolean): string {
+  const border = saved ? SAVED_PIN_COLOR : "#ffffff";
+  return p.avatar
+    ? `<div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid ${border};box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;"><img src="${p.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
+    : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`;
 }
+
 function renderHtmlMarkers(map: mapboxgl.Map) {
-  // Markers live on the shared (persistent) map — if the exact same set is
-  // already rendered, do nothing. Removing and re-adding them is what causes
-  // the visible blink on route changes.
-  const sig = markerSig();
-  if (sig === lastMarkerSig && htmlMarkers.length === currentPins.length && htmlMarkers.length > 0) {
-    return;
+  // Diff-based update: keep existing marker DOM nodes for pins that are still
+  // present, only remove ones that have gone away and add genuinely new ones.
+  // This avoids the full remove/re-add cycle that causes a visible blink when
+  // selecting a channel filter.
+  const nextIds = new Set(currentPins.map((p) => p.id));
+
+  // Remove markers no longer present.
+  for (const [id, entry] of htmlMarkerMap) {
+    if (!nextIds.has(id)) {
+      entry.marker.remove();
+      htmlMarkerMap.delete(id);
+    }
   }
-  lastMarkerSig = sig;
-  htmlMarkers.forEach((m) => m.remove());
-  htmlMarkers = [];
+
   for (const p of currentPins) {
     const saved = currentSavedIds.has(p.id);
-    const border = saved ? SAVED_PIN_COLOR : "#ffffff";
+    const existing = htmlMarkerMap.get(p.id);
+    if (existing) {
+      // Reuse: update DOM only if saved state changed, ensure attached to this map.
+      if (existing.saved !== saved) {
+        existing.el.innerHTML = buildMarkerHtml(p, saved);
+        existing.saved = saved;
+      }
+      existing.pin = p;
+      if (existing.marker.getElement().ownerDocument !== document || !document.body.contains(existing.marker.getElement())) {
+        existing.marker.addTo(map);
+      } else {
+        existing.marker.addTo(map);
+      }
+      continue;
+    }
     const el = document.createElement("button");
     el.type = "button";
     el.className = "wp-channel-marker";
     el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
-    el.innerHTML = p.avatar
-      ? `<div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid ${border};box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;"><img src="${p.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
-      : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`;
+    el.innerHTML = buildMarkerHtml(p, saved);
+    const entry: MarkerEntry = {
+      marker: new mapboxgl.Marker({ element: el, anchor: "center" }).setLngLat([p.lng, p.lat]).addTo(map),
+      el,
+      saved,
+      pin: p,
+    };
     el.addEventListener("click", (e) => {
       e.stopPropagation();
-      sharedHandlerRef.current(p);
+      sharedHandlerRef.current(entry.pin);
     });
-    htmlMarkers.push(
-      new mapboxgl.Marker({ element: el, anchor: "center" }).setLngLat([p.lng, p.lat]).addTo(map),
-    );
+    htmlMarkerMap.set(p.id, entry);
   }
 }
 
