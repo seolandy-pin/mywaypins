@@ -117,7 +117,19 @@ function setPinData(map: mapboxgl.Map, pins: MapPin[], savedIds?: Set<string>) {
 // Every pin is rendered as an HTML marker showing the channel's avatar
 // (falls back to a small colored dot when no avatar exists).
 let htmlMarkers: mapboxgl.Marker[] = [];
+let lastMarkerSig = "";
+function markerSig(): string {
+  return currentPins.map((p) => `${p.id}:${currentSavedIds.has(p.id) ? 1 : 0}`).join("|");
+}
 function renderHtmlMarkers(map: mapboxgl.Map) {
+  // Markers live on the shared (persistent) map — if the exact same set is
+  // already rendered, do nothing. Removing and re-adding them is what causes
+  // the visible blink on route changes.
+  const sig = markerSig();
+  if (sig === lastMarkerSig && htmlMarkers.length === currentPins.length && htmlMarkers.length > 0) {
+    return;
+  }
+  lastMarkerSig = sig;
   htmlMarkers.forEach((m) => m.remove());
   htmlMarkers = [];
   for (const p of currentPins) {
