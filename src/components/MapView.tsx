@@ -330,10 +330,12 @@ export type ChannelMarkerData = {
 export function MapView({
   onPinClick,
   followedChannelIds,
+  videoIdsFilter,
   pinsRefreshKey = 0,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
+  videoIdsFilter?: string[];
   pinsRefreshKey?: number;
   channelMarkers?: ChannelMarkerData[];
   onChannelMarkerClick?: (channelId: string) => void;
@@ -360,7 +362,7 @@ export function MapView({
 
     const render = () => {
       setupPinLayers(map);
-      renderPins(map, followedChannelIds);
+      renderPins(map, followedChannelIds, videoIdsFilter);
     };
     if (!loadedRef.current && !map.loaded()) {
       map.once("load", () => {
@@ -379,7 +381,7 @@ export function MapView({
       window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
       if (div.parentElement === host) host.removeChild(div);
     };
-  }, [token, followedChannelIds?.join(","), pinsRefreshKey]);
+  }, [token, followedChannelIds?.join(","), videoIdsFilter?.join(","), pinsRefreshKey]);
 
 
 
