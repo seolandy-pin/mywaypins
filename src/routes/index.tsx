@@ -11,9 +11,9 @@ import { Compass, Sparkles, Plus, Maximize2, Users } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "WanderPins — Discover travel through the map" },
+      { title: "MyWayPins — Discover travel through the map" },
       { name: "description", content: "Explore travel YouTube videos pinned to real places around the world." },
-      { property: "og:title", content: "WanderPins" },
+      { property: "og:title", content: "MyWayPins" },
       { property: "og:description", content: "Google Maps meets YouTube for travel discovery." },
     ],
   }),
@@ -180,7 +180,7 @@ function Home() {
 function Section({ title, icon: Icon, children }: { title: string; icon?: typeof Sparkles; children: React.ReactNode }) {
   return (
     <section className="mt-6 px-5">
-      <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold">
+      <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
         {Icon && <Icon className="size-4 text-primary" />} {title}
       </h2>
       {children}
