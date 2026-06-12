@@ -188,7 +188,8 @@ function Home() {
                   )}
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
 
         )}
