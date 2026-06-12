@@ -28,15 +28,18 @@ async function fetchSavedPinIds(): Promise<Set<string>> {
 // Pin enriched with the owning channel's avatar so map markers can show it.
 export type MapPin = SamplePin & { avatar?: string | null };
 
-async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
-  if (channelIds && channelIds.length === 0) return [];
+async function fetchIngestedPins(channelIds?: string[], videoIds?: string[]): Promise<MapPin[]> {
+  if (videoIds && videoIds.length === 0) return [];
+  if (!videoIds && channelIds && channelIds.length === 0) return [];
   let q = supabase
     .from("pins")
     .select(
       "id, latitude, longitude, label, pin_type, channel_id, youtube_channels(name, thumbnail_url), videos(youtube_video_id, title, thumbnail_url, published_at), places(city_name, country_name)",
     )
     .limit(1000);
-  if (channelIds) {
+  if (videoIds) {
+    q = q.in("video_id", videoIds);
+  } else if (channelIds) {
     q = q.in("channel_id", channelIds);
   }
   const { data, error } = await q;
