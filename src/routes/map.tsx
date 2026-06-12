@@ -3,10 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
 import { useState } from "react";
-import { Youtube, MapPin } from "lucide-react";
+import { Youtube, MapPin, FolderHeart } from "lucide-react";
 import type { SamplePin } from "@/lib/sample-data";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
+import { useMyCollections } from "@/lib/hooks/use-my-collections";
 
 export const Route = createFileRoute("/map")({
   head: () => ({
