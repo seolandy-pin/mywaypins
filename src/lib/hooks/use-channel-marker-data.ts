@@ -5,7 +5,6 @@ import type { FollowedChannel } from "@/lib/hooks/use-followed-channels";
 export type ChannelMarker = {
   id: string; // pin id (unique per marker)
   channelId: string;
-  videoId: string | null;
   name: string;
   thumbnail: string | null;
   location: string;
@@ -25,7 +24,7 @@ export function useChannelMarkers(channels: FollowedChannel[]) {
     queryFn: async (): Promise<ChannelMarker[]> => {
       const { data } = await supabase
         .from("pins")
-        .select("id, video_id, channel_id, latitude, longitude, places(city_name, country_name)")
+        .select("id, channel_id, latitude, longitude, places(city_name, country_name)")
         .in("channel_id", ids)
         .not("latitude", "is", null)
         .not("longitude", "is", null)
@@ -41,7 +40,6 @@ export function useChannelMarkers(channels: FollowedChannel[]) {
         out.push({
           id: row.id as string,
           channelId: row.channel_id,
-          videoId: (row as { video_id?: string | null }).video_id ?? null,
           name: ch.name,
           thumbnail: ch.thumbnail_url,
           location: place?.country_name ?? place?.city_name ?? ch.current_location ?? "",

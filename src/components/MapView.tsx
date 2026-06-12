@@ -26,7 +26,7 @@ async function fetchSavedPinIds(): Promise<Set<string>> {
 }
 
 // Pin enriched with the owning channel's avatar so map markers can show it.
-export type MapPin = SamplePin & { avatar?: string | null; videoDbId?: string | null };
+export type MapPin = SamplePin & { avatar?: string | null };
 
 async function fetchIngestedPins(channelIds?: string[], videoIds?: string[]): Promise<MapPin[]> {
   if (videoIds && videoIds.length === 0) return [];
@@ -34,7 +34,7 @@ async function fetchIngestedPins(channelIds?: string[], videoIds?: string[]): Pr
   let q = supabase
     .from("pins")
     .select(
-      "id, video_id, latitude, longitude, label, pin_type, channel_id, youtube_channels(name, thumbnail_url), videos(youtube_video_id, title, thumbnail_url, published_at), places(city_name, country_name)",
+      "id, latitude, longitude, label, pin_type, channel_id, youtube_channels(name, thumbnail_url), videos(youtube_video_id, title, thumbnail_url, published_at), places(city_name, country_name)",
     )
     .limit(1000);
   if (videoIds) {
@@ -64,7 +64,6 @@ async function fetchIngestedPins(channelIds?: string[], videoIds?: string[]): Pr
         uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
         youtubeId: v?.youtube_video_id ?? "",
         avatar: ch?.thumbnail_url ?? null,
-        videoDbId: (p as { video_id?: string | null }).video_id ?? null,
       };
     });
 }
@@ -86,7 +85,6 @@ let sharedMap: mapboxgl.Map | null = null;
 const sharedHandlerRef: { current: PinHandler } = { current: () => {} };
 let currentPins: MapPin[] = [];
 let currentSavedIds: Set<string> = new Set();
-let currentSavedVideoIds: Set<string> = new Set();
 const PIN_SOURCE_ID = "wanderpins-source";
 
 function pinsToGeoJSON(pins: SamplePin[], savedIds: Set<string>): GeoJSON.FeatureCollection {
@@ -124,19 +122,14 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
   htmlMarkers = [];
   for (const p of currentPins) {
     const saved = currentSavedIds.has(p.id);
-    const isSavedVideo = !!p.videoDbId && currentSavedVideoIds.has(p.videoDbId);
     const border = saved ? SAVED_PIN_COLOR : "#ffffff";
     const el = document.createElement("button");
     el.type = "button";
     el.className = "wp-channel-marker";
-    el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;position:relative;";
-    const avatarHtml = p.avatar
+    el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
+    el.innerHTML = p.avatar
       ? `<div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid ${border};box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;"><img src="${p.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
       : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`;
-    const badgeHtml = isSavedVideo
-      ? `<div style="position:absolute;top:-4px;right:-4px;width:14px;height:14px;pointer-events:none;" aria-label="Saved video"><svg viewBox="0 0 24 24" width="14" height="14" style="display:block;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.6));"><path d="M12 2C7.6 2 4 5.5 4 9.8c0 5.4 7 11.6 7.3 11.9.2.2.5.3.7.3s.5-.1.7-.3C13 21.4 20 15.2 20 9.8 20 5.5 16.4 2 12 2z" fill="#ef4444"/><polygon points="10,7 10,13 15,10" fill="#ffffff"/></svg></div>`
-      : "";
-    el.innerHTML = avatarHtml + badgeHtml;
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       sharedHandlerRef.current(p);
@@ -338,13 +331,11 @@ export function MapView({
   onPinClick,
   followedChannelIds,
   videoIdsFilter,
-  savedVideoIds,
   pinsRefreshKey = 0,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
   videoIdsFilter?: string[];
-  savedVideoIds?: string[];
   pinsRefreshKey?: number;
   channelMarkers?: ChannelMarkerData[];
   onChannelMarkerClick?: (channelId: string) => void;
@@ -361,11 +352,6 @@ export function MapView({
   useEffect(() => {
     sharedHandlerRef.current = onPinClick;
   }, [onPinClick]);
-
-  useEffect(() => {
-    currentSavedVideoIds = new Set(savedVideoIds ?? []);
-    if (sharedMap) renderHtmlMarkers(sharedMap);
-  }, [savedVideoIds?.join(",")]);
 
   useEffect(() => {
     if (!token || !hostRef.current) return;
