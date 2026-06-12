@@ -43,7 +43,8 @@ function MapScreen() {
   const allMarkers = channelMarkers ?? [];
   let visibleMarkers = allMarkers;
   if (selectedCollection && selectedCollection.video_ids.length > 0) {
-    visibleMarkers = allMarkers.filter((m) => selectedCollection.video_ids.includes(m.videoId));
+    const ids = selectedCollection.video_ids;
+    visibleMarkers = allMarkers.filter((m) => m.videoId && ids.includes(m.videoId));
   } else if (selectedChannelId) {
     visibleMarkers = allMarkers.filter((m) => m.channelId === selectedChannelId);
   }
