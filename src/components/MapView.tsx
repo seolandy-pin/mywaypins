@@ -260,11 +260,20 @@ function boostLabelLegibility(map: mapboxgl.Map) {
   });
 }
 
+let lastFetchSig = "";
 function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[]) {
   const base = !channelIds && !videoIds ? [...samplePins] : [];
+  const sig = `c:${channelIds?.join(",") ?? "*"}|v:${videoIds?.join(",") ?? "*"}`;
+  // Same filter as last fetch and we already have data → just ensure markers
+  // exist on this map instance (route remount) without re-fetching/re-flickering.
+  if (sig === lastFetchSig && currentPins.length > 0) {
+    renderHtmlMarkers(map);
+    return;
+  }
   // Only seed with base if there is no data yet — avoids clearing existing
   // ingested pins (causing a flicker) when the followed-channels query refetches.
   if (currentPins.length === 0 || channelIds?.length === 0 || videoIds?.length === 0) setPinData(map, base);
+  lastFetchSig = sig;
   Promise.all([fetchIngestedPins(channelIds, videoIds), fetchSavedPinIds()])
     .then(([pins, savedIds]) => setPinData(map, [...base, ...pins], savedIds))
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
