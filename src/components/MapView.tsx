@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getMapboxToken } from "@/lib/mapbox.functions";
 
 const TOKEN_KEY = "wanderpins:mapbox_token";
 export const SAVED_PIN_COLOR = "#ff7350";
@@ -73,7 +74,6 @@ function getStoredToken(): string {
   return (
     (import.meta.env.VITE_MAPBOX_ACCESS_TOKEN as string) ||
     (import.meta.env.VITE_MAPBOX_TOKEN as string) ||
-    localStorage.getItem(TOKEN_KEY) ||
     ""
   );
 }
