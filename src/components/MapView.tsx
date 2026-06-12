@@ -26,7 +26,7 @@ async function fetchSavedPinIds(): Promise<Set<string>> {
 }
 
 // Pin enriched with the owning channel's avatar so map markers can show it.
-export type MapPin = SamplePin & { avatar?: string | null };
+export type MapPin = SamplePin & { avatar?: string | null; videoDbId?: string | null };
 
 async function fetchIngestedPins(channelIds?: string[], videoIds?: string[]): Promise<MapPin[]> {
   if (videoIds && videoIds.length === 0) return [];
@@ -34,7 +34,7 @@ async function fetchIngestedPins(channelIds?: string[], videoIds?: string[]): Pr
   let q = supabase
     .from("pins")
     .select(
-      "id, latitude, longitude, label, pin_type, channel_id, youtube_channels(name, thumbnail_url), videos(youtube_video_id, title, thumbnail_url, published_at), places(city_name, country_name)",
+      "id, video_id, latitude, longitude, label, pin_type, channel_id, youtube_channels(name, thumbnail_url), videos(youtube_video_id, title, thumbnail_url, published_at), places(city_name, country_name)",
     )
     .limit(1000);
   if (videoIds) {
@@ -64,6 +64,7 @@ async function fetchIngestedPins(channelIds?: string[], videoIds?: string[]): Pr
         uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
         youtubeId: v?.youtube_video_id ?? "",
         avatar: ch?.thumbnail_url ?? null,
+        videoDbId: (p as { video_id?: string | null }).video_id ?? null,
       };
     });
 }
