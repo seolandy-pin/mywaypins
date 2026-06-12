@@ -260,12 +260,12 @@ function boostLabelLegibility(map: mapboxgl.Map) {
   });
 }
 
-function renderPins(map: mapboxgl.Map, channelIds?: string[]) {
-  const base = !channelIds ? [...samplePins] : [];
+function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[]) {
+  const base = !channelIds && !videoIds ? [...samplePins] : [];
   // Only seed with base if there is no data yet — avoids clearing existing
   // ingested pins (causing a flicker) when the followed-channels query refetches.
-  if (currentPins.length === 0 || channelIds?.length === 0) setPinData(map, base);
-  Promise.all([fetchIngestedPins(channelIds), fetchSavedPinIds()])
+  if (currentPins.length === 0 || channelIds?.length === 0 || videoIds?.length === 0) setPinData(map, base);
+  Promise.all([fetchIngestedPins(channelIds, videoIds), fetchSavedPinIds()])
     .then(([pins, savedIds]) => setPinData(map, [...base, ...pins], savedIds))
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
 }
