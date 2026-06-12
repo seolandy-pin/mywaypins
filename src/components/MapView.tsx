@@ -126,10 +126,13 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
     const el = document.createElement("button");
     el.type = "button";
     el.className = "wp-channel-marker";
-    el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
-    el.innerHTML = p.avatar
+    el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;position:relative;";
+    const badge = saved
+      ? `<div style="position:absolute;top:-4px;right:-4px;width:14px;height:14px;display:flex;align-items:center;justify-content:center;background:#e53935;border-radius:9999px 9999px 2px 9999px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.6);z-index:2;"><svg width="6" height="6" viewBox="0 0 10 10"><polygon points="2,1 9,5 2,9" fill="#fff"/></svg></div>`
+      : "";
+    el.innerHTML = (p.avatar
       ? `<div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid ${border};box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;"><img src="${p.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
-      : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`;
+      : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`) + badge;
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       sharedHandlerRef.current(p);
