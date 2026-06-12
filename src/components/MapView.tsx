@@ -128,8 +128,8 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
     el.className = "wp-channel-marker";
     el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
     el.innerHTML = p.avatar
-      ? `<div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid ${border};box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;"><img src="${p.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
-      : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`;
+      ? `<div style="width:44px;height:44px;border-radius:9999px;overflow:hidden;border:3px solid ${border};box-shadow:0 4px 12px rgba(0,0,0,.65),0 0 0 4px rgba(255,255,255,.15);background:#222;"><img src="${p.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
+      : `<div style="width:26px;height:26px;border-radius:9999px;border:3.5px solid ${border};box-shadow:0 3px 10px rgba(0,0,0,.6),0 0 0 4px rgba(255,255,255,.15);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`;
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       sharedHandlerRef.current(p);
