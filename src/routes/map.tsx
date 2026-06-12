@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { SamplePin } from "@/lib/sample-data";
 import { PIN_TYPE_COLORS } from "@/lib/sample-data";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
+import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 
 export const Route = createFileRoute("/map")({
   head: () => ({
