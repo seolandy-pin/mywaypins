@@ -21,13 +21,16 @@ export const Route = createFileRoute("/map")({
 function MapScreen() {
   const [active, setActive] = useState<SamplePin | null>(null);
   const [open, setOpen] = useState(false);
-  const { channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
+  const { channels, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
+  const { data: channelMarkers } = useChannelMarkers(channels);
 
   return (
     <div className="relative h-[calc(100dvh-5rem)]">
       <MapView
         followedChannelIds={isAuthenticated ? channelIds : undefined}
         pinsRefreshKey={pinsVersion}
+        channelMarkers={channelMarkers ?? []}
+        onChannelMarkerClick={() => {}}
         onPinClick={(p) => {
           setActive(p);
           setOpen(true);
