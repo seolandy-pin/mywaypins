@@ -4,7 +4,7 @@ import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
-import { useNewVideoCount, markVideosSeen } from "@/lib/hooks/use-new-video-count";
+import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
 import { Plus, Maximize2, Search, Bell, MapPin, Plane, Bookmark, Youtube } from "lucide-react";
@@ -44,11 +44,9 @@ function Home() {
     ? allMarkers.filter((m) => m.channelId === selectedChannelId)
     : allMarkers;
 
-  const { count: newCount, refresh: refreshSeen } = useNewVideoCount(channelIds);
+  const { total: newCount } = useNewVideoFlags(channelIds);
 
   const handleBell = () => {
-    markVideosSeen();
-    refreshSeen();
     navigate({ to: "/following" });
   };
 
