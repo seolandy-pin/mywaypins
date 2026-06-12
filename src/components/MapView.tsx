@@ -159,7 +159,11 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
     const el = document.createElement("button");
     el.type = "button";
     el.className = "wp-channel-marker";
-    el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
+    // The opacity transition smooths Mapbox's per-frame occlusion toggling
+    // (0 ↔ 1) for markers near the globe's horizon, which otherwise shows as
+    // a hard on/off blink while the camera moves.
+    el.style.cssText =
+      "display:block;cursor:pointer;background:transparent;border:0;padding:0;transition:opacity .3s ease;";
     el.innerHTML = buildMarkerHtml(p, saved);
     const entry: MarkerEntry = {
       // occludedOpacity: 0 fully hides markers on the back of the globe so
@@ -307,7 +311,9 @@ let fetchSeq = 0;
 const pinCache = new Map<string, MapPin[]>();
 function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[]) {
   const base = !channelIds && !videoIds ? [...samplePins] : [];
-  const sig = `c:${channelIds?.join(",") ?? "*"}|v:${videoIds?.join(",") ?? "*"}`;
+  // Sort IDs so the signature is order-independent — a re-ordered (but
+  // identical) filter list must not trigger a refetch/marker swap.
+  const sig = `c:${channelIds ? [...channelIds].sort().join(",") : "*"}|v:${videoIds ? [...videoIds].sort().join(",") : "*"}`;
   // Same filter as last fetch and we already have data → just ensure markers
   // exist on this map instance (route remount) without re-fetching/re-flickering.
   if (sig === lastFetchSig && currentPins.length > 0) {
