@@ -8,6 +8,7 @@ import type { SamplePin } from "@/lib/sample-data";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
+import videoPinBadge from "@/assets/video-pin-badge.asset.json";
 
 export const Route = createFileRoute("/map")({
   head: () => ({
