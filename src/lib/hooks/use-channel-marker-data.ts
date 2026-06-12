@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { FollowedChannel } from "@/lib/hooks/use-followed-channels";
 
 export type ChannelMarker = {
+  id: string; // pin id (unique per marker)
   channelId: string;
   name: string;
   thumbnail: string | null;
@@ -12,8 +13,8 @@ export type ChannelMarker = {
 };
 
 /**
- * For each followed channel, find a representative pin (latest) so we can
- * drop a small channel-avatar marker on the home map.
+ * Returns ONE marker per pin (each video location) carrying the channel's
+ * avatar — these replace the generic circle dots on the home map.
  */
 export function useChannelMarkers(channels: FollowedChannel[]) {
   const ids = channels.map((c) => c.id);
@@ -23,20 +24,21 @@ export function useChannelMarkers(channels: FollowedChannel[]) {
     queryFn: async (): Promise<ChannelMarker[]> => {
       const { data } = await supabase
         .from("pins")
-        .select("channel_id, latitude, longitude, places(city_name, country_name)")
+        .select("id, channel_id, latitude, longitude, places(city_name, country_name)")
         .in("channel_id", ids)
         .not("latitude", "is", null)
         .not("longitude", "is", null)
         .order("created_at", { ascending: false })
         .limit(500);
       if (!data) return [];
-      const byChannel = new Map<string, ChannelMarker>();
+      const out: ChannelMarker[] = [];
       for (const row of data) {
-        if (!row.channel_id || byChannel.has(row.channel_id)) continue;
+        if (!row.channel_id) continue;
         const ch = channels.find((c) => c.id === row.channel_id);
         if (!ch) continue;
         const place = (row as { places: { city_name?: string; country_name?: string } | null }).places;
-        byChannel.set(row.channel_id, {
+        out.push({
+          id: row.id as string,
           channelId: row.channel_id,
           name: ch.name,
           thumbnail: ch.thumbnail_url,
@@ -45,7 +47,7 @@ export function useChannelMarkers(channels: FollowedChannel[]) {
           lng: row.longitude as number,
         });
       }
-      return Array.from(byChannel.values());
+      return out;
     },
   });
 }
