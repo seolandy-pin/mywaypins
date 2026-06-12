@@ -5,9 +5,10 @@ import { VideoSheet } from "@/components/VideoSheet";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
+import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
-import { Plus, Maximize2, Search, Bell, MapPin, Plane, Youtube } from "lucide-react";
+import { Plus, Maximize2, Search, Bell, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,11 +33,16 @@ function Home() {
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const { channels: followed, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
+  const { collections } = useMyCollections();
 
-  const mapFilter = isAuthenticated
+  const selectedCollection = collections.find((c) => c.id === selectedCollectionId) ?? null;
+  // Map filter priority: collection > selected channel > all followed.
+  const mapChannelFilter = isAuthenticated && !selectedCollection
     ? selectedChannelId ? [selectedChannelId] : channelIds
     : undefined;
+  const mapVideoFilter = selectedCollection ? selectedCollection.video_ids : undefined;
 
   const markersQuery = useChannelMarkers(followed);
   const allMarkers = markersQuery.data ?? [];
@@ -49,6 +55,15 @@ function Home() {
   const handleBell = () => {
     navigate({ to: "/following" });
   };
+
+  function pickChannel(id: string) {
+    setSelectedCollectionId(null);
+    setSelectedChannelId((cur) => (cur === id ? null : id));
+  }
+  function pickCollection(id: string) {
+    setSelectedChannelId(null);
+    setSelectedCollectionId((cur) => (cur === id ? null : id));
+  }
 
   return (
     <>
@@ -107,10 +122,11 @@ function Home() {
       <section className="mx-4">
         <div className="relative h-[58vh] min-h-[340px] w-full overflow-hidden rounded-3xl border border-border bg-surface-1 shadow-xl">
           <MapView
-            followedChannelIds={mapFilter}
+            followedChannelIds={mapChannelFilter}
+            videoIdsFilter={mapVideoFilter}
             pinsRefreshKey={pinsVersion}
             channelMarkers={visibleMarkers}
-            onChannelMarkerClick={(id) => setSelectedChannelId((cur) => (cur === id ? null : id))}
+            onChannelMarkerClick={(id) => pickChannel(id)}
             onPinClick={(p) => {
               setActivePin(p);
               setSheetOpen(true);
@@ -157,7 +173,7 @@ function Home() {
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => setSelectedChannelId((cur) => (cur === c.id ? null : c.id))}
+                  onClick={() => pickChannel(c.id)}
                   aria-pressed={isSelected}
                   className={`group relative flex w-[70px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 text-left ring-1 active:scale-95 ${
                     isSelected ? "ring-2 ring-primary" : "ring-border"
@@ -191,6 +207,62 @@ function Home() {
 
         )}
       </section>
+
+      {isAuthenticated && (
+        <section className="mt-2 px-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-display text-base font-bold">
+              <span className="flex size-6 items-center justify-center rounded-md bg-primary/15 text-primary">
+                <FolderHeart className="size-4" />
+              </span>
+              My Folders
+            </h2>
+            <Link to="/submit" search={{ tab: "video" } as never} className="flex cursor-pointer items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+              + Save Video
+            </Link>
+          </div>
+
+          {collections.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Create folders to save individual videos.{" "}
+              <Link to="/submit" search={{ tab: "video" } as never} className="text-primary underline">Save a video</Link>.
+            </p>
+          ) : (
+            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4">
+              {collections.map((c) => {
+                const isSelected = selectedCollectionId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => pickCollection(c.id)}
+                    aria-pressed={isSelected}
+                    className={`group relative flex w-[70px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 text-left ring-1 active:scale-95 ${
+                      isSelected ? "ring-2 ring-primary" : "ring-border"
+                    }`}
+                  >
+                    <div className="relative aspect-square w-full overflow-hidden bg-surface-2">
+                      {c.cover_image_url ? (
+                        <img src={c.cover_image_url} alt={c.name} className="size-full object-cover" />
+                      ) : (
+                        <div className="flex size-full items-center justify-center text-primary">
+                          <FolderHeart className="size-5" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-1">
+                      <p className="line-clamp-1 text-[9px] font-semibold leading-tight">{c.name}</p>
+                      <p className="line-clamp-1 text-[8px] leading-tight text-muted-foreground">
+                        {c.item_count} {c.item_count === 1 ? "video" : "videos"}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
     </>
   );
 }
