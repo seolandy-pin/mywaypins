@@ -87,8 +87,8 @@ function Home() {
               )}
             </button>
             <Link
-              to="/submit"
-              aria-label="Add channel"
+              to="/search"
+              aria-label="Search and add channels"
               className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-95"
             >
               <Plus className="size-[18px]" />
