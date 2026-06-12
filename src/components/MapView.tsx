@@ -26,7 +26,7 @@ async function fetchSavedPinIds(): Promise<Set<string>> {
 }
 
 // Pin enriched with the owning channel's avatar so map markers can show it.
-export type MapPin = SamplePin & { avatar?: string | null; isNew?: boolean };
+export type MapPin = SamplePin & { avatar?: string | null };
 
 async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
   if (channelIds && channelIds.length === 0) return [];
@@ -35,7 +35,7 @@ async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
     .select(
       "id, latitude, longitude, label, pin_type, channel_id, youtube_channels(name, thumbnail_url), videos(youtube_video_id, title, thumbnail_url, published_at), places(city_name, country_name)",
     )
-    .limit(5000);
+    .limit(1000);
   if (channelIds) {
     q = q.in("channel_id", channelIds);
   }
@@ -48,8 +48,6 @@ async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
       const ch = (p as { youtube_channels: { name?: string; thumbnail_url?: string } | null }).youtube_channels;
       const place = (p as { places: { city_name?: string; country_name?: string } | null }).places;
       const type = (ALLOWED_PIN_TYPES as string[]).includes(p.pin_type) ? (p.pin_type as PinType) : "new";
-      const publishedMs = v?.published_at ? new Date(v.published_at).getTime() : 0;
-      const isNew = publishedMs > Date.now() - 24 * 3600 * 1000;
       return {
         id: p.id,
         lat: p.latitude as number,
@@ -63,7 +61,6 @@ async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
         uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
         youtubeId: v?.youtube_video_id ?? "",
         avatar: ch?.thumbnail_url ?? null,
-        isNew,
       };
     });
 }
@@ -120,47 +117,23 @@ let htmlMarkers: mapboxgl.Marker[] = [];
 function renderHtmlMarkers(map: mapboxgl.Map) {
   htmlMarkers.forEach((m) => m.remove());
   htmlMarkers = [];
-  // Group pins by quantized coordinate; jitter siblings in a small ring so
-  // multiple videos at the same place are all visible instead of stacking.
-  const groups = new Map<string, MapPin[]>();
   for (const p of currentPins) {
-    const key = `${p.lat.toFixed(4)}|${p.lng.toFixed(4)}`;
-    const arr = groups.get(key);
-    if (arr) arr.push(p);
-    else groups.set(key, [p]);
-  }
-  for (const [, group] of groups) {
-    const n = group.length;
-    group.forEach((p, idx) => {
-      const saved = currentSavedIds.has(p.id);
-      const border = saved ? SAVED_PIN_COLOR : "#ffffff";
-      const el = document.createElement("button");
-      el.type = "button";
-      el.className = "wp-channel-marker";
-      el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;position:relative;";
-      const newDot = p.isNew
-        ? `<span style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:#ef4444;border:2px solid #0b0d12;box-shadow:0 0 0 1px #ef4444;"></span>`
-        : "";
-      el.innerHTML = (p.avatar
-        ? `<div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid ${border};box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;"><img src="${p.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
-        : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`) + newDot;
-      el.addEventListener("click", (e) => {
-        e.stopPropagation();
-        sharedHandlerRef.current(p);
-      });
-      let lng = p.lng;
-      let lat = p.lat;
-      if (n > 1) {
-        // Spiral offset (~10–35m on the ground): 0.0001° lat ≈ 11m.
-        const angle = (idx / n) * Math.PI * 2;
-        const radius = 0.0003 + Math.floor(idx / 8) * 0.0004;
-        lng += Math.cos(angle) * radius / Math.max(0.2, Math.cos(p.lat * Math.PI / 180));
-        lat += Math.sin(angle) * radius;
-      }
-      htmlMarkers.push(
-        new mapboxgl.Marker({ element: el, anchor: "center" }).setLngLat([lng, lat]).addTo(map),
-      );
+    const saved = currentSavedIds.has(p.id);
+    const border = saved ? SAVED_PIN_COLOR : "#ffffff";
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "wp-channel-marker";
+    el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
+    el.innerHTML = p.avatar
+      ? `<div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid ${border};box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;"><img src="${p.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
+      : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`;
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      sharedHandlerRef.current(p);
     });
+    htmlMarkers.push(
+      new mapboxgl.Marker({ element: el, anchor: "center" }).setLngLat([p.lng, p.lat]).addTo(map),
+    );
   }
 }
 

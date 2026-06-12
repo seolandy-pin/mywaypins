@@ -7,8 +7,7 @@ import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useNewVideoCount, markVideosSeen } from "@/lib/hooks/use-new-video-count";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
-import { Plus, Maximize2, Search, Bell, MapPin, Plane, Youtube } from "lucide-react";
-import { useNewVideosByChannel } from "@/lib/hooks/use-new-videos-by-channel";
+import { Plus, Maximize2, Search, Bell, MapPin, Plane, Bookmark, Youtube } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -46,7 +45,6 @@ function Home() {
     : allMarkers;
 
   const { count: newCount, refresh: refreshSeen } = useNewVideoCount(channelIds);
-  const { recentChannelIds } = useNewVideosByChannel(channelIds);
 
   const handleBell = () => {
     markVideosSeen();
@@ -155,9 +153,7 @@ function Home() {
           </p>
         ) : (
           <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4">
-            {followed.slice(0, 24).map((c) => {
-              const isNew = recentChannelIds.has(c.id);
-              return (
+            {followed.slice(0, 24).map((c) => (
               <Link
                 key={c.id}
                 to="/channel/$handle"
@@ -172,9 +168,9 @@ function Home() {
                       <Youtube className="size-4" />
                     </div>
                   )}
-                  {isNew && (
-                    <span className="absolute right-0.5 top-0.5 size-2 rounded-full bg-red-500 ring-2 ring-surface-1" />
-                  )}
+                  <span className="absolute right-0.5 top-0.5 flex size-3.5 items-center justify-center rounded-sm bg-background/70 text-foreground backdrop-blur-sm">
+                    <Bookmark className="size-2 fill-current" />
+                  </span>
                 </div>
                 <div className="p-1">
                   <p className="line-clamp-1 text-[9px] font-semibold leading-tight">{c.name}</p>
@@ -189,8 +185,7 @@ function Home() {
                   )}
                 </div>
               </Link>
-              );
-            })}
+            ))}
           </div>
 
         )}
