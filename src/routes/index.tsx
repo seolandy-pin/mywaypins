@@ -7,7 +7,8 @@ import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useNewVideoCount, markVideosSeen } from "@/lib/hooks/use-new-video-count";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
-import { Plus, Maximize2, Search, Bell, MapPin, Plane, Bookmark, Youtube } from "lucide-react";
+import { Plus, Maximize2, Search, Bell, MapPin, Plane, Youtube } from "lucide-react";
+import { useNewVideosByChannel } from "@/lib/hooks/use-new-videos-by-channel";
 
 export const Route = createFileRoute("/")({
   head: () => ({
