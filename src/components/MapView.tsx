@@ -469,7 +469,8 @@ export function MapView({
       loadedRef.current = true;
       render();
     }
-  }, [token, followedChannelIds?.join(","), videoIdsFilter?.join(","), pinsRefreshKey]);
+    // Sorted joins: a re-ordered (but identical) ID list must not re-run this effect.
+  }, [token, followedChannelIds ? [...followedChannelIds].sort().join(",") : "", videoIdsFilter ? [...videoIdsFilter].sort().join(",") : "", pinsRefreshKey]);
 
 
 
