@@ -11,9 +11,9 @@ import { Compass, Sparkles, Plus, Maximize2, Users } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "WanderPins — Discover travel through the map" },
+      { title: "MyWayPins — Discover travel through the map" },
       { name: "description", content: "Explore travel YouTube videos pinned to real places around the world." },
-      { property: "og:title", content: "WanderPins" },
+      { property: "og:title", content: "MyWayPins" },
       { property: "og:description", content: "Google Maps meets YouTube for travel discovery." },
     ],
   }),
@@ -48,7 +48,7 @@ function Home() {
       <header className="safe-top flex items-center justify-between px-5 pb-2 pt-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Welcome to</p>
-          <h1 className="font-display text-3xl font-bold leading-none">WanderPins</h1>
+          <h1 className="font-display text-2xl font-bold leading-none">MyWayPins</h1>
         </div>
         <Link to="/submit" className="flex size-10 items-center justify-center rounded-full bg-surface-1 active:scale-95">
           <Plus className="size-5" />
@@ -67,7 +67,7 @@ function Home() {
           />
           <div className="glass pointer-events-none absolute inset-x-3 top-3 flex items-center gap-2 rounded-2xl border border-border/60 px-3 py-2">
             <Compass className="size-4 text-primary" />
-            <span className="font-display text-sm font-semibold">
+            <span className="font-display text-xs font-semibold">
               {selectedChannel ? selectedChannel.name : isAuthenticated ? "Channels you follow" : "Explore the world"}
             </span>
             <div className="ml-auto flex items-center gap-2 text-[10px]">
@@ -180,7 +180,7 @@ function Home() {
 function Section({ title, icon: Icon, children }: { title: string; icon?: typeof Sparkles; children: React.ReactNode }) {
   return (
     <section className="mt-6 px-5">
-      <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold">
+      <h2 className="mb-3 flex items-center gap-2 font-display text-base font-bold">
         {Icon && <Icon className="size-4 text-primary" />} {title}
       </h2>
       {children}
