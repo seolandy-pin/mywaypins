@@ -25,7 +25,7 @@ export function useChannelMarkers(channels: FollowedChannel[]) {
     queryFn: async (): Promise<ChannelMarker[]> => {
       const { data } = await supabase
         .from("pins")
-        .select("id, channel_id, latitude, longitude, places(city_name, country_name)")
+        .select("id, video_id, channel_id, latitude, longitude, places(city_name, country_name)")
         .in("channel_id", ids)
         .not("latitude", "is", null)
         .not("longitude", "is", null)
@@ -41,6 +41,7 @@ export function useChannelMarkers(channels: FollowedChannel[]) {
         out.push({
           id: row.id as string,
           channelId: row.channel_id,
+          videoId: (row as { video_id?: string | null }).video_id ?? null,
           name: ch.name,
           thumbnail: ch.thumbnail_url,
           location: place?.country_name ?? place?.city_name ?? ch.current_location ?? "",
