@@ -338,11 +338,13 @@ export function MapView({
   onPinClick,
   followedChannelIds,
   videoIdsFilter,
+  savedVideoIds,
   pinsRefreshKey = 0,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
   videoIdsFilter?: string[];
+  savedVideoIds?: string[];
   pinsRefreshKey?: number;
   channelMarkers?: ChannelMarkerData[];
   onChannelMarkerClick?: (channelId: string) => void;
@@ -359,6 +361,11 @@ export function MapView({
   useEffect(() => {
     sharedHandlerRef.current = onPinClick;
   }, [onPinClick]);
+
+  useEffect(() => {
+    currentSavedVideoIds = new Set(savedVideoIds ?? []);
+    if (sharedMap) renderHtmlMarkers(sharedMap);
+  }, [savedVideoIds?.join(",")]);
 
   useEffect(() => {
     if (!token || !hostRef.current) return;
