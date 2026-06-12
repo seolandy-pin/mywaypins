@@ -2,11 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 
 import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
-import { PIN_TYPE_COLORS } from "@/lib/sample-data";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
-import { Compass, Sparkles, Plus, Maximize2, Users } from "lucide-react";
+import { Sparkles, Plus, Maximize2, Users } from "lucide-react";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -64,20 +64,8 @@ function Home() {
               setSheetOpen(true);
             }}
           />
-          <div className="glass pointer-events-none absolute inset-x-3 top-3 flex items-center gap-2 rounded-2xl border border-border/60 px-3 py-2">
-            <Compass className="size-4 text-primary" />
-            <span className="font-display text-xs font-semibold">
-              {selectedChannel ? selectedChannel.name : isAuthenticated ? "Channels you follow" : "Explore the world"}
-            </span>
-            <div className="ml-auto flex items-center gap-2 text-[10px]">
-              {(["trending", "new", "featured", "traveling"] as const).map((t) => (
-                <span key={t} className="flex items-center gap-1 capitalize text-muted-foreground">
-                  <span className="size-2 rounded-full" style={{ background: PIN_TYPE_COLORS[t] }} />
-                  {t}
-                </span>
-              ))}
-            </div>
-          </div>
+
+
           {selectedChannel && (
             <div className="glass absolute inset-x-3 bottom-14 flex items-center gap-3 rounded-2xl border border-border/60 p-2.5">
               {selectedChannel.thumbnail_url ? (
@@ -136,7 +124,7 @@ function Home() {
                 onClick={() => setSelectedChannelId(null)}
                 className={`flex w-20 shrink-0 cursor-pointer flex-col items-center text-center active:scale-95 ${selectedChannelId === null ? "" : "opacity-60"}`}
               >
-                <div className={`flex size-16 items-center justify-center rounded-full bg-surface-2 ring-2 ${selectedChannelId === null ? "ring-primary" : "ring-border"}`}>
+                <div className={`flex size-16 items-center justify-center rounded-xl bg-surface-2 ring-2 ${selectedChannelId === null ? "ring-primary" : "ring-border"}`}>
                   <Users className="size-6 text-primary" />
                 </div>
                 <p className="mt-1.5 line-clamp-1 text-xs font-medium">All</p>
@@ -154,11 +142,12 @@ function Home() {
                       <img
                         src={c.thumbnail_url}
                         alt={c.name}
-                        className={`size-16 rounded-full object-cover ring-2 ${isSelected ? "ring-primary" : "ring-border"}`}
+                        className={`size-16 rounded-xl object-cover ring-2 ${isSelected ? "ring-primary" : "ring-border"}`}
                       />
                     ) : (
-                      <div className={`size-16 rounded-full bg-surface-2 ring-2 ${isSelected ? "ring-primary" : "ring-border"}`} />
+                      <div className={`size-16 rounded-xl bg-surface-2 ring-2 ${isSelected ? "ring-primary" : "ring-border"}`} />
                     )}
+
                     <p className="mt-1.5 line-clamp-1 text-xs font-medium">{c.name}</p>
                     <p className="text-[10px] text-muted-foreground">
                       {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : ""}
