@@ -5,6 +5,7 @@ import type { FollowedChannel } from "@/lib/hooks/use-followed-channels";
 export type ChannelMarker = {
   id: string; // pin id (unique per marker)
   channelId: string;
+  videoId: string | null;
   name: string;
   thumbnail: string | null;
   location: string;
