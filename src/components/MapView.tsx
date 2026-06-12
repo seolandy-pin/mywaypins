@@ -28,15 +28,18 @@ async function fetchSavedPinIds(): Promise<Set<string>> {
 // Pin enriched with the owning channel's avatar so map markers can show it.
 export type MapPin = SamplePin & { avatar?: string | null };
 
-async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
-  if (channelIds && channelIds.length === 0) return [];
+async function fetchIngestedPins(channelIds?: string[], videoIds?: string[]): Promise<MapPin[]> {
+  if (videoIds && videoIds.length === 0) return [];
+  if (!videoIds && channelIds && channelIds.length === 0) return [];
   let q = supabase
     .from("pins")
     .select(
       "id, latitude, longitude, label, pin_type, channel_id, youtube_channels(name, thumbnail_url), videos(youtube_video_id, title, thumbnail_url, published_at), places(city_name, country_name)",
     )
     .limit(1000);
-  if (channelIds) {
+  if (videoIds) {
+    q = q.in("video_id", videoIds);
+  } else if (channelIds) {
     q = q.in("channel_id", channelIds);
   }
   const { data, error } = await q;
@@ -257,12 +260,12 @@ function boostLabelLegibility(map: mapboxgl.Map) {
   });
 }
 
-function renderPins(map: mapboxgl.Map, channelIds?: string[]) {
-  const base = !channelIds ? [...samplePins] : [];
+function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[]) {
+  const base = !channelIds && !videoIds ? [...samplePins] : [];
   // Only seed with base if there is no data yet — avoids clearing existing
   // ingested pins (causing a flicker) when the followed-channels query refetches.
-  if (currentPins.length === 0 || channelIds?.length === 0) setPinData(map, base);
-  Promise.all([fetchIngestedPins(channelIds), fetchSavedPinIds()])
+  if (currentPins.length === 0 || channelIds?.length === 0 || videoIds?.length === 0) setPinData(map, base);
+  Promise.all([fetchIngestedPins(channelIds, videoIds), fetchSavedPinIds()])
     .then(([pins, savedIds]) => setPinData(map, [...base, ...pins], savedIds))
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
 }
@@ -327,10 +330,12 @@ export type ChannelMarkerData = {
 export function MapView({
   onPinClick,
   followedChannelIds,
+  videoIdsFilter,
   pinsRefreshKey = 0,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
+  videoIdsFilter?: string[];
   pinsRefreshKey?: number;
   channelMarkers?: ChannelMarkerData[];
   onChannelMarkerClick?: (channelId: string) => void;
@@ -357,7 +362,7 @@ export function MapView({
 
     const render = () => {
       setupPinLayers(map);
-      renderPins(map, followedChannelIds);
+      renderPins(map, followedChannelIds, videoIdsFilter);
     };
     if (!loadedRef.current && !map.loaded()) {
       map.once("load", () => {
@@ -376,7 +381,7 @@ export function MapView({
       window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
       if (div.parentElement === host) host.removeChild(div);
     };
-  }, [token, followedChannelIds?.join(","), pinsRefreshKey]);
+  }, [token, followedChannelIds?.join(","), videoIdsFilter?.join(","), pinsRefreshKey]);
 
 
 
