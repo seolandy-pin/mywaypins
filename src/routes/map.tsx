@@ -82,9 +82,6 @@ function MapScreen() {
                   </div>
                   <div className="px-0.5 py-0.5">
                     <p className="line-clamp-1 text-[6px] font-semibold leading-tight">{c.name}</p>
-                    <p className="line-clamp-1 text-[5px] leading-tight text-muted-foreground">
-                      {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))}` : "—"}
-                    </p>
                     {c.current_location && (
                       <p className="flex items-center gap-0.5 text-[5px] leading-tight text-muted-foreground">
                         <MapPin className="size-[5px]" />
