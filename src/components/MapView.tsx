@@ -280,19 +280,38 @@ function ensureSharedMap(token: string) {
   return { div, map };
 }
 
+export type ChannelMarkerData = {
+  channelId: string;
+  name: string;
+  thumbnail: string | null;
+  location: string;
+  lat: number;
+  lng: number;
+};
+
 export function MapView({
   onPinClick,
   followedChannelIds,
   pinsRefreshKey = 0,
+  channelMarkers,
+  onChannelMarkerClick,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
   pinsRefreshKey?: number;
+  channelMarkers?: ChannelMarkerData[];
+  onChannelMarkerClick?: (channelId: string) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [token, setToken] = useState<string>("");
   const [tokenInput, setTokenInput] = useState("");
   const loadedRef = useRef(false);
+  const channelMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const onChannelMarkerClickRef = useRef(onChannelMarkerClick);
+
+  useEffect(() => {
+    onChannelMarkerClickRef.current = onChannelMarkerClick;
+  }, [onChannelMarkerClick]);
 
   useEffect(() => {
     setToken(getStoredToken());
@@ -331,6 +350,43 @@ export function MapView({
       if (div.parentElement === host) host.removeChild(div);
     };
   }, [token, followedChannelIds?.join(","), pinsRefreshKey]);
+
+  // Render channel avatar markers (HTML markers) on top of the map
+  useEffect(() => {
+    if (!token || !sharedMap) return;
+    const map = sharedMap;
+    // Clean up previous markers
+    channelMarkersRef.current.forEach((m) => m.remove());
+    channelMarkersRef.current = [];
+    if (!channelMarkers || channelMarkers.length === 0) return;
+
+    for (const cm of channelMarkers) {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "wp-channel-marker";
+      el.style.cssText = "display:flex;flex-direction:column;align-items:center;cursor:pointer;background:transparent;border:0;padding:0;transform:translateY(-4px);";
+      el.innerHTML = `
+        <div style="width:44px;height:44px;border-radius:9999px;overflow:hidden;border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.5);background:#222;">
+          ${cm.thumbnail ? `<img src="${cm.thumbnail}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" />` : ""}
+        </div>
+        <div style="margin-top:4px;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.85);line-height:1.1;white-space:nowrap;">${cm.name}</div>
+        ${cm.location ? `<div style="font-size:10px;color:#e5e7eb;text-shadow:0 1px 2px rgba(0,0,0,.85);line-height:1.1;white-space:nowrap;">${cm.location}</div>` : ""}
+      `;
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        onChannelMarkerClickRef.current?.(cm.channelId);
+      });
+      const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+        .setLngLat([cm.lng, cm.lat])
+        .addTo(map);
+      channelMarkersRef.current.push(marker);
+    }
+    return () => {
+      channelMarkersRef.current.forEach((m) => m.remove());
+      channelMarkersRef.current = [];
+    };
+  }, [token, channelMarkers]);
+
 
   if (!token) {
     return (
