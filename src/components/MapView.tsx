@@ -25,12 +25,15 @@ async function fetchSavedPinIds(): Promise<Set<string>> {
   return new Set(((data ?? []).map((r) => r.pin_id).filter(Boolean)) as string[]);
 }
 
-async function fetchIngestedPins(channelIds?: string[]): Promise<SamplePin[]> {
+// Pin enriched with the owning channel's avatar so map markers can show it.
+export type MapPin = SamplePin & { avatar?: string | null };
+
+async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
   if (channelIds && channelIds.length === 0) return [];
   let q = supabase
     .from("pins")
     .select(
-      "id, latitude, longitude, label, pin_type, channel_id, videos(youtube_video_id, title, thumbnail_url, published_at, youtube_channels(name)), places(city_name, country_name)",
+      "id, latitude, longitude, label, pin_type, channel_id, youtube_channels(name, thumbnail_url), videos(youtube_video_id, title, thumbnail_url, published_at), places(city_name, country_name)",
     )
     .limit(1000);
   if (channelIds) {
@@ -40,8 +43,9 @@ async function fetchIngestedPins(channelIds?: string[]): Promise<SamplePin[]> {
   if (error || !data) return [];
   return data
     .filter((p) => typeof p.latitude === "number" && typeof p.longitude === "number")
-    .map((p): SamplePin => {
-      const v = (p as { videos: { youtube_video_id?: string; title?: string; thumbnail_url?: string; published_at?: string; youtube_channels?: { name?: string } | null } | null }).videos;
+    .map((p): MapPin => {
+      const v = (p as { videos: { youtube_video_id?: string; title?: string; thumbnail_url?: string; published_at?: string } | null }).videos;
+      const ch = (p as { youtube_channels: { name?: string; thumbnail_url?: string } | null }).youtube_channels;
       const place = (p as { places: { city_name?: string; country_name?: string } | null }).places;
       const type = (ALLOWED_PIN_TYPES as string[]).includes(p.pin_type) ? (p.pin_type as PinType) : "new";
       return {
@@ -50,12 +54,13 @@ async function fetchIngestedPins(channelIds?: string[]): Promise<SamplePin[]> {
         lng: p.longitude as number,
         type,
         title: v?.title ?? p.label ?? "Untitled",
-        creator: v?.youtube_channels?.name ?? "Unknown",
+        creator: ch?.name ?? "Unknown",
         thumbnail: v?.thumbnail_url ?? "",
         location: [place?.city_name, place?.country_name].filter(Boolean).join(", ") || (p.label ?? ""),
         views: "",
         uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
         youtubeId: v?.youtube_video_id ?? "",
+        avatar: ch?.thumbnail_url ?? null,
       };
     });
 }
@@ -75,7 +80,7 @@ type PinHandler = (p: SamplePin) => void;
 let sharedDiv: HTMLDivElement | null = null;
 let sharedMap: mapboxgl.Map | null = null;
 const sharedHandlerRef: { current: PinHandler } = { current: () => {} };
-let currentPins: SamplePin[] = [];
+let currentPins: MapPin[] = [];
 let currentSavedIds: Set<string> = new Set();
 const PIN_SOURCE_ID = "wanderpins-source";
 
@@ -98,11 +103,38 @@ function pinsToGeoJSON(pins: SamplePin[], savedIds: Set<string>): GeoJSON.Featur
   };
 }
 
-function setPinData(map: mapboxgl.Map, pins: SamplePin[], savedIds?: Set<string>) {
+function setPinData(map: mapboxgl.Map, pins: MapPin[], savedIds?: Set<string>) {
   currentPins = pins;
   if (savedIds) currentSavedIds = savedIds;
   const src = map.getSource(PIN_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
   if (src) src.setData(pinsToGeoJSON(pins, currentSavedIds));
+  renderHtmlMarkers(map);
+}
+
+// Every pin is rendered as an HTML marker showing the channel's avatar
+// (falls back to a small colored dot when no avatar exists).
+let htmlMarkers: mapboxgl.Marker[] = [];
+function renderHtmlMarkers(map: mapboxgl.Map) {
+  htmlMarkers.forEach((m) => m.remove());
+  htmlMarkers = [];
+  for (const p of currentPins) {
+    const saved = currentSavedIds.has(p.id);
+    const border = saved ? SAVED_PIN_COLOR : "#ffffff";
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "wp-channel-marker";
+    el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
+    el.innerHTML = p.avatar
+      ? `<div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid ${border};box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;"><img src="${p.avatar}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`
+      : `<div style="width:18px;height:18px;border-radius:9999px;border:2.5px solid ${border};box-shadow:0 2px 6px rgba(0,0,0,.5);background:${saved ? SAVED_PIN_COLOR : PIN_TYPE_COLORS[p.type]};"></div>`;
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      sharedHandlerRef.current(p);
+    });
+    htmlMarkers.push(
+      new mapboxgl.Marker({ element: el, anchor: "center" }).setLngLat([p.lng, p.lat]).addTo(map),
+    );
+  }
 }
 
 function setupPinLayers(map: mapboxgl.Map) {
@@ -116,12 +148,14 @@ function setupPinLayers(map: mapboxgl.Map) {
     clusterMaxZoom: 6,
   });
 
-  // Cluster bubbles
+  // All circle/cluster layers are hidden — pins render as HTML avatar
+  // markers instead (see renderHtmlMarkers).
   map.addLayer({
     id: "wp-clusters",
     type: "circle",
     source: PIN_SOURCE_ID,
     filter: ["has", "point_count"],
+    layout: { visibility: "none" },
     paint: {
       "circle-color": "#5b8def",
       "circle-opacity": 0.9,
@@ -136,6 +170,7 @@ function setupPinLayers(map: mapboxgl.Map) {
     source: PIN_SOURCE_ID,
     filter: ["has", "point_count"],
     layout: {
+      visibility: "none",
       "text-field": ["get", "point_count_abbreviated"],
       "text-font": ["DIN Pro Medium", "Arial Unicode MS Bold"],
       "text-size": 13,
@@ -144,12 +179,12 @@ function setupPinLayers(map: mapboxgl.Map) {
     paint: { "text-color": "#ffffff" },
   });
 
-  // Invisible larger hit target for easier tapping on mobile
   map.addLayer({
     id: "wp-pin-hit",
     type: "circle",
     source: PIN_SOURCE_ID,
     filter: ["!", ["has", "point_count"]],
+    layout: { visibility: "none" },
     paint: {
       "circle-color": "#000",
       "circle-opacity": 0,
@@ -157,12 +192,12 @@ function setupPinLayers(map: mapboxgl.Map) {
     },
   });
 
-  // Visible single pins (saved pins are gold with a stronger ring)
   map.addLayer({
     id: "wp-pin",
     type: "circle",
     source: PIN_SOURCE_ID,
     filter: ["!", ["has", "point_count"]],
+    layout: { visibility: "none" },
     paint: {
       "circle-color": ["get", "color"],
       "circle-radius": ["case", ["==", ["get", "saved"], true], 11, 9],
@@ -293,8 +328,6 @@ export function MapView({
   onPinClick,
   followedChannelIds,
   pinsRefreshKey = 0,
-  channelMarkers,
-  onChannelMarkerClick,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
@@ -306,12 +339,6 @@ export function MapView({
   const [token, setToken] = useState<string>("");
   const [tokenInput, setTokenInput] = useState("");
   const loadedRef = useRef(false);
-  const channelMarkersRef = useRef<mapboxgl.Marker[]>([]);
-  const onChannelMarkerClickRef = useRef(onChannelMarkerClick);
-
-  useEffect(() => {
-    onChannelMarkerClickRef.current = onChannelMarkerClick;
-  }, [onChannelMarkerClick]);
 
   useEffect(() => {
     setToken(getStoredToken());
@@ -351,52 +378,6 @@ export function MapView({
     };
   }, [token, followedChannelIds?.join(","), pinsRefreshKey]);
 
-  // Render channel avatar markers (HTML markers) on top of the map.
-  // When channel markers are present, hide the generic circle pins so each
-  // location is represented by the channel's avatar instead.
-  useEffect(() => {
-    if (!token || !sharedMap) return;
-    const map = sharedMap;
-    channelMarkersRef.current.forEach((m) => m.remove());
-    channelMarkersRef.current = [];
-
-    const applyVisibility = () => {
-      const hasMarkers = !!(channelMarkers && channelMarkers.length > 0);
-      ["wp-pin", "wp-pin-hit"].forEach((id) => {
-        if (map.getLayer(id)) {
-          map.setLayoutProperty(id, "visibility", hasMarkers ? "none" : "visible");
-        }
-      });
-    };
-    if (map.isStyleLoaded()) applyVisibility();
-    else map.once("load", applyVisibility);
-
-    if (!channelMarkers || channelMarkers.length === 0) return;
-
-    for (const cm of channelMarkers) {
-      const el = document.createElement("button");
-      el.type = "button";
-      el.className = "wp-channel-marker";
-      el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
-      el.innerHTML = `
-        <div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;">
-          ${cm.thumbnail ? `<img src="${cm.thumbnail}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" />` : ""}
-        </div>
-      `;
-      el.addEventListener("click", (e) => {
-        e.stopPropagation();
-        onChannelMarkerClickRef.current?.(cm.channelId);
-      });
-      const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
-        .setLngLat([cm.lng, cm.lat])
-        .addTo(map);
-      channelMarkersRef.current.push(marker);
-    }
-    return () => {
-      channelMarkersRef.current.forEach((m) => m.remove());
-      channelMarkersRef.current = [];
-    };
-  }, [token, channelMarkers]);
 
 
 
