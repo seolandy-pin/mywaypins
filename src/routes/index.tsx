@@ -7,7 +7,7 @@ import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
-import { Plus, Maximize2, Search, Bell, MapPin, Plane, Bookmark, Youtube } from "lucide-react";
+import { Plus, Maximize2, Search, Bell, MapPin, Plane, Youtube } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
