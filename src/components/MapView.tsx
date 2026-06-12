@@ -8,7 +8,7 @@ import { Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const TOKEN_KEY = "wanderpins:mapbox_token";
-export const SAVED_PIN_COLOR = "#facc15";
+export const SAVED_PIN_COLOR = "#ff7350";
 export const FAVORITES_CHANGED_EVENT = "wanderpins:favorites-changed";
 
 type PinType = SamplePin["type"];
