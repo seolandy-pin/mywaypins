@@ -425,12 +425,30 @@ export function MapView({
     sharedHandlerRef.current = onPinClick;
   }, [onPinClick]);
 
+  // Attach the shared map div ONCE per mount. This effect must NOT depend on
+  // the filter props — re-running it detaches + re-appends the map container,
+  // which blinks the whole map (and every channel icon) on each channel click.
   useEffect(() => {
     if (!token || !hostRef.current) return;
     const { div, map } = ensureSharedMap(token);
     const host = hostRef.current;
-    host.appendChild(div);
+    if (div.parentElement !== host) host.appendChild(div);
     requestAnimationFrame(() => map.resize());
+
+    const onFavoritesChanged = () => refreshSavedHighlight(map);
+    window.addEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
+
+    return () => {
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
+      if (div.parentElement === host) host.removeChild(div);
+    };
+  }, [token]);
+
+  // Render pins when filters change — without touching the map container DOM.
+  useEffect(() => {
+    if (!token) return;
+    const map = sharedMap;
+    if (!map) return;
 
     const render = () => {
       setupPinLayers(map);
@@ -445,14 +463,6 @@ export function MapView({
       loadedRef.current = true;
       render();
     }
-
-    const onFavoritesChanged = () => refreshSavedHighlight(map);
-    window.addEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
-
-    return () => {
-      window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
-      if (div.parentElement === host) host.removeChild(div);
-    };
   }, [token, followedChannelIds?.join(","), videoIdsFilter?.join(","), pinsRefreshKey]);
 
 
