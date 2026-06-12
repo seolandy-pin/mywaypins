@@ -162,7 +162,12 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
     el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
     el.innerHTML = buildMarkerHtml(p, saved);
     const entry: MarkerEntry = {
-      marker: new mapboxgl.Marker({ element: el, anchor: "center" }).setLngLat([p.lng, p.lat]).addTo(map),
+      // occludedOpacity: 0 fully hides markers on the back of the globe so
+      // channel icons don't faintly flicker in/out in empty regions as the
+      // camera moves (Mapbox v3 default is 0.2, which causes the ghosting).
+      marker: new mapboxgl.Marker({ element: el, anchor: "center", occludedOpacity: 0 })
+        .setLngLat([p.lng, p.lat])
+        .addTo(map),
       el,
       saved,
       pin: p,
