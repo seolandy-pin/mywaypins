@@ -35,9 +35,11 @@ function MapScreen() {
   const { data: channelMarkers } = useChannelMarkers(channels);
 
   const selectedCollection = collections.find((c) => c.id === selectedCollectionId) ?? null;
-  const mapChannelFilter = isAuthenticated && !selectedCollection
-    ? selectedChannelId ? [selectedChannelId] : channelIds
-    : undefined;
+  const mapChannelFilter = !isAuthenticated
+    ? []
+    : selectedCollection
+      ? undefined
+      : selectedChannelId ? [selectedChannelId] : channelIds;
   const mapVideoFilter = selectedCollection ? selectedCollection.video_ids : undefined;
 
   const allMarkers = channelMarkers ?? [];
