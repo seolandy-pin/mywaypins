@@ -39,6 +39,7 @@ function MapScreen() {
     ? selectedChannelId ? [selectedChannelId] : channelIds
     : undefined;
   const mapVideoFilter = selectedCollection ? selectedCollection.video_ids : undefined;
+  const savedVideoIds = Array.from(new Set(collections.flatMap((c) => c.video_ids)));
 
   const allMarkers = channelMarkers ?? [];
   let visibleMarkers = allMarkers;
@@ -63,6 +64,7 @@ function MapScreen() {
       <MapView
         followedChannelIds={mapChannelFilter}
         videoIdsFilter={mapVideoFilter}
+        savedVideoIds={savedVideoIds}
         pinsRefreshKey={pinsVersion}
         channelMarkers={visibleMarkers}
         onChannelMarkerClick={(id) => pickChannel(id)}
