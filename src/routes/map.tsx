@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { SamplePin } from "@/lib/sample-data";
 import { PIN_TYPE_COLORS } from "@/lib/sample-data";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
+import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 
 export const Route = createFileRoute("/map")({
   head: () => ({
@@ -20,13 +21,16 @@ export const Route = createFileRoute("/map")({
 function MapScreen() {
   const [active, setActive] = useState<SamplePin | null>(null);
   const [open, setOpen] = useState(false);
-  const { channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
+  const { channels, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
+  const { data: channelMarkers } = useChannelMarkers(channels);
 
   return (
     <div className="relative h-[calc(100dvh-5rem)]">
       <MapView
         followedChannelIds={isAuthenticated ? channelIds : undefined}
         pinsRefreshKey={pinsVersion}
+        channelMarkers={channelMarkers ?? []}
+        onChannelMarkerClick={() => {}}
         onPinClick={(p) => {
           setActive(p);
           setOpen(true);
