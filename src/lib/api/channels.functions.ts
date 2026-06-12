@@ -83,19 +83,42 @@ export const processSubmission = createServerFn({ method: "POST" })
       .select()
       .single();
 
-    // Fetch latest videos and store (limit 10 for MVP)
-    const vidsRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ch.id}&maxResults=10&order=date&type=video&key=${YT_KEY}`,
-    );
-    const vidsJson = (await vidsRes.json()) as {
-      items?: Array<{
-        id: { videoId: string };
-        snippet: { title: string; description: string; publishedAt: string; thumbnails: { high?: { url: string } } };
-      }>;
+    // Fetch latest 20 + top 20 by view count (deduped), paginating if needed.
+    type SearchItem = {
+      id: { videoId: string };
+      snippet: { title: string; description: string; publishedAt: string; thumbnails: { high?: { url: string } } };
     };
+    type SearchResp = { items?: SearchItem[]; nextPageToken?: string };
+
+    async function fetchN(order: "date" | "viewCount", want: number, exclude: Set<string>): Promise<SearchItem[]> {
+      const out: SearchItem[] = [];
+      let pageToken: string | undefined;
+      // cap pagination to avoid runaway quota use
+      for (let page = 0; page < 5 && out.length < want; page++) {
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ch.id}&maxResults=50&order=${order}&type=video&key=${YT_KEY}${pageToken ? `&pageToken=${pageToken}` : ""}`;
+        const r = await fetch(url);
+        if (!r.ok) break;
+        const j = (await r.json()) as SearchResp;
+        for (const it of j.items ?? []) {
+          const id = it.id?.videoId;
+          if (!id || exclude.has(id)) continue;
+          exclude.add(id);
+          out.push(it);
+          if (out.length >= want) break;
+        }
+        if (!j.nextPageToken) break;
+        pageToken = j.nextPageToken;
+      }
+      return out;
+    }
+
+    const seen = new Set<string>();
+    const latest = await fetchN("date", 20, seen);
+    const top = await fetchN("viewCount", 20, seen);
+    const allVideos = [...latest, ...top];
 
     const videoIdsToExtract: string[] = [];
-    for (const v of vidsJson.items ?? []) {
+    for (const v of allVideos) {
       const { data: vidRow } = await supabaseAdmin
         .from("videos")
         .upsert(
