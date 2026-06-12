@@ -60,7 +60,16 @@ function Home() {
             <h1 className="font-display text-3xl font-bold leading-none">
               <span className="text-foreground">MyWay</span>
               <span className="text-primary">Pins</span>
-              <MapPin className="ml-0.5 inline size-5 -translate-y-1 fill-primary text-primary" />
+              <span className="relative ml-0.5 inline-block size-5 -translate-y-1 align-baseline">
+                <MapPin className="size-5 fill-primary text-primary" strokeWidth={0} />
+                <svg
+                  viewBox="0 0 24 24"
+                  className="absolute left-1/2 top-[38%] size-2.5 -translate-x-1/2 -translate-y-1/2 fill-background"
+                  aria-hidden="true"
+                >
+                  <polygon points="8,5 8,19 19,12" />
+                </svg>
+              </span>
             </h1>
             <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
               Your Travel YouTube Collection
