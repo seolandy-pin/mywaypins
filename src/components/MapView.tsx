@@ -160,10 +160,10 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
     el.type = "button";
     el.className = "wp-channel-marker";
     // The opacity transition smooths Mapbox's per-frame occlusion toggling
-    // (0 ↔ 1) for markers near the globe's horizon, which otherwise shows as
-    // a hard on/off blink while the camera moves.
+    // (0 ↔ 1) for markers near the globe's horizon. Kept short so markers
+    // disappear quickly without lingering ghosts.
     el.style.cssText =
-      "display:block;cursor:pointer;background:transparent;border:0;padding:0;transition:opacity .3s ease;";
+      "display:block;cursor:pointer;background:transparent;border:0;padding:0;transition:opacity .12s ease-out;";
     el.innerHTML = buildMarkerHtml(p, saved);
     const entry: MarkerEntry = {
       // occludedOpacity: 0 fully hides markers on the back of the globe so
