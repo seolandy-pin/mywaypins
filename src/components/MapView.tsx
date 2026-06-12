@@ -377,13 +377,11 @@ export function MapView({
       const el = document.createElement("button");
       el.type = "button";
       el.className = "wp-channel-marker";
-      el.style.cssText = "display:flex;flex-direction:column;align-items:center;cursor:pointer;background:transparent;border:0;padding:0;transform:translateY(-2px);";
+      el.style.cssText = "display:block;cursor:pointer;background:transparent;border:0;padding:0;";
       el.innerHTML = `
         <div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.55);background:#222;">
           ${cm.thumbnail ? `<img src="${cm.thumbnail}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" />` : ""}
         </div>
-        <div style="margin-top:2px;font-size:9px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9);line-height:1.05;white-space:nowrap;">${cm.name}</div>
-        ${cm.location ? `<div style="font-size:8px;color:#e5e7eb;text-shadow:0 1px 2px rgba(0,0,0,.9);line-height:1.05;white-space:nowrap;">${cm.location}</div>` : ""}
       `;
       el.addEventListener("click", (e) => {
         e.stopPropagation();
