@@ -6,6 +6,7 @@ import { Bell, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth/use-auth";
 import { Button } from "@/components/ui/button";
 import { listMyFollowedChannels } from "@/lib/follows.functions";
+import { useNewVideosByChannel, markChannelSeen } from "@/lib/hooks/use-new-videos-by-channel";
 
 export const Route = createFileRoute("/following")({
   head: () => ({ meta: [{ title: "Following — WanderPins" }] }),
