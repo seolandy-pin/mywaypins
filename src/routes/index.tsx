@@ -2,11 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 
 import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
-import { PIN_TYPE_COLORS } from "@/lib/sample-data";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
-import { Compass, Sparkles, Plus, Maximize2, Users } from "lucide-react";
+import { Sparkles, Plus, Maximize2, Users } from "lucide-react";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
