@@ -26,7 +26,7 @@ async function fetchSavedPinIds(): Promise<Set<string>> {
 }
 
 // Pin enriched with the owning channel's avatar so map markers can show it.
-export type MapPin = SamplePin & { avatar?: string | null };
+export type MapPin = SamplePin & { avatar?: string | null; isNew?: boolean };
 
 async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
   if (channelIds && channelIds.length === 0) return [];
