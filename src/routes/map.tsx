@@ -93,6 +93,12 @@ function MapScreen() {
                           <Youtube className="size-3" />
                         </div>
                       )}
+                      <img
+                        src={videoPinBadge.url}
+                        alt=""
+                        aria-hidden="true"
+                        className="pointer-events-none absolute -right-0.5 -top-0.5 size-2.5 drop-shadow"
+                      />
                     </div>
                     <div className="px-0.5 py-0.5">
                       <p className="line-clamp-1 text-[6px] font-semibold leading-tight">{c.name}</p>
