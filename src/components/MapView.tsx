@@ -298,6 +298,7 @@ function boostLabelLegibility(map: mapboxgl.Map) {
 }
 
 let lastFetchSig = "";
+let fetchSeq = 0;
 function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[]) {
   const base = !channelIds && !videoIds ? [...samplePins] : [];
   const sig = `c:${channelIds?.join(",") ?? "*"}|v:${videoIds?.join(",") ?? "*"}`;
@@ -307,12 +308,21 @@ function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[
     renderHtmlMarkers(map);
     return;
   }
-  // Only seed with base if there is no data yet — avoids clearing existing
-  // ingested pins (causing a flicker) when the followed-channels query refetches.
-  if (currentPins.length === 0 || channelIds?.length === 0 || videoIds?.length === 0) setPinData(map, base);
+  // Filter changed → clear stale pins immediately so the previous channel's
+  // markers don't linger on screen while the new fetch is in flight.
+  if (sig !== lastFetchSig) {
+    setPinData(map, base);
+  } else if (currentPins.length === 0 || channelIds?.length === 0 || videoIds?.length === 0) {
+    setPinData(map, base);
+  }
   lastFetchSig = sig;
+  const mySeq = ++fetchSeq;
   Promise.all([fetchIngestedPins(channelIds, videoIds), fetchSavedPinIds()])
-    .then(([pins, savedIds]) => setPinData(map, [...base, ...pins], savedIds))
+    .then(([pins, savedIds]) => {
+      // Drop stale responses if another filter change happened in the meantime.
+      if (mySeq !== fetchSeq) return;
+      setPinData(map, [...base, ...pins], savedIds);
+    })
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
 }
 
