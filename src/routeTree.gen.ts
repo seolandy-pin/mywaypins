@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileSavedRouteImport } from './routes/profile_.saved'
 import { Route as ProfileCollectionsRouteImport } from './routes/profile_.collections'
 import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
+import { Route as ApiPublicReingestAllRouteImport } from './routes/api/public/reingest-all'
 
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
@@ -70,6 +71,11 @@ const ChannelHandleRoute = ChannelHandleRouteImport.update({
   path: '/channel/$handle',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicReingestAllRoute = ApiPublicReingestAllRouteImport.update({
+  id: '/api/public/reingest-all',
+  path: '/api/public/reingest-all',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/channel/$handle': typeof ChannelHandleRoute
   '/profile/collections': typeof ProfileCollectionsRoute
   '/profile/saved': typeof ProfileSavedRoute
+  '/api/public/reingest-all': typeof ApiPublicReingestAllRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/channel/$handle': typeof ChannelHandleRoute
   '/profile/collections': typeof ProfileCollectionsRoute
   '/profile/saved': typeof ProfileSavedRoute
+  '/api/public/reingest-all': typeof ApiPublicReingestAllRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/channel/$handle': typeof ChannelHandleRoute
   '/profile_/collections': typeof ProfileCollectionsRoute
   '/profile_/saved': typeof ProfileSavedRoute
+  '/api/public/reingest-all': typeof ApiPublicReingestAllRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/channel/$handle'
     | '/profile/collections'
     | '/profile/saved'
+    | '/api/public/reingest-all'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/channel/$handle'
     | '/profile/collections'
     | '/profile/saved'
+    | '/api/public/reingest-all'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/channel/$handle'
     | '/profile_/collections'
     | '/profile_/saved'
+    | '/api/public/reingest-all'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   ChannelHandleRoute: typeof ChannelHandleRoute
   ProfileCollectionsRoute: typeof ProfileCollectionsRoute
   ProfileSavedRoute: typeof ProfileSavedRoute
+  ApiPublicReingestAllRoute: typeof ApiPublicReingestAllRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChannelHandleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/reingest-all': {
+      id: '/api/public/reingest-all'
+      path: '/api/public/reingest-all'
+      fullPath: '/api/public/reingest-all'
+      preLoaderRoute: typeof ApiPublicReingestAllRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,7 +266,18 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelHandleRoute: ChannelHandleRoute,
   ProfileCollectionsRoute: ProfileCollectionsRoute,
   ProfileSavedRoute: ProfileSavedRoute,
+  ApiPublicReingestAllRoute: ApiPublicReingestAllRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
