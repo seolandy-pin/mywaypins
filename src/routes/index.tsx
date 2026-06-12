@@ -46,6 +46,7 @@ function Home() {
     : allMarkers;
 
   const { count: newCount, refresh: refreshSeen } = useNewVideoCount(channelIds);
+  const { recentChannelIds } = useNewVideosByChannel(channelIds);
 
   const handleBell = () => {
     markVideosSeen();
