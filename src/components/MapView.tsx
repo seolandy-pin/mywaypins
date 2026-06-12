@@ -315,12 +315,19 @@ function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[
     return;
   }
   if (sig !== lastFetchSig) {
-    // Filter changed → show cached pins for this filter immediately if we have
-    // them; otherwise clear stale pins so the old channel's markers don't linger.
+    // Filter changed. If we have cached pins for this filter, swap to them
+    // immediately. Otherwise KEEP the previous markers visible while the new
+    // fetch is in flight — clearing first causes a visible blank/flicker.
+    // `renderHtmlMarkers` diffs old → new when the fetch resolves, so pins
+    // not in the new filter are removed in a single seamless swap.
     const cached = pinCache.get(sig);
-    setPinData(map, cached ?? base);
-  } else if (currentPins.length === 0 || channelIds?.length === 0 || videoIds?.length === 0) {
-    setPinData(map, base);
+    if (cached) {
+      setPinData(map, cached);
+    } else if (channelIds?.length === 0 || videoIds?.length === 0) {
+      // Nothing to fetch (no filter selected) → clear right away.
+      setPinData(map, base);
+    }
+    // else: leave existing markers in place until the fetch completes.
   }
   lastFetchSig = sig;
   const mySeq = ++fetchSeq;
