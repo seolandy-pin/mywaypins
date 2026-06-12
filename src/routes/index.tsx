@@ -47,7 +47,6 @@ function Home() {
     <>
       <header className="safe-top flex items-center justify-between px-5 pb-2 pt-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Welcome to</p>
           <h1 className="font-display text-2xl font-bold leading-none">MyWayPins</h1>
         </div>
         <Link to="/submit" className="flex size-10 items-center justify-center rounded-full bg-surface-1 active:scale-95">
