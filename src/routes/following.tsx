@@ -6,6 +6,7 @@ import { Bell, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth/use-auth";
 import { Button } from "@/components/ui/button";
 import { listMyFollowedChannels } from "@/lib/follows.functions";
+import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
 
 export const Route = createFileRoute("/following")({
   head: () => ({ meta: [{ title: "Following — WanderPins" }] }),
@@ -55,6 +56,10 @@ function FollowingScreen() {
     } | null;
   }>;
 
+  const channelIdList = rows.map((r) => r.youtube_channels?.id).filter((x): x is string => Boolean(x));
+  const { counts, markChannelSeen } = useNewVideoFlags(channelIdList);
+
+
   return (
     <>
       <header className="safe-top px-5 pt-4">
@@ -77,18 +82,34 @@ function FollowingScreen() {
             {rows.map((r) => {
               const c = r.youtube_channels;
               if (!c) return null;
+              const newCount = counts[c.id] ?? 0;
               return (
                 <li key={c.id}>
                   <Link
                     to="/channel/$handle"
                     params={{ handle: c.youtube_channel_id }}
+                    onClick={() => markChannelSeen(c.id)}
                     className="flex cursor-pointer items-center gap-3 rounded-2xl bg-card p-3 transition-colors hover:bg-accent"
                   >
                     {c.thumbnail_url && (
-                      <img src={c.thumbnail_url} alt={c.name} className="size-14 shrink-0 rounded-full object-cover" />
+                      <div className="relative shrink-0">
+                        <img src={c.thumbnail_url} alt={c.name} className="size-14 rounded-full object-cover" />
+                        {newCount > 0 && (
+                          <span className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground ring-2 ring-card">
+                            {newCount > 9 ? "9+" : newCount}
+                          </span>
+                        )}
+                      </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="line-clamp-1 text-sm font-semibold">{c.name}</p>
+                      <p className="line-clamp-1 text-sm font-semibold">
+                        {c.name}
+                        {newCount > 0 && (
+                          <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 align-middle text-[10px] font-semibold text-primary">
+                            New
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : "Subscribers hidden"}
                         {c.is_currently_traveling && c.current_location ? ` · In ${c.current_location}` : ""}
