@@ -48,6 +48,8 @@ async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
       const ch = (p as { youtube_channels: { name?: string; thumbnail_url?: string } | null }).youtube_channels;
       const place = (p as { places: { city_name?: string; country_name?: string } | null }).places;
       const type = (ALLOWED_PIN_TYPES as string[]).includes(p.pin_type) ? (p.pin_type as PinType) : "new";
+      const publishedMs = v?.published_at ? new Date(v.published_at).getTime() : 0;
+      const isNew = publishedMs > Date.now() - 24 * 3600 * 1000;
       return {
         id: p.id,
         lat: p.latitude as number,
@@ -61,6 +63,7 @@ async function fetchIngestedPins(channelIds?: string[]): Promise<MapPin[]> {
         uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
         youtubeId: v?.youtube_video_id ?? "",
         avatar: ch?.thumbnail_url ?? null,
+        isNew,
       };
     });
 }
