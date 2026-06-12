@@ -39,9 +39,12 @@ function Home() {
 
   const selectedCollection = collections.find((c) => c.id === selectedCollectionId) ?? null;
   // Map filter priority: collection > selected channel > all followed.
-  const mapChannelFilter = isAuthenticated && !selectedCollection
-    ? selectedChannelId ? [selectedChannelId] : channelIds
-    : undefined;
+  // When signed out, pass an empty array so no pins (and no sample data) render.
+  const mapChannelFilter = !isAuthenticated
+    ? []
+    : selectedCollection
+      ? undefined
+      : selectedChannelId ? [selectedChannelId] : channelIds;
   const mapVideoFilter = selectedCollection ? selectedCollection.video_ids : undefined;
 
   const markersQuery = useChannelMarkers(followed);
