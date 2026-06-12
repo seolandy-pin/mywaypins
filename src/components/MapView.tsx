@@ -145,17 +145,15 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
     const saved = currentSavedIds.has(p.id);
     const existing = htmlMarkerMap.get(p.id);
     if (existing) {
-      // Reuse: update DOM only if saved state changed, ensure attached to this map.
+      // Reuse: update DOM only if saved state changed.
       if (existing.saved !== saved) {
         existing.el.innerHTML = buildMarkerHtml(p, saved);
         existing.saved = saved;
       }
       existing.pin = p;
-      if (existing.marker.getElement().ownerDocument !== document || !document.body.contains(existing.marker.getElement())) {
-        existing.marker.addTo(map);
-      } else {
-        existing.marker.addTo(map);
-      }
+      // IMPORTANT: only re-attach if detached — Marker.addTo() internally
+      // removes + re-adds the DOM node, which causes a visible flash.
+      if (!existing.el.isConnected) existing.marker.addTo(map);
       continue;
     }
     const el = document.createElement("button");
@@ -299,6 +297,9 @@ function boostLabelLegibility(map: mapboxgl.Map) {
 
 let lastFetchSig = "";
 let fetchSeq = 0;
+// Cache fetched pin sets per filter signature so re-selecting a channel shows
+// its markers instantly (no blank flash while the network request is in flight).
+const pinCache = new Map<string, MapPin[]>();
 function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[]) {
   const base = !channelIds && !videoIds ? [...samplePins] : [];
   const sig = `c:${channelIds?.join(",") ?? "*"}|v:${videoIds?.join(",") ?? "*"}`;
@@ -308,10 +309,11 @@ function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[
     renderHtmlMarkers(map);
     return;
   }
-  // Filter changed → clear stale pins immediately so the previous channel's
-  // markers don't linger on screen while the new fetch is in flight.
   if (sig !== lastFetchSig) {
-    setPinData(map, base);
+    // Filter changed → show cached pins for this filter immediately if we have
+    // them; otherwise clear stale pins so the old channel's markers don't linger.
+    const cached = pinCache.get(sig);
+    setPinData(map, cached ?? base);
   } else if (currentPins.length === 0 || channelIds?.length === 0 || videoIds?.length === 0) {
     setPinData(map, base);
   }
@@ -321,7 +323,9 @@ function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[
     .then(([pins, savedIds]) => {
       // Drop stale responses if another filter change happened in the meantime.
       if (mySeq !== fetchSeq) return;
-      setPinData(map, [...base, ...pins], savedIds);
+      const all = [...base, ...pins];
+      pinCache.set(sig, all);
+      setPinData(map, all, savedIds);
     })
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
 }
