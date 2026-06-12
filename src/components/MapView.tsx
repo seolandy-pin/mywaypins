@@ -163,7 +163,7 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
     // (0 ↔ 1) for markers near the globe's horizon. Kept short so markers
     // disappear quickly without lingering ghosts.
     el.style.cssText =
-      "display:block;cursor:pointer;background:transparent;border:0;padding:0;transition:opacity .01s ease-out;";
+      "display:block;cursor:pointer;background:transparent;border:0;padding:0;transition:opacity .001s ease-out;";
     el.innerHTML = buildMarkerHtml(p, saved);
     const entry: MarkerEntry = {
       // occludedOpacity: 0 fully hides markers on the back of the globe so
