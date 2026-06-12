@@ -143,34 +143,34 @@ function Home() {
             No channels yet. <Link to="/search" className="text-primary underline">Find creators</Link>.
           </p>
         ) : (
-          <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-4">
-            {followed.slice(0, 12).map((c) => (
+          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4">
+            {followed.slice(0, 24).map((c) => (
               <Link
                 key={c.id}
                 to="/channel/$handle"
                 params={{ handle: c.youtube_channel_id }}
-                className="group relative flex w-[140px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-2xl bg-surface-1 ring-1 ring-border active:scale-95"
+                className="group relative flex w-[70px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 ring-1 ring-border active:scale-95"
               >
                 <div className="relative aspect-square w-full overflow-hidden bg-surface-2">
                   {c.thumbnail_url ? (
                     <img src={c.thumbnail_url} alt={c.name} className="size-full object-cover" />
                   ) : (
                     <div className="flex size-full items-center justify-center text-muted-foreground">
-                      <Youtube className="size-8" />
+                      <Youtube className="size-4" />
                     </div>
                   )}
-                  <span className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-md bg-background/70 text-foreground backdrop-blur-sm">
-                    <Bookmark className="size-3.5 fill-current" />
+                  <span className="absolute right-0.5 top-0.5 flex size-3.5 items-center justify-center rounded-sm bg-background/70 text-foreground backdrop-blur-sm">
+                    <Bookmark className="size-2 fill-current" />
                   </span>
                 </div>
-                <div className="p-2.5">
-                  <p className="line-clamp-1 text-[13px] font-semibold">{c.name}</p>
-                  <p className="line-clamp-1 text-[11px] text-muted-foreground">
-                    {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subscribers` : "—"}
+                <div className="p-1">
+                  <p className="line-clamp-1 text-[9px] font-semibold leading-tight">{c.name}</p>
+                  <p className="line-clamp-1 text-[8px] leading-tight text-muted-foreground">
+                    {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : "—"}
                   </p>
                   {c.current_location && (
-                    <p className="mt-0.5 flex items-center gap-0.5 text-[11px] text-muted-foreground">
-                      <MapPin className="size-3" />
+                    <p className="mt-0.5 flex items-center gap-0.5 text-[8px] leading-tight text-muted-foreground">
+                      <MapPin className="size-2" />
                       <span className="line-clamp-1">{c.current_location}</span>
                     </p>
                   )}
@@ -178,6 +178,7 @@ function Home() {
               </Link>
             ))}
           </div>
+
         )}
       </section>
     </>
