@@ -44,7 +44,7 @@ function Home() {
     ? allMarkers.filter((m) => m.channelId === selectedChannelId)
     : allMarkers;
 
-  const { total: newCount } = useNewVideoFlags(channelIds);
+  const { total: newCount, counts: newCounts, markChannelSeen } = useNewVideoFlags(channelIds);
 
   const handleBell = () => {
     navigate({ to: "/following" });
@@ -151,11 +151,14 @@ function Home() {
           </p>
         ) : (
           <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4">
-            {followed.slice(0, 24).map((c) => (
+            {followed.slice(0, 24).map((c) => {
+              const hasNew = (newCounts[c.id] ?? 0) > 0;
+              return (
               <Link
                 key={c.id}
                 to="/channel/$handle"
                 params={{ handle: c.youtube_channel_id }}
+                onClick={() => markChannelSeen(c.id)}
                 className="group relative flex w-[70px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 ring-1 ring-border active:scale-95"
               >
                 <div className="relative aspect-square w-full overflow-hidden bg-surface-2">
@@ -166,9 +169,21 @@ function Home() {
                       <Youtube className="size-4" />
                     </div>
                   )}
-                  <span className="absolute right-0.5 top-0.5 flex size-3.5 items-center justify-center rounded-sm bg-background/70 text-foreground backdrop-blur-sm">
-                    <Bookmark className="size-2 fill-current" />
-                  </span>
+                  {hasNew && (
+                    <span
+                      aria-label="New video"
+                      className="absolute right-0.5 top-0.5 inline-block size-4 drop-shadow"
+                    >
+                      <MapPin className="size-4 fill-primary text-primary" strokeWidth={0} />
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="absolute left-1/2 top-[38%] size-2 -translate-x-1/2 -translate-y-1/2 fill-background"
+                        aria-hidden="true"
+                      >
+                        <polygon points="8,5 8,19 19,12" />
+                      </svg>
+                    </span>
+                  )}
                 </div>
                 <div className="p-1">
                   <p className="line-clamp-1 text-[9px] font-semibold leading-tight">{c.name}</p>
