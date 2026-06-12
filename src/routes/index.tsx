@@ -154,7 +154,9 @@ function Home() {
           </p>
         ) : (
           <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4">
-            {followed.slice(0, 24).map((c) => (
+            {followed.slice(0, 24).map((c) => {
+              const isNew = recentChannelIds.has(c.id);
+              return (
               <Link
                 key={c.id}
                 to="/channel/$handle"
@@ -169,9 +171,9 @@ function Home() {
                       <Youtube className="size-4" />
                     </div>
                   )}
-                  <span className="absolute right-0.5 top-0.5 flex size-3.5 items-center justify-center rounded-sm bg-background/70 text-foreground backdrop-blur-sm">
-                    <Bookmark className="size-2 fill-current" />
-                  </span>
+                  {isNew && (
+                    <span className="absolute right-0.5 top-0.5 size-2 rounded-full bg-red-500 ring-2 ring-surface-1" />
+                  )}
                 </div>
                 <div className="p-1">
                   <p className="line-clamp-1 text-[9px] font-semibold leading-tight">{c.name}</p>
