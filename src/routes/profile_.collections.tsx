@@ -148,7 +148,9 @@ function CollectionsScreen() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{c.name}</p>
-                    <p className="text-[11px] text-muted-foreground">Tap to {isOpen ? "collapse" : "view videos"}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {counts[c.id] ?? 0} video{(counts[c.id] ?? 0) === 1 ? "" : "s"} · Tap to {isOpen ? "collapse" : "view videos"}
+                    </p>
                   </div>
                   {isOpen ? <ChevronDown className="size-4 text-muted-foreground" /> : <ChevronRight className="size-4 text-muted-foreground" />}
                 </button>
