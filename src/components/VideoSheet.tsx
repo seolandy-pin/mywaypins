@@ -92,8 +92,10 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
               {playing ? (
                 <iframe
                   className="size-full"
-                  src={`https://www.youtube-nocookie.com/embed/${pin.youtubeId}?autoplay=1&modestbranding=1&rel=0&playsinline=1`}
-                  allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+                  src={`https://www.youtube.com/embed/${pin.youtubeId}?autoplay=1&playsinline=1&rel=0`}
+                  title={pin.title}
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 />
               ) : (
