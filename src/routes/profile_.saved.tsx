@@ -8,6 +8,7 @@ import { VideoSheet } from "@/components/VideoSheet";
 import type { SamplePin } from "@/lib/sample-data";
 import { PIN_TYPE_COLORS } from "@/lib/sample-data";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/profile_/saved")({
   head: () => ({ meta: [{ title: "Saved — WanderPins" }] }),
