@@ -61,7 +61,7 @@ function SubmitScreen() {
       <div className="mx-5 mt-4 grid grid-cols-2 gap-1 rounded-xl bg-surface-1 p-1 text-xs font-semibold">
         <button
           type="button"
-          onClick={() => navigate({ to: "/search" })}
+          onClick={() => navigate({ to: "/submit", search: { tab: "channel" } })}
           className={`rounded-lg py-2 ${tab === "channel" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
         >
           <Youtube className="mr-1 inline size-3.5" /> Channel
