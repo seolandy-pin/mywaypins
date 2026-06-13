@@ -93,13 +93,6 @@ function Home() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              to="/search"
-              aria-label="Search creators"
-              className="flex size-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-surface-1 active:scale-95"
-            >
-              <Search className="size-[18px]" />
-            </Link>
             <button
               type="button"
               onClick={handleBell}
