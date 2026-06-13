@@ -117,7 +117,14 @@ export const saveVideoToCollection = createServerFn({ method: "POST" })
 
     const videoId = parseYoutubeVideoId(data.videoUrl);
     console.log("[saveVideoToCollection] videoUrl=", JSON.stringify(data.videoUrl), "parsedId=", videoId);
-    if (!videoId) throw new Error(`Could not parse a YouTube video ID from URL: ${data.videoUrl}`);
+    if (!videoId) {
+      // Detect channel URL and give a clearer message
+      const isChannelUrl = /youtube\.com\/(@|channel\/|c\/|user\/)/i.test(data.videoUrl);
+      if (isChannelUrl) {
+        throw new Error("That looks like a channel URL. Paste a video link like https://youtube.com/watch?v=... or https://youtu.be/...");
+      }
+      throw new Error("Could not find a YouTube video ID. Use a link like https://youtube.com/watch?v=... or https://youtu.be/...");
+    }
 
     const YT_KEY = process.env.YOUTUBE_API_KEY;
     if (!YT_KEY) throw new Error("YOUTUBE_API_KEY not configured");
