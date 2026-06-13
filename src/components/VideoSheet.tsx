@@ -92,7 +92,7 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
               {playing ? (
                 <iframe
                   className="size-full"
-                  src={`https://www.youtube.com/embed/${pin.youtubeId}?autoplay=1`}
+                  src={`https://www.youtube-nocookie.com/embed/${pin.youtubeId}?autoplay=1&modestbranding=1&rel=0&playsinline=1`}
                   allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
                   allowFullScreen
                 />
