@@ -59,7 +59,7 @@ function rowToPin(r: FavoriteRow): SamplePin | null {
 }
 
 function SavedScreen() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<FavoriteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<SamplePin | null>(null);
