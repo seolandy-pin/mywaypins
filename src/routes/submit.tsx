@@ -37,10 +37,6 @@ export const Route = createFileRoute("/submit")({
 function SubmitScreen() {
   const navigate = useNavigate();
   const { tab = "video" } = Route.useSearch();
-  if (tab === "channel") {
-    navigate({ to: "/search", replace: true });
-    return null;
-  }
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
