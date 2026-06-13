@@ -8,6 +8,7 @@ import { VideoSheet } from "@/components/VideoSheet";
 import type { SamplePin } from "@/lib/sample-data";
 import { PIN_TYPE_COLORS } from "@/lib/sample-data";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/profile_/saved")({
   head: () => ({ meta: [{ title: "Saved — WanderPins" }] }),
@@ -58,7 +59,7 @@ function rowToPin(r: FavoriteRow): SamplePin | null {
 }
 
 function SavedScreen() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<FavoriteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<SamplePin | null>(null);
@@ -99,7 +100,18 @@ function SavedScreen() {
         <h1 className="font-display text-xl font-bold">Saved</h1>
       </header>
 
-      {loading ? (
+      {authLoading ? (
+        <div className="p-6 text-sm text-muted-foreground">Loading…</div>
+      ) : !isAuthenticated ? (
+        <div className="safe-top flex min-h-[70vh] flex-col items-center justify-center gap-3 px-6 text-center">
+          <div className="rounded-full bg-surface-2 p-4"><Bookmark className="size-8 text-primary" /></div>
+          <h2 className="font-display text-2xl font-bold">Your saved places</h2>
+          <p className="text-sm text-muted-foreground text-balance">
+            Sign in to save places, build travel collections, and follow creators.
+          </p>
+          <Button asChild size="lg" className="mt-2"><Link to="/auth">Sign in or create account</Link></Button>
+        </div>
+      ) : loading ? (
         <div className="p-6 text-sm text-muted-foreground">Loading…</div>
       ) : rows.length === 0 ? (
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-2 p-6 text-center">
