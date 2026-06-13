@@ -26,6 +26,7 @@ type CollectionVideo = {
 function CollectionsScreen() {
   const { user } = useAuth();
   const [items, setItems] = useState<Collection[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -41,7 +42,21 @@ function CollectionsScreen() {
       .select("id,name,description,cover_image_url")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
-    setItems((data as Collection[]) ?? []);
+    const cols = (data as Collection[]) ?? [];
+    setItems(cols);
+
+    if (cols.length > 0) {
+      const ids = cols.map((c) => c.id);
+      const { data: ciData } = await supabase
+        .from("collection_items")
+        .select("collection_id")
+        .in("collection_id", ids);
+      const byCol: Record<string, number> = {};
+      for (const row of (ciData ?? []) as { collection_id: string }[]) {
+        byCol[row.collection_id] = (byCol[row.collection_id] ?? 0) + 1;
+      }
+      setCounts(byCol);
+    }
   }
   useEffect(() => { refresh(); }, [user]);
 
@@ -133,7 +148,9 @@ function CollectionsScreen() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{c.name}</p>
-                    <p className="text-[11px] text-muted-foreground">Tap to {isOpen ? "collapse" : "view videos"}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {counts[c.id] ?? 0} video{(counts[c.id] ?? 0) === 1 ? "" : "s"} · Tap to {isOpen ? "collapse" : "view videos"}
+                    </p>
                   </div>
                   {isOpen ? <ChevronDown className="size-4 text-muted-foreground" /> : <ChevronRight className="size-4 text-muted-foreground" />}
                 </button>
