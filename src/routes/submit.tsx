@@ -21,14 +21,18 @@ type SubmitSearch = { tab?: "channel" | "video" };
 export const Route = createFileRoute("/submit")({
   head: () => ({ meta: [{ title: "Add to MyWayPins" }] }),
   validateSearch: (s: Record<string, unknown>): SubmitSearch => ({
-    tab: s.tab === "video" ? "video" : "channel",
+    tab: s.tab === "channel" ? "channel" : "video",
   }),
   component: SubmitScreen,
 });
 
 function SubmitScreen() {
   const navigate = useNavigate();
-  const { tab = "channel" } = Route.useSearch();
+  const { tab = "video" } = Route.useSearch();
+  if (tab === "channel") {
+    navigate({ to: "/search", replace: true });
+    return null;
+  }
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
@@ -53,7 +57,7 @@ function SubmitScreen() {
       <div className="mx-5 mt-4 grid grid-cols-2 gap-1 rounded-xl bg-surface-1 p-1 text-xs font-semibold">
         <button
           type="button"
-          onClick={() => navigate({ to: "/submit", search: { tab: "channel" } })}
+          onClick={() => navigate({ to: "/search" })}
           className={`rounded-lg py-2 ${tab === "channel" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
         >
           <Youtube className="mr-1 inline size-3.5" /> Channel
