@@ -135,6 +135,20 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
               <Play className="size-4" /> Watch Video
             </Button>
             <Button
+              variant="outline"
+              size="lg"
+              asChild
+              aria-label="Open on YouTube"
+            >
+              <a
+                href={`https://www.youtube.com/watch?v=${pin.youtubeId}`}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <ExternalLink className="size-4" />
+              </a>
+            </Button>
+            <Button
               variant={saved ? "default" : "outline"}
               size="lg"
               onClick={handleSave}
