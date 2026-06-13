@@ -1,12 +1,7 @@
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-} from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Bookmark, MapPin, Eye, Calendar, Play, Youtube } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import { Bookmark, MapPin, Eye, Calendar, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { SamplePin } from "@/lib/sample-data";
 import { PIN_TYPE_COLORS } from "@/lib/sample-data";
@@ -15,34 +10,7 @@ import { toast } from "sonner";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function getYouTubeWatchUrl(videoId: string) {
-  return `https://www.youtube.com/watch?v=${videoId}`;
-}
-
-function getYouTubeEmbedUrl(videoId: string) {
-  const params = new URLSearchParams({
-    autoplay: "1",
-    playsinline: "1",
-    rel: "0",
-    modestbranding: "1",
-    enablejsapi: "1",
-  });
-  if (typeof window !== "undefined") {
-    params.set("origin", window.location.origin);
-    params.set("widget_referrer", window.location.origin);
-  }
-  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
-}
-
-export function VideoSheet({
-  pin,
-  open,
-  onOpenChange,
-}: {
-  pin: SamplePin | null;
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-}) {
+export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null; open: boolean; onOpenChange: (o: boolean) => void }) {
   const [playing, setPlaying] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -54,9 +22,7 @@ export function VideoSheet({
     setSaved(false);
     if (!open || !pinId || !UUID_RE.test(pinId)) return;
     (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
       const { data } = await supabase
         .from("favorites")
@@ -67,24 +33,16 @@ export function VideoSheet({
         .maybeSingle();
       if (!cancelled) setSaved(!!data);
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [open, pinId]);
 
   if (!pin) return null;
 
-  const watchUrl = getYouTubeWatchUrl(pin.youtubeId);
-
   async function handleSave() {
     if (!pin || saving) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      toast.error("Sign in to save places", {
-        action: { label: "Sign in", onClick: () => (window.location.href = "/auth") },
-      });
+      toast.error("Sign in to save places", { action: { label: "Sign in", onClick: () => (window.location.href = "/auth") } });
       return;
     }
     // Real ingested pins have UUID ids; sample pins ("1","2"...) can't be saved.
@@ -126,38 +84,20 @@ export function VideoSheet({
   }
 
   return (
-    <Drawer
-      open={open}
-      onOpenChange={(o) => {
-        onOpenChange(o);
-        if (!o) setPlaying(false);
-      }}
-    >
+    <Drawer open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setPlaying(false); }}>
       <DrawerContent className="bg-card text-card-foreground border-border max-h-[92vh]">
         <div className="mx-auto w-full max-w-[520px] overflow-y-auto">
           <DrawerHeader className="px-0 pt-0">
             <div className="relative aspect-video w-full overflow-hidden rounded-t-2xl bg-black">
               {playing ? (
-                <>
-                  <iframe
-                    className="absolute inset-0 size-full"
-                    src={getYouTubeEmbedUrl(pin.youtubeId)}
-                    title={pin.title}
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                  />
-                  <a
-                    href={watchUrl}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    title="Open on YouTube"
-                    aria-label="Open on YouTube"
-                    className="absolute bottom-2 right-2 z-50 flex size-12 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-xl ring-2 ring-background/70 transition hover:bg-primary/90 active:scale-95"
-                  >
-                    <Youtube className="size-7 fill-current" />
-                  </a>
-                </>
+                <iframe
+                  className="size-full"
+                  src={`https://www.youtube.com/embed/${pin.youtubeId}?autoplay=1&playsinline=1&rel=0`}
+                  title={pin.title}
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
               ) : (
                 <>
                   <img src={pin.thumbnail} alt={pin.title} className="size-full object-cover" />
@@ -181,9 +121,7 @@ export function VideoSheet({
             </div>
             <div className="px-5 pt-4 text-left">
               <DrawerTitle className="font-display text-xl leading-tight">{pin.title}</DrawerTitle>
-              <DrawerDescription className="sr-only">
-                {pin.location || pin.creator}
-              </DrawerDescription>
+              <DrawerDescription className="sr-only">{pin.location || pin.creator}</DrawerDescription>
               <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">{pin.creator}</span>
               </div>
@@ -198,9 +136,18 @@ export function VideoSheet({
             <Button className="flex-1" size="lg" onClick={() => setPlaying(true)}>
               <Play className="size-4" /> Watch Video
             </Button>
-            <Button variant="outline" size="lg" asChild aria-label="Open on YouTube">
-              <a href={watchUrl} target="_blank" rel="noreferrer noopener">
-                <Youtube className="size-4" />
+            <Button
+              variant="outline"
+              size="lg"
+              asChild
+              aria-label="Open on YouTube"
+            >
+              <a
+                href={`https://www.youtube.com/watch?v=${pin.youtubeId}`}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <ExternalLink className="size-4" />
               </a>
             </Button>
             <Button
