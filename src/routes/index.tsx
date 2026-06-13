@@ -31,6 +31,8 @@ function formatNum(n: number) {
 
 function Home() {
   const navigate = useNavigate();
+  const channelsScrollRef = useDragScroll<HTMLDivElement>();
+  const collectionsScrollRef = useDragScroll<HTMLDivElement>();
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
