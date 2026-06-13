@@ -1,5 +1,6 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 import { Bookmark, MapPin, Eye, Calendar, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { SamplePin } from "@/lib/sample-data";
@@ -91,7 +92,7 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
               {playing ? (
                 <iframe
                   className="size-full"
-                  src={`https://www.youtube.com/embed/${pin.youtubeId}?autoplay=1`}
+                  src={`https://www.youtube-nocookie.com/embed/${pin.youtubeId}?autoplay=1&modestbranding=1&rel=0&playsinline=1`}
                   allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
                   allowFullScreen
                 />
@@ -132,6 +133,20 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
           <div className="flex gap-2 px-5 pb-6 safe-bottom">
             <Button className="flex-1" size="lg" onClick={() => setPlaying(true)}>
               <Play className="size-4" /> Watch Video
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              asChild
+              aria-label="Open on YouTube"
+            >
+              <a
+                href={`https://www.youtube.com/watch?v=${pin.youtubeId}`}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <ExternalLink className="size-4" />
+              </a>
             </Button>
             <Button
               variant={saved ? "default" : "outline"}
