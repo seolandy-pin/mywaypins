@@ -140,7 +140,7 @@ export function VideoSheet({
               {playing ? (
                 <>
                   <iframe
-                    className="size-full"
+                    className="absolute inset-0 size-full"
                     src={getYouTubeEmbedUrl(pin.youtubeId)}
                     title={pin.title}
                     referrerPolicy="strict-origin-when-cross-origin"
@@ -153,9 +153,9 @@ export function VideoSheet({
                     rel="noreferrer noopener"
                     title="Open on YouTube"
                     aria-label="Open on YouTube"
-                    className="absolute bottom-3 right-3 z-10 hidden size-10 items-center justify-center rounded-full bg-background/85 text-primary shadow-lg ring-1 ring-border backdrop-blur transition hover:bg-surface-2 active:scale-95 md:flex"
+                    className="absolute bottom-2 right-2 z-50 flex size-12 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-xl ring-2 ring-background/70 transition hover:bg-primary/90 active:scale-95"
                   >
-                    <Youtube className="size-5 fill-current" />
+                    <Youtube className="size-7 fill-current" />
                   </a>
                 </>
               ) : (
