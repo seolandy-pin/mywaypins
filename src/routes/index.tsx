@@ -8,7 +8,7 @@ import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
-import { Plus, Maximize2, Search, Bell, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
+import { Plus, Maximize2, Bell, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -93,13 +93,6 @@ function Home() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              to="/search"
-              aria-label="Search creators"
-              className="flex size-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-surface-1 active:scale-95"
-            >
-              <Search className="size-[18px]" />
-            </Link>
             <button
               type="button"
               onClick={handleBell}
