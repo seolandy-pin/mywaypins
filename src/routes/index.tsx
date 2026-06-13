@@ -165,7 +165,8 @@ function Home() {
             No channels yet. <Link to="/search" className="text-primary underline">Find creators</Link>.
           </p>
         ) : (
-          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4">
+          <div ref={channelsScrollRef} className="no-scrollbar -mx-4 flex cursor-grab gap-2 overflow-x-auto px-4 pb-4 select-none">
+
             {followed.slice(0, 24).map((c) => {
               const isSelected = selectedChannelId === c.id;
               return (
