@@ -1,5 +1,6 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 import { Bookmark, MapPin, Eye, Calendar, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { SamplePin } from "@/lib/sample-data";
