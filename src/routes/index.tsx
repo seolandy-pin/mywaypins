@@ -8,6 +8,7 @@ import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
+import { useDragScroll } from "@/lib/hooks/use-drag-scroll";
 import { Plus, Maximize2, Bell, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -30,6 +31,8 @@ function formatNum(n: number) {
 
 function Home() {
   const navigate = useNavigate();
+  const channelsScrollRef = useDragScroll<HTMLDivElement>();
+  const collectionsScrollRef = useDragScroll<HTMLDivElement>();
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
@@ -162,7 +165,8 @@ function Home() {
             No channels yet. <Link to="/search" className="text-primary underline">Find creators</Link>.
           </p>
         ) : (
-          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4">
+          <div ref={channelsScrollRef} className="no-scrollbar -mx-4 flex cursor-grab gap-2 overflow-x-auto px-4 pb-4 select-none">
+
             {followed.slice(0, 24).map((c) => {
               const isSelected = selectedChannelId === c.id;
               return (
@@ -227,7 +231,7 @@ function Home() {
               <Link to="/submit" search={{ tab: "video" } as never} className="text-primary underline">Save a video</Link>.
             </p>
           ) : (
-            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4">
+            <div ref={collectionsScrollRef} className="no-scrollbar -mx-4 flex cursor-grab gap-2 overflow-x-auto px-4 pb-4 select-none">
               {collections.map((c) => {
                 const isSelected = selectedCollectionId === c.id;
                 return (
