@@ -116,7 +116,8 @@ export const saveVideoToCollection = createServerFn({ method: "POST" })
     if (!col) throw new Error("Collection not found");
 
     const videoId = parseYoutubeVideoId(data.videoUrl);
-    if (!videoId) throw new Error("Could not parse a YouTube video ID from that URL");
+    console.log("[saveVideoToCollection] videoUrl=", JSON.stringify(data.videoUrl), "parsedId=", videoId);
+    if (!videoId) throw new Error(`Could not parse a YouTube video ID from URL: ${data.videoUrl}`);
 
     const YT_KEY = process.env.YOUTUBE_API_KEY;
     if (!YT_KEY) throw new Error("YOUTUBE_API_KEY not configured");
