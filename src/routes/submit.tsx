@@ -153,11 +153,17 @@ function VideoForm() {
       toast.error("Pick or create a folder first");
       return;
     }
+    const trimmed = videoUrl.trim();
+    if (/youtube\.com\/(@|channel\/|c\/|user\/)/i.test(trimmed)) {
+      toast.error("That's a channel URL. Paste a single video link (youtube.com/watch?v=... or youtu.be/...).");
+      return;
+    }
     setSaving(true);
     try {
-      const r = await saveFn({ data: { videoUrl: videoUrl.trim(), collectionId } });
+      const r = await saveFn({ data: { videoUrl: trimmed, collectionId } });
       toast.success(`Saved! ${r.pins} location${r.pins === 1 ? "" : "s"} pinned.`);
       qc.invalidateQueries({ queryKey: ["my-collections"] });
+      qc.invalidateQueries({ queryKey: ["pins"] });
       navigate({ to: "/" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save video");
@@ -165,6 +171,7 @@ function VideoForm() {
       setSaving(false);
     }
   }
+
 
   return (
     <>
