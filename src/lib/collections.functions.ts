@@ -4,20 +4,32 @@ import { z } from "zod";
 import { extractLocations } from "@/lib/api/channels.functions";
 
 function parseYoutubeVideoId(url: string): string | null {
+  const raw = url.trim();
+  // Bare 11-char ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) return raw;
+  // Add protocol if missing so URL() can parse
+  const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
   try {
-    const u = new URL(url.trim());
-    if (u.hostname.includes("youtu.be")) {
-      return u.pathname.replace(/^\//, "").split("/")[0] || null;
+    const u = new URL(withProto);
+    const host = u.hostname.replace(/^www\./, "").replace(/^m\./, "");
+    if (host === "youtu.be") {
+      const id = u.pathname.replace(/^\//, "").split("/")[0];
+      return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
     }
-    const v = u.searchParams.get("v");
-    if (v) return v;
-    const m = u.pathname.match(/\/(shorts|embed|live)\/([^/?#]+)/);
-    if (m) return m[2];
-    return null;
+    if (host.endsWith("youtube.com") || host.endsWith("youtube-nocookie.com")) {
+      const v = u.searchParams.get("v");
+      if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) return v;
+      const m = u.pathname.match(/\/(shorts|embed|live|v)\/([a-zA-Z0-9_-]{11})/);
+      if (m) return m[2];
+    }
   } catch {
-    return null;
+    // fall through
   }
+  // Last-resort: find any 11-char token after v= or / 
+  const fallback = raw.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})(?:[?&#/]|$)/);
+  return fallback ? fallback[1] : null;
 }
+
 
 export const listMyCollections = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
