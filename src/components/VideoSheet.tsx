@@ -180,9 +180,7 @@ export function VideoSheet({
               )}
             </div>
             <div className="px-5 pt-4 text-left">
-              <DrawerTitle className="font-display text-xl leading-tight">
-                {pin.title}
-              </DrawerTitle>
+              <DrawerTitle className="font-display text-xl leading-tight">{pin.title}</DrawerTitle>
               <DrawerDescription className="sr-only">
                 {pin.location || pin.creator}
               </DrawerDescription>
