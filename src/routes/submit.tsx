@@ -21,7 +21,7 @@ type SubmitSearch = { tab?: "channel" | "video" };
 export const Route = createFileRoute("/submit")({
   head: () => ({ meta: [{ title: "Add to MyWayPins" }] }),
   validateSearch: (s: Record<string, unknown>): SubmitSearch => ({
-    tab: s.tab === "video" ? "video" : "channel",
+    tab: s.tab === "channel" ? "channel" : "video",
   }),
   component: SubmitScreen,
 });
