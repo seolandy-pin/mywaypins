@@ -1,7 +1,7 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
-import { Bookmark, MapPin, Eye, Calendar, Play } from "lucide-react";
+import { Bookmark, MapPin, Eye, Calendar, Play, Youtube } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { SamplePin } from "@/lib/sample-data";
 import { PIN_TYPE_COLORS } from "@/lib/sample-data";
@@ -9,6 +9,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function getYouTubeWatchUrl(videoId: string) {
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+function getYouTubeEmbedUrl(videoId: string) {
+  const params = new URLSearchParams({
+    autoplay: "1",
+    playsinline: "1",
+    rel: "0",
+    modestbranding: "1",
+    enablejsapi: "1",
+  });
+  if (typeof window !== "undefined") {
+    params.set("origin", window.location.origin);
+    params.set("widget_referrer", window.location.origin);
+  }
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+}
 
 export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null; open: boolean; onOpenChange: (o: boolean) => void }) {
   const [playing, setPlaying] = useState(false);
@@ -37,6 +56,8 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
   }, [open, pinId]);
 
   if (!pin) return null;
+
+  const watchUrl = getYouTubeWatchUrl(pin.youtubeId);
 
   async function handleSave() {
     if (!pin || saving) return;
@@ -90,14 +111,26 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
           <DrawerHeader className="px-0 pt-0">
             <div className="relative aspect-video w-full overflow-hidden rounded-t-2xl bg-black">
               {playing ? (
-                <iframe
-                  className="size-full"
-                  src={`https://www.youtube.com/embed/${pin.youtubeId}?autoplay=1&playsinline=1&rel=0`}
-                  title={pin.title}
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
+                <>
+                  <iframe
+                    className="size-full"
+                    src={getYouTubeEmbedUrl(pin.youtubeId)}
+                    title={pin.title}
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                  <a
+                    href={watchUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    title="Open on YouTube"
+                    aria-label="Open on YouTube"
+                    className="absolute right-3 top-3 z-10 hidden size-9 items-center justify-center rounded-full bg-background/85 text-primary shadow-lg ring-1 ring-border backdrop-blur transition hover:bg-surface-2 active:scale-95 md:flex"
+                  >
+                    <Youtube className="size-5 fill-current" />
+                  </a>
+                </>
               ) : (
                 <>
                   <img src={pin.thumbnail} alt={pin.title} className="size-full object-cover" />
@@ -143,7 +176,7 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
               aria-label="Open on YouTube"
             >
               <a
-                href={`https://www.youtube.com/watch?v=${pin.youtubeId}`}
+                href={watchUrl}
                 target="_blank"
                 rel="noreferrer noopener"
               >
