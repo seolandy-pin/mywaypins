@@ -231,7 +231,7 @@ function Home() {
               <Link to="/submit" search={{ tab: "video" } as never} className="text-primary underline">Save a video</Link>.
             </p>
           ) : (
-            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4">
+            <div ref={collectionsScrollRef} className="no-scrollbar -mx-4 flex cursor-grab gap-2 overflow-x-auto px-4 pb-4 select-none">
               {collections.map((c) => {
                 const isSelected = selectedCollectionId === c.id;
                 return (
