@@ -73,7 +73,7 @@ function ProfileScreen() {
         <Item to="/profile/saved" icon={Bookmark} label="Saved places & videos" />
         <Item to="/profile/collections" icon={FolderHeart} label="Travel collections" />
         <Item to="/following" icon={Users} label="Creators you follow" />
-        <Item to="/search" icon={Plus} label="Submit a channel" />
+        <Item to="/submit" icon={Plus} label="Submit a channel" />
       </nav>
 
       <div className="mt-6 px-5 pb-10">
