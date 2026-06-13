@@ -126,7 +126,13 @@ export function VideoSheet({
   }
 
   return (
-    <Drawer open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setPlaying(false); }}>
+    <Drawer
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) setPlaying(false);
+      }}
+    >
       <DrawerContent className="bg-card text-card-foreground border-border max-h-[92vh]">
         <div className="mx-auto w-full max-w-[520px] overflow-y-auto">
           <DrawerHeader className="px-0 pt-0">
@@ -147,7 +153,7 @@ export function VideoSheet({
                     rel="noreferrer noopener"
                     title="Open on YouTube"
                     aria-label="Open on YouTube"
-                    className="absolute right-3 top-3 z-10 hidden size-9 items-center justify-center rounded-full bg-background/85 text-primary shadow-lg ring-1 ring-border backdrop-blur transition hover:bg-surface-2 active:scale-95 md:flex"
+                    className="absolute bottom-3 right-3 z-10 hidden size-10 items-center justify-center rounded-full bg-background/85 text-primary shadow-lg ring-1 ring-border backdrop-blur transition hover:bg-surface-2 active:scale-95 md:flex"
                   >
                     <Youtube className="size-5 fill-current" />
                   </a>
@@ -174,8 +180,12 @@ export function VideoSheet({
               )}
             </div>
             <div className="px-5 pt-4 text-left">
-              <DrawerTitle className="font-display text-xl leading-tight">{pin.title}</DrawerTitle>
-              <DrawerDescription className="sr-only">{pin.location || pin.creator}</DrawerDescription>
+              <DrawerTitle className="font-display text-xl leading-tight">
+                {pin.title}
+              </DrawerTitle>
+              <DrawerDescription className="sr-only">
+                {pin.location || pin.creator}
+              </DrawerDescription>
               <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">{pin.creator}</span>
               </div>
@@ -190,18 +200,9 @@ export function VideoSheet({
             <Button className="flex-1" size="lg" onClick={() => setPlaying(true)}>
               <Play className="size-4" /> Watch Video
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              asChild
-              aria-label="Open on YouTube"
-            >
-              <a
-                href={watchUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                <ExternalLink className="size-4" />
+            <Button variant="outline" size="lg" asChild aria-label="Open on YouTube">
+              <a href={watchUrl} target="_blank" rel="noreferrer noopener">
+                <Youtube className="size-4" />
               </a>
             </Button>
             <Button
