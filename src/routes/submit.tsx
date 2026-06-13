@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth/use-auth";
 import { submitChannel } from "@/lib/api/channels.functions";
 import {
@@ -14,7 +14,15 @@ import {
 } from "@/lib/collections.functions";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import { toast } from "sonner";
-import { ChevronLeft, Youtube, Sparkles, FolderPlus, Film } from "lucide-react";
+import { ChevronLeft, Youtube, Sparkles, FolderPlus, Film, Search as SearchIcon, MapPin } from "lucide-react";
+import { searchYouTubeChannelsFn } from "@/lib/youtube.functions";
+import { samplePins, featuredDestinations, popularCreators } from "@/lib/sample-data";
+
+function formatNum(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`;
+  return String(n);
+}
 
 type SubmitSearch = { tab?: "channel" | "video" };
 
