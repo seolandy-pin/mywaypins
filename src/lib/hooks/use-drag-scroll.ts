@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Enables click-and-drag horizontal scrolling on a container (desktop).
- * Touch scrolling continues to work natively. Suppresses click events
- * fired right after a drag so child buttons don't trigger accidentally.
+ * Enables click-and-drag horizontal scrolling plus vertical-wheel→horizontal
+ * scrolling on a container (desktop UX). Touch scrolling continues to work
+ * natively. Suppresses click events fired right after a drag so child buttons
+ * don't trigger accidentally.
  */
 export function useDragScroll<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
@@ -16,6 +17,7 @@ export function useDragScroll<T extends HTMLElement>() {
     let didDrag = false;
     let startX = 0;
     let startScroll = 0;
+    let suppressClickUntil = 0;
 
     const onPointerDown = (e: PointerEvent) => {
       if (e.pointerType !== "mouse") return;
@@ -27,10 +29,9 @@ export function useDragScroll<T extends HTMLElement>() {
     const onPointerMove = (e: PointerEvent) => {
       if (!isDown) return;
       const dx = e.clientX - startX;
-      if (Math.abs(dx) > 4) {
+      if (!didDrag && Math.abs(dx) > 4) {
         didDrag = true;
         el.style.cursor = "grabbing";
-        try { el.setPointerCapture(e.pointerId); } catch { /* noop */ }
       }
       if (didDrag) {
         el.scrollLeft = startScroll - dx;
@@ -38,31 +39,43 @@ export function useDragScroll<T extends HTMLElement>() {
       }
     };
     const endDrag = () => {
+      if (didDrag) suppressClickUntil = Date.now() + 250;
       isDown = false;
       el.style.cursor = "";
     };
     const onClickCapture = (e: MouseEvent) => {
-      if (didDrag) {
+      if (Date.now() < suppressClickUntil) {
         e.stopPropagation();
         e.preventDefault();
-        didDrag = false;
       }
+    };
+    const onWheel = (e: WheelEvent) => {
+      // Map vertical wheel to horizontal scroll when the user isn't already
+      // scrolling horizontally. Keeps shift+wheel native.
+      if (e.deltaY === 0 || e.shiftKey) return;
+      const max = el.scrollWidth - el.clientWidth;
+      if (max <= 0) return;
+      const atStart = el.scrollLeft <= 0;
+      const atEnd = el.scrollLeft >= max - 1;
+      if ((e.deltaY < 0 && atStart) || (e.deltaY > 0 && atEnd)) return;
+      el.scrollLeft += e.deltaY;
+      e.preventDefault();
     };
 
     el.addEventListener("pointerdown", onPointerDown);
-    el.addEventListener("pointermove", onPointerMove);
-    el.addEventListener("pointerup", endDrag);
-    el.addEventListener("pointercancel", endDrag);
-    el.addEventListener("pointerleave", endDrag);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
     el.addEventListener("click", onClickCapture, true);
+    el.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
       el.removeEventListener("pointerdown", onPointerDown);
-      el.removeEventListener("pointermove", onPointerMove);
-      el.removeEventListener("pointerup", endDrag);
-      el.removeEventListener("pointercancel", endDrag);
-      el.removeEventListener("pointerleave", endDrag);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
       el.removeEventListener("click", onClickCapture, true);
+      el.removeEventListener("wheel", onWheel);
     };
   }, []);
 
