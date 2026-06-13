@@ -8,6 +8,7 @@ import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
+import { useDragScroll } from "@/lib/hooks/use-drag-scroll";
 import { Plus, Maximize2, Bell, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
 
 export const Route = createFileRoute("/")({
