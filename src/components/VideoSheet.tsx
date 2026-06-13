@@ -90,14 +90,25 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
           <DrawerHeader className="px-0 pt-0">
             <div className="relative aspect-video w-full overflow-hidden rounded-t-2xl bg-black">
               {playing ? (
-                <iframe
-                  className="size-full"
-                  src={`https://www.youtube.com/embed/${pin.youtubeId}?autoplay=1&playsinline=1&rel=0`}
-                  title={pin.title}
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
+                <>
+                  <iframe
+                    className="size-full"
+                    src={`https://www.youtube.com/embed/${pin.youtubeId}?autoplay=1&playsinline=1&rel=0`}
+                    title={pin.title}
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                  {/* Overlay over the YouTube logo (bottom-right of player) so clicking it opens youtube.com in a new tab instead of being blocked by X-Frame-Options */}
+                  <a
+                    href={`https://www.youtube.com/watch?v=${pin.youtubeId}`}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label="Open on YouTube"
+                    className="absolute bottom-2 right-2 h-8 w-20"
+                    style={{ background: "transparent" }}
+                  />
+                </>
               ) : (
                 <>
                   <img src={pin.thumbnail} alt={pin.title} className="size-full object-cover" />
