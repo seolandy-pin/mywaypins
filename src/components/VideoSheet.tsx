@@ -1,6 +1,11 @@
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
 import { Bookmark, MapPin, Eye, Calendar, Play, Youtube } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { SamplePin } from "@/lib/sample-data";
@@ -29,7 +34,15 @@ function getYouTubeEmbedUrl(videoId: string) {
   return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
 }
 
-export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null; open: boolean; onOpenChange: (o: boolean) => void }) {
+export function VideoSheet({
+  pin,
+  open,
+  onOpenChange,
+}: {
+  pin: SamplePin | null;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
   const [playing, setPlaying] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -41,7 +54,9 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
     setSaved(false);
     if (!open || !pinId || !UUID_RE.test(pinId)) return;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user || cancelled) return;
       const { data } = await supabase
         .from("favorites")
@@ -52,7 +67,9 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
         .maybeSingle();
       if (!cancelled) setSaved(!!data);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [open, pinId]);
 
   if (!pin) return null;
@@ -61,9 +78,13 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
 
   async function handleSave() {
     if (!pin || saving) return;
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
-      toast.error("Sign in to save places", { action: { label: "Sign in", onClick: () => (window.location.href = "/auth") } });
+      toast.error("Sign in to save places", {
+        action: { label: "Sign in", onClick: () => (window.location.href = "/auth") },
+      });
       return;
     }
     // Real ingested pins have UUID ids; sample pins ("1","2"...) can't be saved.
