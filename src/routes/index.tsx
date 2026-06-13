@@ -205,14 +205,17 @@ function Home() {
       </section>
 
       {isAuthenticated && (
-        <section className="mt-2 px-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 font-display text-base font-bold">
-              <span className="flex size-6 items-center justify-center rounded-md bg-primary/15 text-primary">
-                <FolderHeart className="size-4" />
-              </span>
-              My Folders
-            </h2>
+      <section className="mt-2 px-4">
+        <div className="mb-3 flex items-center justify-between">
+          <Link
+            to="/profile/collections"
+            className="flex items-center gap-2 font-display text-base font-bold"
+          >
+            <span className="flex size-6 items-center justify-center rounded-md bg-primary/15 text-primary">
+              <FolderHeart className="size-4" />
+            </span>
+            My Folders
+          </Link>
             <Link to="/submit" search={{ tab: "video" } as never} className="flex cursor-pointer items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground">
               + Save Video
             </Link>
