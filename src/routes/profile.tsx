@@ -74,6 +74,7 @@ function ProfileScreen() {
         <Item to="/profile/collections" icon={FolderHeart} label="Travel collections" />
         <Item to="/following" icon={Users} label="Creators you follow" />
         <Item to="/submit" icon={Plus} label="Submit a channel" />
+        <Item to="/profile/help" icon={HelpCircle} label="Help & Support" />
       </nav>
 
       <div className="mt-6 px-5 pb-10">
