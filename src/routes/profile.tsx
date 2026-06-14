@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Bookmark, FolderHeart, Users, LogOut, Settings, Plus, User as UserIcon } from "lucide-react";
+import { Bookmark, FolderHeart, Users, LogOut, Settings, Plus, User as UserIcon, HelpCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/profile")({
