@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Bookmark, FolderHeart, Users, LogOut, Settings, Plus, User as UserIcon } from "lucide-react";
+import { Bookmark, FolderHeart, Users, LogOut, Settings, Plus, User as UserIcon, HelpCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/profile")({
@@ -74,6 +74,7 @@ function ProfileScreen() {
         <Item to="/profile/collections" icon={FolderHeart} label="Travel collections" />
         <Item to="/following" icon={Users} label="Creators you follow" />
         <Item to="/submit" icon={Plus} label="Submit a channel" />
+        <Item to="/profile/help" icon={HelpCircle} label="Help & Support" />
       </nav>
 
       <div className="mt-6 px-5 pb-10">

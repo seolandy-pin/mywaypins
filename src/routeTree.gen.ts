@@ -17,6 +17,7 @@ import { Route as FollowingRouteImport } from './routes/following'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileSavedRouteImport } from './routes/profile_.saved'
+import { Route as ProfileHelpRouteImport } from './routes/profile_.help'
 import { Route as ProfileCollectionsRouteImport } from './routes/profile_.collections'
 import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 
@@ -60,6 +61,11 @@ const ProfileSavedRoute = ProfileSavedRouteImport.update({
   path: '/profile/saved',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileHelpRoute = ProfileHelpRouteImport.update({
+  id: '/profile_/help',
+  path: '/profile/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileCollectionsRoute = ProfileCollectionsRouteImport.update({
   id: '/profile_/collections',
   path: '/profile/collections',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/submit': typeof SubmitRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/profile/collections': typeof ProfileCollectionsRoute
+  '/profile/help': typeof ProfileHelpRoute
   '/profile/saved': typeof ProfileSavedRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/submit': typeof SubmitRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/profile/collections': typeof ProfileCollectionsRoute
+  '/profile/help': typeof ProfileHelpRoute
   '/profile/saved': typeof ProfileSavedRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/submit': typeof SubmitRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/profile_/collections': typeof ProfileCollectionsRoute
+  '/profile_/help': typeof ProfileHelpRoute
   '/profile_/saved': typeof ProfileSavedRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/submit'
     | '/channel/$handle'
     | '/profile/collections'
+    | '/profile/help'
     | '/profile/saved'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/submit'
     | '/channel/$handle'
     | '/profile/collections'
+    | '/profile/help'
     | '/profile/saved'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/submit'
     | '/channel/$handle'
     | '/profile_/collections'
+    | '/profile_/help'
     | '/profile_/saved'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   SubmitRoute: typeof SubmitRoute
   ChannelHandleRoute: typeof ChannelHandleRoute
   ProfileCollectionsRoute: typeof ProfileCollectionsRoute
+  ProfileHelpRoute: typeof ProfileHelpRoute
   ProfileSavedRoute: typeof ProfileSavedRoute
 }
 
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileSavedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile_/help': {
+      id: '/profile_/help'
+      path: '/profile/help'
+      fullPath: '/profile/help'
+      preLoaderRoute: typeof ProfileHelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile_/collections': {
       id: '/profile_/collections'
       path: '/profile/collections'
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   SubmitRoute: SubmitRoute,
   ChannelHandleRoute: ChannelHandleRoute,
   ProfileCollectionsRoute: ProfileCollectionsRoute,
+  ProfileHelpRoute: ProfileHelpRoute,
   ProfileSavedRoute: ProfileSavedRoute,
 }
 export const routeTree = rootRouteImport
