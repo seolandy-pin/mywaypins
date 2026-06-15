@@ -6,6 +6,7 @@ import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
+import { useRefreshFollowedOnLoad } from "@/lib/hooks/use-refresh-followed-on-load";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
 import { useDragScroll } from "@/lib/hooks/use-drag-scroll";
@@ -57,6 +58,7 @@ function Home() {
     : allMarkers;
 
   const { total: newCount } = useNewVideoFlags(channelIds);
+  useRefreshFollowedOnLoad();
 
   const handleBell = () => {
     navigate({ to: "/following" });
