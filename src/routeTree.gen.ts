@@ -20,6 +20,7 @@ import { Route as ProfileSavedRouteImport } from './routes/profile_.saved'
 import { Route as ProfileHelpRouteImport } from './routes/profile_.help'
 import { Route as ProfileCollectionsRouteImport } from './routes/profile_.collections'
 import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
+import { Route as ApiPublicHooksRefreshFollowedRouteImport } from './routes/api/public/hooks/refresh-followed'
 
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
@@ -76,6 +77,12 @@ const ChannelHandleRoute = ChannelHandleRouteImport.update({
   path: '/channel/$handle',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksRefreshFollowedRoute =
+  ApiPublicHooksRefreshFollowedRouteImport.update({
+    id: '/api/public/hooks/refresh-followed',
+    path: '/api/public/hooks/refresh-followed',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/profile/collections': typeof ProfileCollectionsRoute
   '/profile/help': typeof ProfileHelpRoute
   '/profile/saved': typeof ProfileSavedRoute
+  '/api/public/hooks/refresh-followed': typeof ApiPublicHooksRefreshFollowedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +110,7 @@ export interface FileRoutesByTo {
   '/profile/collections': typeof ProfileCollectionsRoute
   '/profile/help': typeof ProfileHelpRoute
   '/profile/saved': typeof ProfileSavedRoute
+  '/api/public/hooks/refresh-followed': typeof ApiPublicHooksRefreshFollowedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +125,7 @@ export interface FileRoutesById {
   '/profile_/collections': typeof ProfileCollectionsRoute
   '/profile_/help': typeof ProfileHelpRoute
   '/profile_/saved': typeof ProfileSavedRoute
+  '/api/public/hooks/refresh-followed': typeof ApiPublicHooksRefreshFollowedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/profile/collections'
     | '/profile/help'
     | '/profile/saved'
+    | '/api/public/hooks/refresh-followed'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/profile/collections'
     | '/profile/help'
     | '/profile/saved'
+    | '/api/public/hooks/refresh-followed'
   id:
     | '__root__'
     | '/'
@@ -157,6 +169,7 @@ export interface FileRouteTypes {
     | '/profile_/collections'
     | '/profile_/help'
     | '/profile_/saved'
+    | '/api/public/hooks/refresh-followed'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +184,7 @@ export interface RootRouteChildren {
   ProfileCollectionsRoute: typeof ProfileCollectionsRoute
   ProfileHelpRoute: typeof ProfileHelpRoute
   ProfileSavedRoute: typeof ProfileSavedRoute
+  ApiPublicHooksRefreshFollowedRoute: typeof ApiPublicHooksRefreshFollowedRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -252,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChannelHandleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/refresh-followed': {
+      id: '/api/public/hooks/refresh-followed'
+      path: '/api/public/hooks/refresh-followed'
+      fullPath: '/api/public/hooks/refresh-followed'
+      preLoaderRoute: typeof ApiPublicHooksRefreshFollowedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -267,17 +288,8 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileCollectionsRoute: ProfileCollectionsRoute,
   ProfileHelpRoute: ProfileHelpRoute,
   ProfileSavedRoute: ProfileSavedRoute,
+  ApiPublicHooksRefreshFollowedRoute: ApiPublicHooksRefreshFollowedRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
