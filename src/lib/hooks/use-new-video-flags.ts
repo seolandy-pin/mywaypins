@@ -72,10 +72,16 @@ export function useNewVideoFlags(channelIds: string[]) {
   });
 
   const rows = q.data ?? [];
-  const counts: Record<string, number> = {};
+  // Only flag the single most recent new video per channel.
+  const latestByChannel: Record<string, string> = {};
   for (const r of rows) {
-    if (r.published_at > lastSeenFor(seenMap, r.channel_id)) {
-      counts[r.channel_id] = (counts[r.channel_id] ?? 0) + 1;
+    const prev = latestByChannel[r.channel_id];
+    if (!prev || r.published_at > prev) latestByChannel[r.channel_id] = r.published_at;
+  }
+  const counts: Record<string, number> = {};
+  for (const [channelId, publishedAt] of Object.entries(latestByChannel)) {
+    if (publishedAt > lastSeenFor(seenMap, channelId)) {
+      counts[channelId] = 1;
     }
   }
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
