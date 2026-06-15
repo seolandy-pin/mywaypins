@@ -58,6 +58,7 @@ function Home() {
     : allMarkers;
 
   const { total: newCount } = useNewVideoFlags(channelIds);
+  useRefreshFollowedOnLoad();
 
   const handleBell = () => {
     navigate({ to: "/following" });
