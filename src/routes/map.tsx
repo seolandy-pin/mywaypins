@@ -67,8 +67,37 @@ function MapScreen() {
         pinsRefreshKey={pinsVersion}
         channelMarkers={visibleMarkers}
         onChannelMarkerClick={(id) => pickChannel(id)}
+        alertPin={
+          newVideoAlert
+            ? {
+                pinId: newVideoAlert.pinId,
+                lat: newVideoAlert.lat,
+                lng: newVideoAlert.lng,
+                thumbnail: newVideoAlert.channelThumbnail,
+              }
+            : null
+        }
+        onAlertPinClick={() => {
+          if (!newVideoAlert) return;
+          setActive({
+            id: newVideoAlert.pinId,
+            lat: newVideoAlert.lat,
+            lng: newVideoAlert.lng,
+            type: "new",
+            title: newVideoAlert.title,
+            creator: newVideoAlert.channelName,
+            thumbnail: newVideoAlert.thumbnailUrl ?? "",
+            location: newVideoAlert.location,
+            views: "",
+            uploaded: new Date(newVideoAlert.publishedAt).toLocaleDateString(),
+            youtubeId: newVideoAlert.youtubeVideoId,
+          });
+          setActivePinIsAlert(true);
+          setOpen(true);
+        }}
         onPinClick={(p) => {
           setActive(p);
+          setActivePinIsAlert(false);
           setOpen(true);
         }}
       />
