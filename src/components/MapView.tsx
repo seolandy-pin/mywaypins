@@ -403,11 +403,20 @@ export type ChannelMarkerData = {
   lng: number;
 };
 
+export type AlertPinData = {
+  pinId: string;
+  lat: number;
+  lng: number;
+  thumbnail: string | null;
+};
+
 export function MapView({
   onPinClick,
   followedChannelIds,
   videoIdsFilter,
   pinsRefreshKey = 0,
+  alertPin,
+  onAlertPinClick,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
@@ -415,6 +424,8 @@ export function MapView({
   pinsRefreshKey?: number;
   channelMarkers?: ChannelMarkerData[];
   onChannelMarkerClick?: (channelId: string) => void;
+  alertPin?: AlertPinData | null;
+  onAlertPinClick?: () => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [token, setToken] = useState<string>("");
