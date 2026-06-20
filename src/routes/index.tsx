@@ -7,10 +7,12 @@ import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import { useRefreshFollowedOnLoad } from "@/lib/hooks/use-refresh-followed-on-load";
+import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
 import { useDragScroll } from "@/lib/hooks/use-drag-scroll";
-import { Plus, Maximize2, Bell, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
+import { Plus, Maximize2, Bell, BellOff, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
