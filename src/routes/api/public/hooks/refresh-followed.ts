@@ -244,5 +244,5 @@ async function refreshChannel(
     }
   }
 
-  return newDbIds.length;
+  return newVideos;
 }
