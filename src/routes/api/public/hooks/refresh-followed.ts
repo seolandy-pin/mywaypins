@@ -179,6 +179,8 @@ async function refreshChannel(
   );
 
   const newDbIds: string[] = [];
+  const newVideos: NewVideo[] = [];
+  // Iterate `latest` first so newVideos[0] is the most recent upload.
   for (const v of all) {
     const s = stats.get(v.id.videoId);
     const wasNew = !existingMap.has(v.id.videoId);
@@ -199,8 +201,16 @@ async function refreshChannel(
       )
       .select("id")
       .single();
-    if (row && wasNew) newDbIds.push(row.id);
+    if (row && wasNew) {
+      newDbIds.push(row.id);
+      newVideos.push({
+        videoId: v.id.videoId,
+        title: v.snippet.title,
+        channelName,
+      });
+    }
   }
+
 
   // Extract locations for newly-discovered videos
   await Promise.allSettled(
