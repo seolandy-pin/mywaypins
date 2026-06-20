@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null; open: boolean; onOpenChange: (o: boolean) => void }) {
+export function VideoSheet({ pin, open, onOpenChange, isNewAlert = false, onAcknowledge }: { pin: SamplePin | null; open: boolean; onOpenChange: (o: boolean) => void; isNewAlert?: boolean; onAcknowledge?: () => void }) {
   const [playing, setPlaying] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
