@@ -178,7 +178,7 @@ function MapScreen() {
         </div>
       )}
 
-      <VideoSheet pin={active} open={open} onOpenChange={setOpen} />
+      <VideoSheet pin={active} open={open} onOpenChange={setOpen} isNewAlert={activePinIsAlert} onAcknowledge={dismissAlert} />
     </div>
   );
 }
