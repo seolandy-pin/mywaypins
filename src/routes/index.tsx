@@ -61,6 +61,8 @@ function Home() {
     : allMarkers;
 
   const { total: newCount } = useNewVideoFlags(channelIds);
+  const { alert: newVideoAlert, dismiss: dismissAlert } = useLatestNewVideoAlert(channelIds);
+  const [activePinIsAlert, setActivePinIsAlert] = useState(false);
   useRefreshFollowedOnLoad();
   const { permission: pushPermission, enable: enablePush } = usePushNotifications();
   const showEnablePush = isAuthenticated && pushPermission === "default";
