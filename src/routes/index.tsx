@@ -5,6 +5,7 @@ import { VideoSheet } from "@/components/VideoSheet";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
+import { useLatestNewVideoAlert } from "@/lib/hooks/use-latest-new-video-alert";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import { useRefreshFollowedOnLoad } from "@/lib/hooks/use-refresh-followed-on-load";
 import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
