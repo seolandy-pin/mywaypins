@@ -25,3 +25,15 @@ export const registerFcmToken = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+/** Deletes all FCM tokens for the current user (used when disabling notifications). */
+export const unregisterMyFcmTokens = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { error } = await context.supabase
+      .from("fcm_tokens")
+      .delete()
+      .eq("user_id", context.userId);
+    if (error) throw error;
+    return { ok: true };
+  });
