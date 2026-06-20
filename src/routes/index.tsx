@@ -2,9 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 
 import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
+import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
-import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
+import { useNewVideoNotifications } from "@/lib/hooks/use-new-video-notifications";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import { useRefreshFollowedOnLoad } from "@/lib/hooks/use-refresh-followed-on-load";
 import { useFcmRegister } from "@/lib/hooks/use-fcm-register";
@@ -37,14 +38,13 @@ function Home() {
   const collectionsScrollRef = useDragScroll<HTMLDivElement>();
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const { channels: followed, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
   const { collections } = useMyCollections();
 
   const selectedCollection = collections.find((c) => c.id === selectedCollectionId) ?? null;
-  // Map filter priority: collection > selected channel > all followed.
-  // When signed out, pass an empty array so no pins (and no sample data) render.
   const mapChannelFilter = !isAuthenticated
     ? []
     : selectedCollection
@@ -58,13 +58,10 @@ function Home() {
     ? allMarkers.filter((m) => m.channelId === selectedChannelId)
     : allMarkers;
 
-  const { total: newCount } = useNewVideoFlags(channelIds);
+  const { items: notifications, unreadCount, markChannelSeen, markAllSeen } =
+    useNewVideoNotifications(channelIds);
   useRefreshFollowedOnLoad();
   useFcmRegister();
-
-  const handleBell = () => {
-    navigate({ to: "/following" });
-  };
 
   function pickChannel(id: string) {
     setSelectedCollectionId(null);
@@ -100,17 +97,45 @@ function Home() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleBell}
-              aria-label="Notifications"
-              className="relative flex size-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-surface-1 active:scale-95"
-            >
-              <Bell className="size-[18px]" />
-              {newCount > 0 && (
-                <span className="absolute right-1 top-1 size-2 rounded-full bg-primary ring-2 ring-background" />
-              )}
-            </button>
+            <NotificationsPanel
+              open={notifOpen}
+              onOpenChange={setNotifOpen}
+              items={notifications}
+              unreadCount={unreadCount}
+              onMarkAllRead={markAllSeen}
+              onItemClick={(it) => {
+                markChannelSeen(it.channelId);
+                setNotifOpen(false);
+                setActivePin({
+                  id: it.videoDbId,
+                  lat: 0,
+                  lng: 0,
+                  type: "new",
+                  title: it.title,
+                  creator: it.channelName,
+                  thumbnail: it.thumbnailUrl ?? "",
+                  location: "",
+                  views: "",
+                  uploaded: new Date(it.publishedAt).toLocaleDateString(),
+                  youtubeId: it.youtubeId,
+                });
+                setSheetOpen(true);
+              }}
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Notifications"
+                  className="relative flex size-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-surface-1 active:scale-95"
+                >
+                  <Bell className="size-[18px]" />
+                  {unreadCount > 0 && (
+                    <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground ring-2 ring-background">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+              }
+            />
             <Link
               to="/submit"
               aria-label="Submit a channel"
