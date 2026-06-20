@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { extractLocations } from "@/lib/api/channels.functions";
 
-type NewVideo = { videoId: string; title: string; channelName: string };
-
-
-
 type SearchItem = {
   id: { videoId: string };
   snippet: {
@@ -44,69 +40,15 @@ export const Route = createFileRoute("/api/public/hooks/refresh-followed")({
           .in("id", channelIds);
 
         let totalNew = 0;
-        // channelDbId -> NewVideo[] discovered this run
-        const newByChannel = new Map<string, NewVideo[]>();
         for (const ch of channels ?? []) {
           if (!ch.youtube_channel_id) continue;
           try {
-            const newOnes = await refreshChannel(
-              ch.id,
-              ch.youtube_channel_id,
-              ch.name ?? "YouTube",
-              YT_KEY,
-              supabaseAdmin,
-            );
-            if (newOnes.length > 0) {
-              newByChannel.set(ch.id, newOnes);
-              totalNew += newOnes.length;
-            }
+            totalNew += await refreshChannel(ch.id, ch.youtube_channel_id, YT_KEY, supabaseAdmin);
           } catch (e) {
             console.error("[refresh-followed] channel failed", ch.id, e);
           }
         }
-
-        // Push notifications: for each channel with new uploads, notify each
-        // follower of that channel about the single most-recent new video.
-        if (newByChannel.size > 0) {
-          try {
-            const { sendFcmToTokens } = await import("@/lib/fcm.server");
-            for (const [channelDbId, vids] of newByChannel) {
-              const latest = vids[0]; // refreshChannel returns latest-first
-              const { data: fols } = await supabaseAdmin
-                .from("followers")
-                .select("user_id")
-                .eq("channel_id", channelDbId);
-              const userIds = Array.from(
-                new Set(((fols ?? []).map((r) => r.user_id).filter(Boolean)) as string[]),
-              );
-              if (userIds.length === 0) continue;
-              const { data: tokRows } = await supabaseAdmin
-                .from("fcm_tokens")
-                .select("token")
-                .in("user_id", userIds);
-              const tokens = ((tokRows ?? []) as Array<{ token: string }>).map((r) => r.token);
-              if (tokens.length === 0) continue;
-              const results = await sendFcmToTokens(
-                tokens,
-                `${latest.channelName}에 새 영상`,
-                latest.title,
-                `/?v=${latest.videoId}`,
-              );
-              // Drop tokens FCM reports as invalid (UNREGISTERED / INVALID_ARGUMENT)
-              const dead = results
-                .filter((r) => !r.ok && (r.status === 404 || r.status === 400))
-                .map((r) => r.token);
-              if (dead.length > 0) {
-                await supabaseAdmin.from("fcm_tokens").delete().in("token", dead);
-              }
-            }
-          } catch (e) {
-            console.error("[refresh-followed] FCM send failed", e);
-          }
-        }
-
         return Response.json({ ok: true, channels: channels?.length ?? 0, newVideos: totalNew });
-
       },
     },
   },
@@ -145,17 +87,15 @@ async function fetchN(
 async function refreshChannel(
   channelDbId: string,
   ytChannelId: string,
-  channelName: string,
   YT_KEY: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
-): Promise<NewVideo[]> {
+): Promise<number> {
   const seen = new Set<string>();
   const latest = await fetchN(ytChannelId, "date", 20, seen, YT_KEY);
   const top = await fetchN(ytChannelId, "viewCount", 20, seen, YT_KEY);
   const all = [...latest, ...top];
-  if (all.length === 0) return [];
-
+  if (all.length === 0) return 0;
 
   // Fetch view stats (search endpoint doesn't include them)
   const ids = all.map((v) => v.id.videoId);
@@ -179,8 +119,6 @@ async function refreshChannel(
   );
 
   const newDbIds: string[] = [];
-  const newVideos: NewVideo[] = [];
-  // Iterate `latest` first so newVideos[0] is the most recent upload.
   for (const v of all) {
     const s = stats.get(v.id.videoId);
     const wasNew = !existingMap.has(v.id.videoId);
@@ -201,16 +139,8 @@ async function refreshChannel(
       )
       .select("id")
       .single();
-    if (row && wasNew) {
-      newDbIds.push(row.id);
-      newVideos.push({
-        videoId: v.id.videoId,
-        title: v.snippet.title,
-        channelName,
-      });
-    }
+    if (row && wasNew) newDbIds.push(row.id);
   }
-
 
   // Extract locations for newly-discovered videos
   await Promise.allSettled(
@@ -244,5 +174,5 @@ async function refreshChannel(
     }
   }
 
-  return newVideos;
+  return newDbIds.length;
 }
