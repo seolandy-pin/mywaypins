@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getFcmVapidKey, registerFcmToken } from "@/lib/api/fcm.functions";
-import { requestFcmToken } from "@/integrations/firebase/messaging.client";
+
 import { useAuth } from "@/lib/auth/use-auth";
 
 const STAMP_KEY = "mywaypins:fcm_registered_at";
@@ -29,6 +29,7 @@ export function useFcmRegister() {
       try {
         const { key } = await fetchKey();
         if (!key) return;
+        const { requestFcmToken } = await import("@/integrations/firebase/messaging.client");
         const token = await requestFcmToken(key);
         if (!token) return;
         await register({ data: { token, userAgent: navigator.userAgent } });
