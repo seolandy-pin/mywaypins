@@ -34,6 +34,8 @@ function MapScreen() {
   const { channels, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
   const { collections } = useMyCollections();
   const { data: channelMarkers } = useChannelMarkers(channels);
+  const { alert: newVideoAlert, dismiss: dismissAlert } = useLatestNewVideoAlert(channelIds);
+  const [activePinIsAlert, setActivePinIsAlert] = useState(false);
 
   const selectedCollection = collections.find((c) => c.id === selectedCollectionId) ?? null;
   const mapChannelFilter = !isAuthenticated
