@@ -5,6 +5,7 @@ import { getFcmVapidKey, registerFcmToken } from "@/lib/api/fcm.functions";
 import { useAuth } from "@/lib/auth/use-auth";
 
 const STAMP_KEY = "mywaypins:fcm_registered_at";
+export const FCM_DISABLED_KEY = "mywaypins:fcm_disabled";
 const MIN_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 /**
