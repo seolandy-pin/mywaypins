@@ -161,7 +161,7 @@ async function refreshChannel(
   const latest = await fetchN(ytChannelId, "date", 20, seen, YT_KEY);
   const top = await fetchN(ytChannelId, "viewCount", 20, seen, YT_KEY);
   const all = [...latest, ...top];
-  if (all.length === 0) return 0;
+  if (all.length === 0) return [];
 
   // Fetch view stats (search endpoint doesn't include them)
   const ids = all.map((v) => v.id.videoId);
@@ -184,6 +184,7 @@ async function refreshChannel(
     ]),
   );
 
+  const newVideos: NewVideo[] = [];
   const newDbIds: string[] = [];
   for (const v of all) {
     const s = stats.get(v.id.videoId);
@@ -205,7 +206,14 @@ async function refreshChannel(
       )
       .select("id")
       .single();
-    if (row && wasNew) newDbIds.push(row.id);
+    if (row && wasNew) {
+      newDbIds.push(row.id);
+      newVideos.push({
+        id: row.id,
+        title: v.snippet.title,
+        published_at: v.snippet.publishedAt,
+      });
+    }
   }
 
   // Extract locations for newly-discovered videos
@@ -240,5 +248,5 @@ async function refreshChannel(
     }
   }
 
-  return newDbIds.length;
+  return newVideos;
 }
