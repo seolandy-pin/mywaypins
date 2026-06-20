@@ -7,10 +7,12 @@ import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import { useRefreshFollowedOnLoad } from "@/lib/hooks/use-refresh-followed-on-load";
+import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
 import { useDragScroll } from "@/lib/hooks/use-drag-scroll";
-import { Plus, Maximize2, Bell, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
+import { Plus, Maximize2, Bell, BellOff, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -59,10 +61,13 @@ function Home() {
 
   const { total: newCount } = useNewVideoFlags(channelIds);
   useRefreshFollowedOnLoad();
+  const { permission: pushPermission, enable: enablePush } = usePushNotifications();
+  const showEnablePush = isAuthenticated && pushPermission === "default";
 
   const handleBell = () => {
     navigate({ to: "/following" });
   };
+
 
   function pickChannel(id: string) {
     setSelectedCollectionId(null);
@@ -98,6 +103,17 @@ function Home() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {showEnablePush && (
+              <button
+                type="button"
+                onClick={enablePush}
+                aria-label="Enable push notifications"
+                title="푸시 알림 켜기"
+                className="flex size-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-surface-1 active:scale-95"
+              >
+                <BellOff className="size-[18px]" />
+              </button>
+            )}
             <button
               type="button"
               onClick={handleBell}
@@ -109,6 +125,7 @@ function Home() {
                 <span className="absolute right-1 top-1 size-2 rounded-full bg-primary ring-2 ring-background" />
               )}
             </button>
+
             <Link
               to="/submit"
               aria-label="Submit a channel"
