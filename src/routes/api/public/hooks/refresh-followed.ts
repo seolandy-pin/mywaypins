@@ -44,15 +44,69 @@ export const Route = createFileRoute("/api/public/hooks/refresh-followed")({
           .in("id", channelIds);
 
         let totalNew = 0;
+        // channelDbId -> NewVideo[] discovered this run
+        const newByChannel = new Map<string, NewVideo[]>();
         for (const ch of channels ?? []) {
           if (!ch.youtube_channel_id) continue;
           try {
-            totalNew += await refreshChannel(ch.id, ch.youtube_channel_id, YT_KEY, supabaseAdmin);
+            const newOnes = await refreshChannel(
+              ch.id,
+              ch.youtube_channel_id,
+              ch.name ?? "YouTube",
+              YT_KEY,
+              supabaseAdmin,
+            );
+            if (newOnes.length > 0) {
+              newByChannel.set(ch.id, newOnes);
+              totalNew += newOnes.length;
+            }
           } catch (e) {
             console.error("[refresh-followed] channel failed", ch.id, e);
           }
         }
+
+        // Push notifications: for each channel with new uploads, notify each
+        // follower of that channel about the single most-recent new video.
+        if (newByChannel.size > 0) {
+          try {
+            const { sendFcmToTokens } = await import("@/lib/fcm.server");
+            for (const [channelDbId, vids] of newByChannel) {
+              const latest = vids[0]; // refreshChannel returns latest-first
+              const { data: fols } = await supabaseAdmin
+                .from("followers")
+                .select("user_id")
+                .eq("channel_id", channelDbId);
+              const userIds = Array.from(
+                new Set(((fols ?? []).map((r) => r.user_id).filter(Boolean)) as string[]),
+              );
+              if (userIds.length === 0) continue;
+              const { data: tokRows } = await supabaseAdmin
+                .from("fcm_tokens")
+                .select("token")
+                .in("user_id", userIds);
+              const tokens = ((tokRows ?? []) as Array<{ token: string }>).map((r) => r.token);
+              if (tokens.length === 0) continue;
+              const results = await sendFcmToTokens(
+                tokens,
+                `${latest.channelName}에 새 영상`,
+                latest.title,
+                `/?v=${latest.videoId}`,
+              );
+              // Drop tokens FCM reports as invalid (UNREGISTERED / INVALID_ARGUMENT)
+              const dead = results
+                .filter((r) => !r.ok && (r.status === 404 || r.status === 400))
+                .map((r) => r.token);
+              if (dead.length > 0) {
+                await supabaseAdmin.from("fcm_tokens").delete().in("token", dead);
+              }
+            }
+          } catch (e) {
+            console.error("[refresh-followed] FCM send failed", e);
+          }
+        }
+
         return Response.json({ ok: true, channels: channels?.length ?? 0, newVideos: totalNew });
+
       },
     },
   },
