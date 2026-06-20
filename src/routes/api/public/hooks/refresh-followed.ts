@@ -145,15 +145,17 @@ async function fetchN(
 async function refreshChannel(
   channelDbId: string,
   ytChannelId: string,
+  channelName: string,
   YT_KEY: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
-): Promise<number> {
+): Promise<NewVideo[]> {
   const seen = new Set<string>();
   const latest = await fetchN(ytChannelId, "date", 20, seen, YT_KEY);
   const top = await fetchN(ytChannelId, "viewCount", 20, seen, YT_KEY);
   const all = [...latest, ...top];
-  if (all.length === 0) return 0;
+  if (all.length === 0) return [];
+
 
   // Fetch view stats (search endpoint doesn't include them)
   const ids = all.map((v) => v.id.videoId);
