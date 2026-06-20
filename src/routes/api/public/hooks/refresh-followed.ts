@@ -39,16 +39,80 @@ export const Route = createFileRoute("/api/public/hooks/refresh-followed")({
           .select("id, youtube_channel_id, name")
           .in("id", channelIds);
 
+        const { sendFcmToTokens } = await import("@/lib/server/fcm-send.server");
+
         let totalNew = 0;
+        let totalPushed = 0;
         for (const ch of channels ?? []) {
           if (!ch.youtube_channel_id) continue;
           try {
-            totalNew += await refreshChannel(ch.id, ch.youtube_channel_id, YT_KEY, supabaseAdmin);
+            const newOnes = await refreshChannel(
+              ch.id,
+              ch.youtube_channel_id,
+              YT_KEY,
+              supabaseAdmin,
+            );
+            totalNew += newOnes.length;
+            if (newOnes.length === 0) continue;
+
+            // Pick the newest of this batch as the notification subject.
+            const latest = newOnes
+              .slice()
+              .sort((a, b) => (b.published_at || "").localeCompare(a.published_at || ""))[0];
+
+            // Followers of this channel → their FCM tokens.
+            const { data: follows } = await supabaseAdmin
+              .from("followers")
+              .select("user_id")
+              .eq("channel_id", ch.id);
+            const userIds = Array.from(
+              new Set((follows ?? []).map((f) => f.user_id).filter(Boolean)),
+            );
+            if (userIds.length === 0) continue;
+
+            const { data: tokRows } = await supabaseAdmin
+              .from("fcm_tokens")
+              .select("token")
+              .in("user_id", userIds);
+            const tokens = (tokRows ?? []).map((r) => r.token).filter(Boolean);
+
+            // Persist in-app notifications so the bell stays populated.
+            const link = `/channel/${ch.id}`;
+            await supabaseAdmin.from("notifications").insert(
+              userIds.map((uid) => ({
+                user_id: uid,
+                kind: "new_video",
+                title: `${ch.name ?? "채널"}에 새 영상`,
+                body: latest.title,
+                link,
+              })),
+            );
+
+            if (tokens.length > 0) {
+              const res = await sendFcmToTokens(tokens, {
+                title: `${ch.name ?? "채널"}에 새 영상`,
+                body: latest.title,
+                url: link,
+                tag: `ch:${ch.id}`,
+              });
+              totalPushed += res.sent;
+              if (res.invalidTokens.length > 0) {
+                await supabaseAdmin
+                  .from("fcm_tokens")
+                  .delete()
+                  .in("token", res.invalidTokens);
+              }
+            }
           } catch (e) {
             console.error("[refresh-followed] channel failed", ch.id, e);
           }
         }
-        return Response.json({ ok: true, channels: channels?.length ?? 0, newVideos: totalNew });
+        return Response.json({
+          ok: true,
+          channels: channels?.length ?? 0,
+          newVideos: totalNew,
+          pushed: totalPushed,
+        });
       },
     },
   },
@@ -84,18 +148,20 @@ async function fetchN(
   return out;
 }
 
+type NewVideo = { id: string; title: string; published_at: string };
+
 async function refreshChannel(
   channelDbId: string,
   ytChannelId: string,
   YT_KEY: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
-): Promise<number> {
+): Promise<NewVideo[]> {
   const seen = new Set<string>();
   const latest = await fetchN(ytChannelId, "date", 20, seen, YT_KEY);
   const top = await fetchN(ytChannelId, "viewCount", 20, seen, YT_KEY);
   const all = [...latest, ...top];
-  if (all.length === 0) return 0;
+  if (all.length === 0) return [];
 
   // Fetch view stats (search endpoint doesn't include them)
   const ids = all.map((v) => v.id.videoId);
@@ -118,6 +184,7 @@ async function refreshChannel(
     ]),
   );
 
+  const newVideos: NewVideo[] = [];
   const newDbIds: string[] = [];
   for (const v of all) {
     const s = stats.get(v.id.videoId);
@@ -139,7 +206,14 @@ async function refreshChannel(
       )
       .select("id")
       .single();
-    if (row && wasNew) newDbIds.push(row.id);
+    if (row && wasNew) {
+      newDbIds.push(row.id);
+      newVideos.push({
+        id: row.id,
+        title: v.snippet.title,
+        published_at: v.snippet.publishedAt,
+      });
+    }
   }
 
   // Extract locations for newly-discovered videos
@@ -174,5 +248,5 @@ async function refreshChannel(
     }
   }
 
-  return newDbIds.length;
+  return newVideos;
 }
