@@ -23,6 +23,7 @@ export function useFcmRegister() {
     if (typeof window === "undefined") return;
     if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
     if (Notification.permission === "denied") return;
+    if (localStorage.getItem(FCM_DISABLED_KEY) === "1") return;
     const last = Number(localStorage.getItem(STAMP_KEY) ?? "0");
     if (Date.now() - last < MIN_INTERVAL_MS) return;
 
