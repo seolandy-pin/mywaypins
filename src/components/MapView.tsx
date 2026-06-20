@@ -403,11 +403,20 @@ export type ChannelMarkerData = {
   lng: number;
 };
 
+export type AlertPinData = {
+  pinId: string;
+  lat: number;
+  lng: number;
+  thumbnail: string | null;
+};
+
 export function MapView({
   onPinClick,
   followedChannelIds,
   videoIdsFilter,
   pinsRefreshKey = 0,
+  alertPin,
+  onAlertPinClick,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
@@ -415,6 +424,8 @@ export function MapView({
   pinsRefreshKey?: number;
   channelMarkers?: ChannelMarkerData[];
   onChannelMarkerClick?: (channelId: string) => void;
+  alertPin?: AlertPinData | null;
+  onAlertPinClick?: () => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [token, setToken] = useState<string>("");
@@ -484,6 +495,80 @@ export function MapView({
     }
     // Sorted joins: a re-ordered (but identical) ID list must not re-run this effect.
   }, [token, followedChannelIds ? [...followedChannelIds].sort().join(",") : "", videoIdsFilter ? [...videoIdsFilter].sort().join(",") : "", pinsRefreshKey]);
+  // ----- "New video" alert marker (single most recent followed video) -----
+  const alertMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  useEffect(() => {
+    if (!token) return;
+    const map = sharedMap;
+    if (!map) return;
+    // Inject pulse CSS once.
+    if (!document.getElementById("wp-alert-pulse-css")) {
+      const style = document.createElement("style");
+      style.id = "wp-alert-pulse-css";
+      style.textContent = `
+@keyframes wpAlertPulse {
+  0% { transform: scale(0.8); opacity: 0.85; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+@keyframes wpAlertBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.wp-alert-marker { position: relative; width: 46px; height: 46px; cursor: pointer; }
+.wp-alert-marker .wp-alert-pulse {
+  position: absolute; inset: 0; border-radius: 9999px;
+  background: rgba(255, 115, 80, 0.55);
+  animation: wpAlertPulse 1.6s ease-out infinite;
+}
+.wp-alert-marker .wp-alert-pulse.delay { animation-delay: 0.8s; }
+.wp-alert-marker .wp-alert-core {
+  position: absolute; inset: 6px; border-radius: 9999px;
+  background: #ff7350; border: 3px solid #fff;
+  box-shadow: 0 4px 14px rgba(0,0,0,.55), 0 0 0 2px rgba(255,115,80,0.4);
+  overflow: hidden; animation: wpAlertBob 2s ease-in-out infinite;
+}
+.wp-alert-marker .wp-alert-core img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wp-alert-marker .wp-alert-badge {
+  position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px;
+  padding: 0 4px; border-radius: 9999px; background: #fff; color: #ff7350;
+  font-size: 9px; font-weight: 800; display: flex; align-items: center;
+  justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  font-family: -apple-system, system-ui, sans-serif;
+}`;
+      document.head.appendChild(style);
+    }
+
+    // Remove previous marker.
+    if (alertMarkerRef.current) {
+      alertMarkerRef.current.remove();
+      alertMarkerRef.current = null;
+    }
+    if (!alertPin) return;
+
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "wp-alert-marker";
+    el.setAttribute("aria-label", "New video");
+    el.innerHTML = `
+      <span class="wp-alert-pulse"></span>
+      <span class="wp-alert-pulse delay"></span>
+      <span class="wp-alert-core">${alertPin.thumbnail ? `<img src="${alertPin.thumbnail}" alt="" />` : ""}</span>
+      <span class="wp-alert-badge">NEW</span>
+    `;
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      onAlertPinClick?.();
+    });
+    const marker = new mapboxgl.Marker({ element: el, anchor: "center", occludedOpacity: 0 })
+      .setLngLat([alertPin.lng, alertPin.lat])
+      .addTo(map);
+    alertMarkerRef.current = marker;
+
+    return () => {
+      marker.remove();
+      if (alertMarkerRef.current === marker) alertMarkerRef.current = null;
+    };
+  }, [token, alertPin?.pinId, alertPin?.lat, alertPin?.lng, alertPin?.thumbnail, onAlertPinClick]);
 
   if (!token) {
     return (

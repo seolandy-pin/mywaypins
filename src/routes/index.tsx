@@ -5,6 +5,7 @@ import { VideoSheet } from "@/components/VideoSheet";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useNewVideoFlags } from "@/lib/hooks/use-new-video-flags";
+import { useLatestNewVideoAlert } from "@/lib/hooks/use-latest-new-video-alert";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import { useRefreshFollowedOnLoad } from "@/lib/hooks/use-refresh-followed-on-load";
 import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
@@ -60,6 +61,8 @@ function Home() {
     : allMarkers;
 
   const { total: newCount } = useNewVideoFlags(channelIds);
+  const { alert: newVideoAlert, dismiss: dismissAlert } = useLatestNewVideoAlert(channelIds);
+  const [activePinIsAlert, setActivePinIsAlert] = useState(false);
   useRefreshFollowedOnLoad();
   const { permission: pushPermission, enable: enablePush } = usePushNotifications();
   const showEnablePush = isAuthenticated && pushPermission === "default";
@@ -145,8 +148,37 @@ function Home() {
             pinsRefreshKey={pinsVersion}
             channelMarkers={visibleMarkers}
             onChannelMarkerClick={(id) => pickChannel(id)}
+            alertPin={
+              newVideoAlert
+                ? {
+                    pinId: newVideoAlert.pinId,
+                    lat: newVideoAlert.lat,
+                    lng: newVideoAlert.lng,
+                    thumbnail: newVideoAlert.channelThumbnail,
+                  }
+                : null
+            }
+            onAlertPinClick={() => {
+              if (!newVideoAlert) return;
+              setActivePin({
+                id: newVideoAlert.pinId,
+                lat: newVideoAlert.lat,
+                lng: newVideoAlert.lng,
+                type: "new",
+                title: newVideoAlert.title,
+                creator: newVideoAlert.channelName,
+                thumbnail: newVideoAlert.thumbnailUrl ?? "",
+                location: newVideoAlert.location,
+                views: "",
+                uploaded: new Date(newVideoAlert.publishedAt).toLocaleDateString(),
+                youtubeId: newVideoAlert.youtubeVideoId,
+              });
+              setActivePinIsAlert(true);
+              setSheetOpen(true);
+            }}
             onPinClick={(p) => {
               setActivePin(p);
+              setActivePinIsAlert(false);
               setSheetOpen(true);
             }}
           />
@@ -159,7 +191,13 @@ function Home() {
             <Maximize2 className="size-3.5" /> Explore Full Map
           </button>
         </div>
-        <VideoSheet pin={activePin} open={sheetOpen} onOpenChange={setSheetOpen} />
+        <VideoSheet
+          pin={activePin}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          isNewAlert={activePinIsAlert}
+          onAcknowledge={dismissAlert}
+        />
       </section>
 
       <section className="mt-5 px-4">
