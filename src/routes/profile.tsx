@@ -60,7 +60,7 @@ function ProfileScreen() {
           <h1 className="font-display text-xl font-bold">{profile?.display_name ?? user?.email}</h1>
           <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
         </div>
-        <button className="rounded-full bg-surface-1 p-2"><Settings className="size-4" /></button>
+        <Link to="/profile/settings" aria-label="Settings" className="rounded-full bg-surface-1 p-2"><Settings className="size-4" /></Link>
       </header>
 
       <section className="mx-5 mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-card p-2 text-center">

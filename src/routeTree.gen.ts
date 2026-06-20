@@ -16,6 +16,7 @@ import { Route as MapRouteImport } from './routes/map'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProfileSettingsRouteImport } from './routes/profile_.settings'
 import { Route as ProfileSavedRouteImport } from './routes/profile_.saved'
 import { Route as ProfileHelpRouteImport } from './routes/profile_.help'
 import { Route as ProfileCollectionsRouteImport } from './routes/profile_.collections'
@@ -57,6 +58,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileSettingsRoute = ProfileSettingsRouteImport.update({
+  id: '/profile_/settings',
+  path: '/profile/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileSavedRoute = ProfileSavedRouteImport.update({
   id: '/profile_/saved',
   path: '/profile/saved',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/profile/collections': typeof ProfileCollectionsRoute
   '/profile/help': typeof ProfileHelpRoute
   '/profile/saved': typeof ProfileSavedRoute
+  '/profile/settings': typeof ProfileSettingsRoute
   '/api/public/hooks/refresh-followed': typeof ApiPublicHooksRefreshFollowedRoute
 }
 export interface FileRoutesByTo {
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/profile/collections': typeof ProfileCollectionsRoute
   '/profile/help': typeof ProfileHelpRoute
   '/profile/saved': typeof ProfileSavedRoute
+  '/profile/settings': typeof ProfileSettingsRoute
   '/api/public/hooks/refresh-followed': typeof ApiPublicHooksRefreshFollowedRoute
 }
 export interface FileRoutesById {
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/profile_/collections': typeof ProfileCollectionsRoute
   '/profile_/help': typeof ProfileHelpRoute
   '/profile_/saved': typeof ProfileSavedRoute
+  '/profile_/settings': typeof ProfileSettingsRoute
   '/api/public/hooks/refresh-followed': typeof ApiPublicHooksRefreshFollowedRoute
 }
 export interface FileRouteTypes {
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/profile/collections'
     | '/profile/help'
     | '/profile/saved'
+    | '/profile/settings'
     | '/api/public/hooks/refresh-followed'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/profile/collections'
     | '/profile/help'
     | '/profile/saved'
+    | '/profile/settings'
     | '/api/public/hooks/refresh-followed'
   id:
     | '__root__'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/profile_/collections'
     | '/profile_/help'
     | '/profile_/saved'
+    | '/profile_/settings'
     | '/api/public/hooks/refresh-followed'
   fileRoutesById: FileRoutesById
 }
@@ -184,6 +196,7 @@ export interface RootRouteChildren {
   ProfileCollectionsRoute: typeof ProfileCollectionsRoute
   ProfileHelpRoute: typeof ProfileHelpRoute
   ProfileSavedRoute: typeof ProfileSavedRoute
+  ProfileSettingsRoute: typeof ProfileSettingsRoute
   ApiPublicHooksRefreshFollowedRoute: typeof ApiPublicHooksRefreshFollowedRoute
 }
 
@@ -238,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile_/settings': {
+      id: '/profile_/settings'
+      path: '/profile/settings'
+      fullPath: '/profile/settings'
+      preLoaderRoute: typeof ProfileSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile_/saved': {
       id: '/profile_/saved'
       path: '/profile/saved'
@@ -288,6 +308,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileCollectionsRoute: ProfileCollectionsRoute,
   ProfileHelpRoute: ProfileHelpRoute,
   ProfileSavedRoute: ProfileSavedRoute,
+  ProfileSettingsRoute: ProfileSettingsRoute,
   ApiPublicHooksRefreshFollowedRoute: ApiPublicHooksRefreshFollowedRoute,
 }
 export const routeTree = rootRouteImport
