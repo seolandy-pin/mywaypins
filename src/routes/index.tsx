@@ -148,8 +148,37 @@ function Home() {
             pinsRefreshKey={pinsVersion}
             channelMarkers={visibleMarkers}
             onChannelMarkerClick={(id) => pickChannel(id)}
+            alertPin={
+              newVideoAlert
+                ? {
+                    pinId: newVideoAlert.pinId,
+                    lat: newVideoAlert.lat,
+                    lng: newVideoAlert.lng,
+                    thumbnail: newVideoAlert.channelThumbnail,
+                  }
+                : null
+            }
+            onAlertPinClick={() => {
+              if (!newVideoAlert) return;
+              setActivePin({
+                id: newVideoAlert.pinId,
+                lat: newVideoAlert.lat,
+                lng: newVideoAlert.lng,
+                type: "new",
+                title: newVideoAlert.title,
+                creator: newVideoAlert.channelName,
+                thumbnail: newVideoAlert.thumbnailUrl ?? "",
+                location: newVideoAlert.location,
+                views: "",
+                uploaded: new Date(newVideoAlert.publishedAt).toLocaleDateString(),
+                youtubeId: newVideoAlert.youtubeVideoId,
+              });
+              setActivePinIsAlert(true);
+              setSheetOpen(true);
+            }}
             onPinClick={(p) => {
               setActivePin(p);
+              setActivePinIsAlert(false);
               setSheetOpen(true);
             }}
           />
@@ -162,7 +191,13 @@ function Home() {
             <Maximize2 className="size-3.5" /> Explore Full Map
           </button>
         </div>
-        <VideoSheet pin={activePin} open={sheetOpen} onOpenChange={setSheetOpen} />
+        <VideoSheet
+          pin={activePin}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          isNewAlert={activePinIsAlert}
+          onAcknowledge={dismissAlert}
+        />
       </section>
 
       <section className="mt-5 px-4">
