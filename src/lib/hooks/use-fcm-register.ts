@@ -29,7 +29,7 @@ export function useFcmRegister() {
       try {
         const { key } = await fetchKey();
         if (!key) return;
-        const { requestFcmToken } = await import("@/integrations/firebase/messaging.client");
+        const { requestFcmToken } = await import("@/integrations/firebase/messaging.browser");
         const token = await requestFcmToken(key);
         if (!token) return;
         await register({ data: { token, userAgent: navigator.userAgent } });
