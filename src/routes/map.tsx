@@ -8,7 +8,6 @@ import type { SamplePin } from "@/lib/sample-data";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
-import { useLatestNewVideoAlert } from "@/lib/hooks/use-latest-new-video-alert";
 
 export const Route = createFileRoute("/map")({
   head: () => ({
@@ -34,8 +33,6 @@ function MapScreen() {
   const { channels, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
   const { collections } = useMyCollections();
   const { data: channelMarkers } = useChannelMarkers(channels);
-  const { alert: newVideoAlert, dismiss: dismissAlert } = useLatestNewVideoAlert(channelIds);
-  const [activePinIsAlert, setActivePinIsAlert] = useState(false);
 
   const selectedCollection = collections.find((c) => c.id === selectedCollectionId) ?? null;
   const mapChannelFilter = !isAuthenticated
@@ -67,37 +64,8 @@ function MapScreen() {
         pinsRefreshKey={pinsVersion}
         channelMarkers={visibleMarkers}
         onChannelMarkerClick={(id) => pickChannel(id)}
-        alertPin={
-          newVideoAlert
-            ? {
-                pinId: newVideoAlert.pinId,
-                lat: newVideoAlert.lat,
-                lng: newVideoAlert.lng,
-                thumbnail: newVideoAlert.channelThumbnail,
-              }
-            : null
-        }
-        onAlertPinClick={() => {
-          if (!newVideoAlert) return;
-          setActive({
-            id: newVideoAlert.pinId,
-            lat: newVideoAlert.lat,
-            lng: newVideoAlert.lng,
-            type: "new",
-            title: newVideoAlert.title,
-            creator: newVideoAlert.channelName,
-            thumbnail: newVideoAlert.thumbnailUrl ?? "",
-            location: newVideoAlert.location,
-            views: "",
-            uploaded: new Date(newVideoAlert.publishedAt).toLocaleDateString(),
-            youtubeId: newVideoAlert.youtubeVideoId,
-          });
-          setActivePinIsAlert(true);
-          setOpen(true);
-        }}
         onPinClick={(p) => {
           setActive(p);
-          setActivePinIsAlert(false);
           setOpen(true);
         }}
       />
@@ -178,7 +146,7 @@ function MapScreen() {
         </div>
       )}
 
-      <VideoSheet pin={active} open={open} onOpenChange={setOpen} isNewAlert={activePinIsAlert} onAcknowledge={dismissAlert} />
+      <VideoSheet pin={active} open={open} onOpenChange={setOpen} />
     </div>
   );
 }
