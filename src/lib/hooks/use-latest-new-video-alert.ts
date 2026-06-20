@@ -9,12 +9,14 @@ export type LatestVideoAlert = {
   videoId: string; // db id
   youtubeVideoId: string;
   title: string;
+  thumbnailUrl: string | null;
   publishedAt: string;
   channelName: string;
   channelThumbnail: string | null;
   pinId: string;
   lat: number;
   lng: number;
+  location: string;
 };
 
 function readDismissed(): string | null {
