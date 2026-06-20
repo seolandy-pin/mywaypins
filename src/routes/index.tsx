@@ -61,10 +61,13 @@ function Home() {
 
   const { total: newCount } = useNewVideoFlags(channelIds);
   useRefreshFollowedOnLoad();
+  const { permission: pushPermission, enable: enablePush } = usePushNotifications();
+  const showEnablePush = isAuthenticated && pushPermission === "default";
 
   const handleBell = () => {
     navigate({ to: "/following" });
   };
+
 
   function pickChannel(id: string) {
     setSelectedCollectionId(null);
