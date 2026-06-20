@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { extractLocations } from "@/lib/api/channels.functions";
 
+type NewVideo = { videoId: string; title: string; channelName: string };
+
+
+
 type SearchItem = {
   id: { videoId: string };
   snippet: {
