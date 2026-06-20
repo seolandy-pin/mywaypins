@@ -148,13 +148,15 @@ async function fetchN(
   return out;
 }
 
+type NewVideo = { id: string; title: string; published_at: string };
+
 async function refreshChannel(
   channelDbId: string,
   ytChannelId: string,
   YT_KEY: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
-): Promise<number> {
+): Promise<NewVideo[]> {
   const seen = new Set<string>();
   const latest = await fetchN(ytChannelId, "date", 20, seen, YT_KEY);
   const top = await fetchN(ytChannelId, "viewCount", 20, seen, YT_KEY);
