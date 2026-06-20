@@ -103,6 +103,17 @@ function Home() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {showEnablePush && (
+              <button
+                type="button"
+                onClick={enablePush}
+                aria-label="Enable push notifications"
+                title="푸시 알림 켜기"
+                className="flex size-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-surface-1 active:scale-95"
+              >
+                <BellOff className="size-[18px]" />
+              </button>
+            )}
             <button
               type="button"
               onClick={handleBell}
@@ -114,6 +125,7 @@ function Home() {
                 <span className="absolute right-1 top-1 size-2 rounded-full bg-primary ring-2 ring-background" />
               )}
             </button>
+
             <Link
               to="/submit"
               aria-label="Submit a channel"
