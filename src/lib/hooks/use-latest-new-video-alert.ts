@@ -49,7 +49,7 @@ export function useLatestNewVideoAlert(channelIds: string[]) {
       const { data, error } = await supabase
         .from("videos")
         .select(
-          "id, title, youtube_video_id, published_at, youtube_channels(name, thumbnail_url), pins!inner(id, latitude, longitude)",
+          "id, title, youtube_video_id, thumbnail_url, published_at, youtube_channels(name, thumbnail_url), pins!inner(id, latitude, longitude, places(city_name, country_name))",
         )
         .in("channel_id", channelIds)
         .not("pins.latitude", "is", null)
@@ -61,22 +61,31 @@ export function useLatestNewVideoAlert(channelIds: string[]) {
         id: string;
         title: string;
         youtube_video_id: string;
+        thumbnail_url: string | null;
         published_at: string;
         youtube_channels: { name?: string; thumbnail_url?: string } | null;
-        pins: Array<{ id: string; latitude: number; longitude: number }>;
+        pins: Array<{
+          id: string;
+          latitude: number;
+          longitude: number;
+          places: { city_name?: string; country_name?: string } | null;
+        }>;
       };
       const pin = row.pins[0];
       if (!pin) return null;
+      const place = pin.places;
       return {
         videoId: row.id,
         youtubeVideoId: row.youtube_video_id,
         title: row.title,
+        thumbnailUrl: row.thumbnail_url,
         publishedAt: row.published_at,
         channelName: row.youtube_channels?.name ?? "",
         channelThumbnail: row.youtube_channels?.thumbnail_url ?? null,
         pinId: pin.id,
         lat: pin.latitude,
         lng: pin.longitude,
+        location: [place?.city_name, place?.country_name].filter(Boolean).join(", "),
       };
     },
   });
