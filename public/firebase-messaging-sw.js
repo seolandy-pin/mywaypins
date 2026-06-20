@@ -18,8 +18,6 @@ messaging.onBackgroundMessage((payload) => {
   const data = payload.data || {};
   self.registration.showNotification(n.title || "MyWayPins", {
     body: n.body || "",
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
     data: { url: data.url || "/" },
     tag: data.tag || undefined,
   });
