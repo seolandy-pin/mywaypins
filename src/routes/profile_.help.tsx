@@ -116,21 +116,31 @@ function HelpSupportScreen() {
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
               <div className="flex flex-col gap-3 text-sm text-muted-foreground">
-                <p>MyWayPins respects your privacy.</p>
                 <p>
-                  We collect only the information necessary to provide and improve our services, including account information, saved travel pins, collections, and app usage data.
+                  MyWayPins respects your privacy. We collect only the information
+                  necessary to provide and improve our services, including account
+                  information (email), device tokens for push notifications (FCM),
+                  saved travel pins, collections, and app usage data.
                 </p>
                 <p>We do not sell personal information to third parties.</p>
                 <p className="text-foreground font-medium">Information may be used to:</p>
                 <ul className="list-disc space-y-1 pl-5">
                   <li>Provide and maintain the service</li>
-                  <li>Improve app performance</li>
-                  <li>Improve user experience</li>
+                  <li>Deliver push notifications for new video updates</li>
+                  <li>Improve app performance and user experience</li>
                   <li>Respond to support requests</li>
                   <li>Ensure platform security</li>
                 </ul>
+                <p className="text-foreground font-medium">Data Deletion & Account Removal</p>
                 <p>
-                  Users may request account deletion and data removal by contacting:{" "}
+                  Users have full control over their data. You can delete your
+                  account and remove all associated personal data instantly at any
+                  time through the Account Deletion feature inside the app settings{" "}
+                  <span className="text-foreground">(Profile → Settings → Delete Account)</span>.
+                </p>
+                <p>
+                  Alternatively, users may request account deletion by contacting us
+                  at:{" "}
                   <a
                     href="mailto:mywaypins.help@gmail.com"
                     className="text-primary underline"
@@ -139,6 +149,14 @@ function HelpSupportScreen() {
                   </a>
                 </p>
                 <p>By using MyWayPins, you agree to this Privacy Policy.</p>
+                <div className="mt-1">
+                  <Link
+                    to="/privacy"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  >
+                    View full Privacy Policy page →
+                  </Link>
+                </div>
               </div>
             </AccordionContent>
           </CardWrap>
