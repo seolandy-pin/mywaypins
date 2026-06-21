@@ -144,9 +144,9 @@ function AuthScreen() {
                   <div className="mx-auto mb-2 rounded-xl gradient-hero p-2.5 text-primary-foreground w-fit">
                     <Mail className="size-5" />
                   </div>
-                  <DialogTitle className="text-center">비밀번호 재설정</DialogTitle>
+                  <DialogTitle className="text-center">Reset Password</DialogTitle>
                   <DialogDescription className="text-center">
-                    가입하신 이메일 주소를 입력해 주세요.
+                    Enter your registered email address.
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleForgotSubmit} className="space-y-3">
@@ -170,10 +170,10 @@ function AuthScreen() {
                       disabled={forgotBusy}
                       className="flex-1"
                     >
-                      취소
+                      Cancel
                     </Button>
                     <Button type="submit" disabled={forgotBusy} className="flex-1">
-                      {forgotBusy ? "전송 중..." : "제출"}
+                      {forgotBusy ? "Sending..." : "Submit"}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -184,18 +184,17 @@ function AuthScreen() {
                   <div className="mx-auto mb-2 rounded-xl gradient-hero p-2.5 text-primary-foreground w-fit">
                     <Mail className="size-5" />
                   </div>
-                  <DialogTitle className="text-center">요청이 접수되었습니다</DialogTitle>
+                  <DialogTitle className="text-center">Request Received</DialogTitle>
                 </DialogHeader>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  비밀번호 재설정 요청이 접수되었습니다. 보안을 위해 가입하신 이메일 계정으로
-                  <span className="text-foreground font-medium"> 10분 내</span>에 임시 비밀번호가 발송됩니다.
-                  메일이 오지 않거나 빠른 처리를 원하시면 공식 지원팀
-                  (<a href="mailto:mywaypins.help@gmail.com" className="text-primary hover:underline">mywaypins.help@gmail.com</a>)
-                  으로 문의해 주세요.
+                  Your password reset request has been received. For security, a temporary password will be sent to your registered email within{" "}
+                  <span className="text-foreground font-medium">10 minutes</span>.
+                  If you do not receive the email or need urgent assistance, please contact our support team at{" "}
+                  <a href="mailto:mywaypins.help@gmail.com" className="text-primary hover:underline">mywaypins.help@gmail.com</a>.
                 </p>
                 <DialogFooter>
                   <Button onClick={() => setForgotOpen(false)} className="w-full">
-                    확인
+                    OK
                   </Button>
                 </DialogFooter>
               </>
