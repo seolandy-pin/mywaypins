@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -36,6 +37,11 @@ const SearchRoute = SearchRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MapRoute = MapRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/following': typeof FollowingRoute
   '/map': typeof MapRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/following': typeof FollowingRoute
   '/map': typeof MapRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/following': typeof FollowingRoute
   '/map': typeof MapRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/following'
     | '/map'
+    | '/privacy'
     | '/profile'
     | '/search'
     | '/submit'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/following'
     | '/map'
+    | '/privacy'
     | '/profile'
     | '/search'
     | '/submit'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/following'
     | '/map'
+    | '/privacy'
     | '/profile'
     | '/search'
     | '/submit'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   FollowingRoute: typeof FollowingRoute
   MapRoute: typeof MapRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   SearchRoute: typeof SearchRoute
   SubmitRoute: typeof SubmitRoute
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/map': {
@@ -301,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   FollowingRoute: FollowingRoute,
   MapRoute: MapRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   SearchRoute: SearchRoute,
   SubmitRoute: SubmitRoute,
@@ -314,3 +335,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
