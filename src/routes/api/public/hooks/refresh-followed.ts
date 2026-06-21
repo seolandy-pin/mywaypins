@@ -82,7 +82,7 @@ export const Route = createFileRoute("/api/public/hooks/refresh-followed")({
               userIds.map((uid) => ({
                 user_id: uid,
                 kind: "new_video",
-                title: `${ch.name ?? "채널"}에 새 영상`,
+                title: `New video on ${ch.name ?? "Channel"}`,
                 body: latest.title,
                 link,
               })),
@@ -90,7 +90,7 @@ export const Route = createFileRoute("/api/public/hooks/refresh-followed")({
 
             if (tokens.length > 0) {
               const res = await sendFcmToTokens(tokens, {
-                title: `${ch.name ?? "채널"}에 새 영상`,
+                title: `New video on ${ch.name ?? "Channel"}`,
                 body: latest.title,
                 url: link,
                 tag: `ch:${ch.id}`,
