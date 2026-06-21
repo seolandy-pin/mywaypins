@@ -96,54 +96,56 @@ function Home() {
               <Plane className="size-3" />
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <NotificationsPanel
-              open={notifOpen}
-              onOpenChange={setNotifOpen}
-              items={notifications}
-              unreadCount={unreadCount}
-              onMarkAllRead={markAllSeen}
-              onItemClick={(it) => {
-                markChannelSeen(it.channelId);
-                setNotifOpen(false);
-                setActivePin({
-                  id: it.videoDbId,
-                  lat: 0,
-                  lng: 0,
-                  type: "new",
-                  title: it.title,
-                  creator: it.channelName,
-                  thumbnail: it.thumbnailUrl ?? "",
-                  location: "",
-                  views: "",
-                  uploaded: new Date(it.publishedAt).toLocaleDateString(),
-                  youtubeId: it.youtubeId,
-                });
-                setSheetOpen(true);
-              }}
-              trigger={
-                <button
-                  type="button"
-                  aria-label="Notifications"
-                  className="relative flex size-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-surface-1 active:scale-95"
-                >
-                  <Bell className="size-[18px]" />
-                  {unreadCount > 0 && (
-                    <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground ring-2 ring-background">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </button>
-              }
-            />
-            <Link
-              to="/submit"
-              aria-label="Submit a channel"
-              className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-95"
-            >
-              <Plus className="size-[18px]" />
-            </Link>
-          </div>
+          {isAuthenticated && (
+            <div className="flex items-center gap-2">
+              <NotificationsPanel
+                open={notifOpen}
+                onOpenChange={setNotifOpen}
+                items={notifications}
+                unreadCount={unreadCount}
+                onMarkAllRead={markAllSeen}
+                onItemClick={(it) => {
+                  markChannelSeen(it.channelId);
+                  setNotifOpen(false);
+                  setActivePin({
+                    id: it.videoDbId,
+                    lat: 0,
+                    lng: 0,
+                    type: "new",
+                    title: it.title,
+                    creator: it.channelName,
+                    thumbnail: it.thumbnailUrl ?? "",
+                    location: "",
+                    views: "",
+                    uploaded: new Date(it.publishedAt).toLocaleDateString(),
+                    youtubeId: it.youtubeId,
+                  });
+                  setSheetOpen(true);
+                }}
+                trigger={
+                  <button
+                    type="button"
+                    aria-label="Notifications"
+                    className="relative flex size-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-surface-1 active:scale-95"
+                  >
+                    <Bell className="size-[18px]" />
+                    {unreadCount > 0 && (
+                      <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground ring-2 ring-background">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                }
+              />
+              <Link
+                to="/submit"
+                aria-label="Submit a channel"
+                className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-95"
+              >
+                <Plus className="size-[18px]" />
+              </Link>
+            </div>
+          )}
         </div>
       </header>
 
