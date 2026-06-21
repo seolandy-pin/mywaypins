@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { MobileShell } from "@/components/layout/MobileShell";
+import { PasswordRecoveryModal } from "@/components/PasswordRecoveryModal";
 
 function NotFoundComponent() {
   return (
@@ -97,6 +98,7 @@ function RootComponent() {
       <MobileShell>
         <Outlet />
       </MobileShell>
+      <PasswordRecoveryModal />
       <Toaster position="top-center" theme="dark" />
     </QueryClientProvider>
   );

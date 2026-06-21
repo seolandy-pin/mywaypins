@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MapRouteImport } from './routes/map'
@@ -32,6 +33,11 @@ const SubmitRoute = SubmitRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/map': typeof MapRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
   '/channel/$handle': typeof ChannelHandleRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/map': typeof MapRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
   '/channel/$handle': typeof ChannelHandleRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/map': typeof MapRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/submit': typeof SubmitRoute
   '/channel/$handle': typeof ChannelHandleRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/privacy'
     | '/profile'
+    | '/reset-password'
     | '/search'
     | '/submit'
     | '/channel/$handle'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/privacy'
     | '/profile'
+    | '/reset-password'
     | '/search'
     | '/submit'
     | '/channel/$handle'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/privacy'
     | '/profile'
+    | '/reset-password'
     | '/search'
     | '/submit'
     | '/channel/$handle'
@@ -203,6 +215,7 @@ export interface RootRouteChildren {
   MapRoute: typeof MapRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   SubmitRoute: typeof SubmitRoute
   ChannelHandleRoute: typeof ChannelHandleRoute
@@ -227,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -323,6 +343,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapRoute: MapRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   SubmitRoute: SubmitRoute,
   ChannelHandleRoute: ChannelHandleRoute,
