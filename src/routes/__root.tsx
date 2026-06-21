@@ -98,6 +98,7 @@ function RootComponent() {
       <MobileShell>
         <Outlet />
       </MobileShell>
+      <PasswordRecoveryModal />
       <Toaster position="top-center" theme="dark" />
     </QueryClientProvider>
   );
