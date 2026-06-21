@@ -30,14 +30,23 @@ function AuthScreen() {
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const fn = mode === "signin"
-      ? supabase.auth.signInWithPassword({ email, password })
-      : supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
-    const { error } = await fn;
+    if (mode === "signin") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      setLoading(false);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Welcome back!");
+      navigate({ to: "/" });
+      return;
+    }
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
+    if (error) { setLoading(false); toast.error(error.message); return; }
+    if (!data.session) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) { setLoading(false); toast.error(signInError.message); return; }
+    }
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(mode === "signin" ? "Welcome back!" : "Account created — check your email.");
-    if (mode === "signin") navigate({ to: "/" });
+    toast.success("Welcome! Account created successfully.");
+    navigate({ to: "/" });
   }
 
   async function handleGoogle() {
