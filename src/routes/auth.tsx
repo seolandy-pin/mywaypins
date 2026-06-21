@@ -3,11 +3,19 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
-import { Compass } from "lucide-react";
+import { Compass, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — WanderPins" }] }),
@@ -20,6 +28,11 @@ function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotBusy, setForgotBusy] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -57,6 +70,27 @@ function AuthScreen() {
     navigate({ to: "/" });
   }
 
+  function openForgot() {
+    setForgotEmail(email);
+    setForgotSent(false);
+    setForgotOpen(true);
+  }
+
+  async function handleForgotSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setForgotBusy(true);
+    try {
+      await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+    } catch {
+      // Ignore — show generic confirmation regardless to avoid email enumeration
+    }
+    setForgotBusy(false);
+    setForgotSent(true);
+  }
+
   return (
     <div className="safe-top flex min-h-screen flex-col items-center justify-center gap-6 px-6">
         <div className="flex flex-col items-center gap-2 text-center">
@@ -73,6 +107,17 @@ function AuthScreen() {
           <div className="space-y-1">
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="bg-surface-1 h-12" />
+            {mode === "signin" && (
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={openForgot}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
           </div>
           <Button type="submit" size="lg" className="w-full" disabled={loading}>
             {mode === "signin" ? "Sign in" : "Create account"}
@@ -90,6 +135,73 @@ function AuthScreen() {
         <button onClick={() => setMode(mode === "signin" ? "signup" : "signin")} className="text-sm text-muted-foreground">
           {mode === "signin" ? "New here? Create an account" : "Have an account? Sign in"}
         </button>
+
+        <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+          <DialogContent className="bg-surface-1 border-border max-w-sm">
+            {!forgotSent ? (
+              <>
+                <DialogHeader>
+                  <div className="mx-auto mb-2 rounded-xl gradient-hero p-2.5 text-primary-foreground w-fit">
+                    <Mail className="size-5" />
+                  </div>
+                  <DialogTitle className="text-center">비밀번호 재설정</DialogTitle>
+                  <DialogDescription className="text-center">
+                    가입하신 이메일 주소를 입력해 주세요.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleForgotSubmit} className="space-y-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="forgot-email">Email</Label>
+                    <Input
+                      id="forgot-email"
+                      type="email"
+                      required
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      className="bg-surface-2 h-12"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  <DialogFooter className="gap-2 sm:gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setForgotOpen(false)}
+                      disabled={forgotBusy}
+                      className="flex-1"
+                    >
+                      취소
+                    </Button>
+                    <Button type="submit" disabled={forgotBusy} className="flex-1">
+                      {forgotBusy ? "전송 중..." : "제출"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </>
+            ) : (
+              <>
+                <DialogHeader>
+                  <div className="mx-auto mb-2 rounded-xl gradient-hero p-2.5 text-primary-foreground w-fit">
+                    <Mail className="size-5" />
+                  </div>
+                  <DialogTitle className="text-center">요청이 접수되었습니다</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  비밀번호 재설정 요청이 접수되었습니다. 보안을 위해 가입하신 이메일 계정으로
+                  <span className="text-foreground font-medium"> 10분 내</span>에 임시 비밀번호가 발송됩니다.
+                  메일이 오지 않거나 빠른 처리를 원하시면 공식 지원팀
+                  (<a href="mailto:mywaypins.help@gmail.com" className="text-primary hover:underline">mywaypins.help@gmail.com</a>)
+                  으로 문의해 주세요.
+                </p>
+                <DialogFooter>
+                  <Button onClick={() => setForgotOpen(false)} className="w-full">
+                    확인
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
     </div>
   );
 }
