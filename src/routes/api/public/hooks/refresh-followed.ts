@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { extractLocations } from "@/lib/api/channels.functions";
+import { hasYouTubeKey, ytFetch } from "@/lib/youtube-keys";
+
 
 type SearchItem = {
   id: { videoId: string };
