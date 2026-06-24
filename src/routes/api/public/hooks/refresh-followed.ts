@@ -51,9 +51,9 @@ export const Route = createFileRoute("/api/public/hooks/refresh-followed")({
             const newOnes = await refreshChannel(
               ch.id,
               ch.youtube_channel_id,
-              YT_KEY,
               supabaseAdmin,
             );
+
             totalNew += newOnes.length;
             if (newOnes.length === 0) continue;
 
