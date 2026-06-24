@@ -141,7 +141,7 @@ function ChannelSearchPanel() {
           />
         </div>
         <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <Youtube className="size-3.5 text-primary" /> Tip: type a creator's name to find &amp; follow their channel.
+          <Youtube className="size-3.5 text-primary" /> Tip: try a place like "Japan" to see top travel videos.
         </p>
       </div>
 
