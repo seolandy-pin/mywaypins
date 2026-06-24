@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { hasYouTubeKey, ytFetch } from "@/lib/youtube-keys";
+
 
 /**
  * Refreshes followed channels' videos on demand. Pulls the latest 20 + top 20
