@@ -238,7 +238,7 @@ export const extractLocations = createServerFn({ method: "POST" })
     return { ok: true, pins: locs.length };
   });
 
-async function resolveYoutubeChannelId(url: string, apiKey: string): Promise<string | null> {
+async function resolveYoutubeChannelId(url: string): Promise<string | null> {
   const channelMatch = url.match(/\/channel\/([^/?#]+)/u);
   if (channelMatch) return channelMatch[1];
   const handleMatch = url.match(/\/@([^/?#]+)/u);
@@ -247,16 +247,19 @@ async function resolveYoutubeChannelId(url: string, apiKey: string): Promise<str
   if (!query) return null;
   if (handleMatch) {
     const handle = query.startsWith("@") ? query : `@${query}`;
-    const handleRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`,
+    const handleRes = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(handle)}&key=${key}`,
     );
     const handleJson = (await handleRes.json()) as { items?: Array<{ id?: string }> };
     const id = handleJson.items?.[0]?.id;
     if (id) return id;
   }
-  const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=1&key=${apiKey}`,
+  const res = await ytFetch(
+    (key) =>
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=1&key=${key}`,
   );
   const json = (await res.json()) as { items?: Array<{ snippet?: { channelId?: string } }> };
   return json.items?.[0]?.snippet?.channelId ?? null;
 }
+
