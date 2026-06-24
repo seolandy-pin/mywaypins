@@ -18,7 +18,14 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
 
     const sUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=8&q=${encodeURIComponent(q)}&key=${apiKey}`;
     const sRes = await fetch(sUrl);
-    if (!sRes.ok) throw new Error(`YouTube search ${sRes.status}`);
+    if (!sRes.ok) {
+      // 429(rate limit) 또는 5xx는 UI가 깨지지 않도록 빈 결과로 폴백.
+      if (sRes.status === 429 || sRes.status >= 500) {
+        console.warn(`[youtube] search fallback, status=${sRes.status}`);
+        return [];
+      }
+      throw new Error(`YouTube search ${sRes.status}`);
+    }
     const sJson = (await sRes.json()) as { items?: Array<{ id: { channelId: string } }> };
     const ids = (sJson.items ?? []).map((i) => i.id.channelId).filter(Boolean);
     if (ids.length === 0) return [];
