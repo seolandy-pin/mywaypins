@@ -18,13 +18,13 @@ export const Route = createFileRoute("/api/public/hooks/refresh-followed")({
   server: {
     handlers: {
       POST: async () => {
-        const YT_KEY = process.env.YOUTUBE_API_KEY;
-        if (!YT_KEY) {
+        if (!hasYouTubeKey()) {
           return new Response(JSON.stringify({ ok: false, reason: "YOUTUBE_API_KEY missing" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
           });
         }
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         // Channels with at least one follower
