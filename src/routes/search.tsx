@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, MapPin, Youtube } from "lucide-react";
+import { Search as SearchIcon, MapPin, Youtube, Eye, Play } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { samplePins, featuredDestinations, popularCreators } from "@/lib/sample-data";
-import { searchYouTubeChannelsFn } from "@/lib/youtube.functions";
+import { searchYouTubeChannelsFn, searchYouTubeVideosFn, type YTVideoResult } from "@/lib/youtube.functions";
+import { SearchVideoSheet } from "@/components/SearchVideoSheet";
 
 export const Route = createFileRoute("/search")({
   head: () => ({
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/search")({
   component: SearchScreen,
 });
 
-function formatNum(n: number) {
+function formatNum(n: number | null | undefined) {
+  if (n == null) return "—";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`;
   return String(n);
@@ -28,7 +30,9 @@ function formatNum(n: number) {
 function SearchScreen() {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
+  const [activeVideo, setActiveVideo] = useState<YTVideoResult | null>(null);
   const ytSearch = useServerFn(searchYouTubeChannelsFn);
+  const ytVideosSearch = useServerFn(searchYouTubeVideosFn);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 400);
@@ -43,15 +47,24 @@ function SearchScreen() {
     queryFn: () => ytSearch({ data: { q: debounced } }),
   });
 
+  const ytVideosQuery = useQuery({
+    queryKey: ["yt-videos-search", debounced],
+    enabled: debounced.length >= 2,
+    staleTime: 1000 * 60 * 30,
+    retry: false,
+    queryFn: () => ytVideosSearch({ data: { q: debounced } }),
+  });
+
   useEffect(() => {
-    if (!ytQuery.error) return;
-    const msg = (ytQuery.error as Error).message ?? "";
+    const err = ytQuery.error || ytVideosQuery.error;
+    if (!err) return;
+    const msg = (err as Error).message ?? "";
     if (msg.includes("QUOTA") || msg.includes("403") || msg.includes("429")) {
       toast.error("YouTube API daily quota exceeded. Please try again later.");
     } else {
       toast.error("Something went wrong while searching. Please try again later.");
     }
-  }, [ytQuery.error]);
+  }, [ytQuery.error, ytVideosQuery.error]);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -84,12 +97,12 @@ function SearchScreen() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search YouTube channels, places…"
+            placeholder="Search places, creators, videos…"
             className="h-12 rounded-2xl bg-surface-1 pl-10 text-base"
           />
         </form>
         <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <Youtube className="size-3.5 text-primary" /> Tip: type a creator's name to find &amp; follow their channel.
+          <Youtube className="size-3.5 text-primary" /> Tip: try a place like "Japan" to see top travel videos.
         </p>
       </header>
 
@@ -112,10 +125,40 @@ function SearchScreen() {
 
       {results && (
         <div className="mt-4 space-y-6 px-5 pb-6">
-          <Group title="YouTube channels">
+          <Group title="Popular videos">
             {debounced.length < 2 && <p className="text-xs text-muted-foreground">Type at least 2 characters…</p>}
+            {debounced.length >= 2 && ytVideosQuery.isLoading && <p className="text-sm text-muted-foreground">Searching popular videos…</p>}
+            {ytVideosQuery.data && ytVideosQuery.data.length === 0 && <Empty />}
+            <div className="grid grid-cols-2 gap-3">
+              {ytVideosQuery.data?.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setActiveVideo(v)}
+                  className="overflow-hidden rounded-2xl bg-card text-left active:scale-[0.98]"
+                >
+                  <div className="relative aspect-video w-full overflow-hidden bg-black">
+                    <img src={v.thumbnail} alt="" className="size-full object-cover" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition group-hover:opacity-100">
+                      <Play className="size-8 fill-white text-white" />
+                    </div>
+                    {v.viewCount != null && (
+                      <span className="absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium text-white">
+                        <Eye className="size-3" />
+                        {formatNum(v.viewCount)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="px-2.5 py-2">
+                    <p className="line-clamp-2 text-xs font-semibold leading-snug">{v.title}</p>
+                    <p className="mt-1 line-clamp-1 text-[10px] text-muted-foreground">{v.channelTitle}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </Group>
+
+          <Group title="YouTube channels">
             {debounced.length >= 2 && ytQuery.isLoading && <p className="text-sm text-muted-foreground">Searching…</p>}
-            {ytQuery.error && <p className="text-sm text-destructive">Couldn't reach YouTube.</p>}
             {ytQuery.data && ytQuery.data.length === 0 && <Empty />}
             {ytQuery.data?.map((c) => {
               const handle = c.customUrl;
@@ -154,7 +197,6 @@ function SearchScreen() {
             })}
           </Group>
 
-
           <Group title="Places">
             {results.places.length === 0 && <Empty />}
             {results.places.map((p) => (
@@ -167,14 +209,14 @@ function SearchScreen() {
               <Row key={c.name} title={c.name} subtitle={`${c.subs} subscribers`} img={c.avatar} round />
             ))}
           </Group>
-          <Group title="Videos">
-            {results.videos.length === 0 && <Empty />}
-            {results.videos.map((v) => (
-              <Row key={v.id} title={v.title} subtitle={`${v.creator} · ${v.location}`} img={v.thumbnail} />
-            ))}
-          </Group>
         </div>
       )}
+
+      <SearchVideoSheet
+        video={activeVideo}
+        open={!!activeVideo}
+        onOpenChange={(o) => { if (!o) setActiveVideo(null); }}
+      />
     </>
   );
 }

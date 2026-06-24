@@ -169,3 +169,148 @@ export const getYouTubeChannelByHandleFn = createServerFn({ method: "GET" })
     };
   });
 
+export type YTVideoResult = {
+  id: string;
+  title: string;
+  thumbnail: string;
+  channelId: string;
+  channelTitle: string;
+  channelHandle?: string;
+  channelThumbnail?: string;
+  viewCount: number | null;
+  publishedAt?: string;
+};
+
+/**
+ * Search popular videos for a place/topic query.
+ * Used by the search screen so that "Japan", "Bali", etc. surface the
+ * most-viewed travel videos. Results are cached 24h to save quota.
+ */
+export const searchYouTubeVideosFn = createServerFn({ method: "GET" })
+  .inputValidator((d: { q: string }) => d)
+  .handler(async ({ data }): Promise<YTVideoResult[]> => {
+    const q = data.q.trim();
+    if (q.length < 2) return [];
+    if (!hasYouTubeKey()) throw new Error("YOUTUBE_API_KEY not configured");
+
+    const cacheKey = `videos:${q.toLowerCase()}`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: cached } = await supabaseAdmin
+      .from("youtube_search_cache")
+      .select("results, expires_at")
+      .eq("query", cacheKey)
+      .maybeSingle();
+    if (cached && new Date(cached.expires_at).getTime() > Date.now()) {
+      return cached.results as YTVideoResult[];
+    }
+
+    const writeCache = async (results: YTVideoResult[]) => {
+      await supabaseAdmin
+        .from("youtube_search_cache")
+        .upsert(
+          {
+            query: cacheKey,
+            results: results as unknown as never,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          },
+          { onConflict: "query" },
+        );
+    };
+
+    // order=viewCount surfaces the most popular videos for the term first.
+    const sRes = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&maxResults=12&q=${encodeURIComponent(q)}&key=${key}`,
+    );
+    if (!sRes.ok) {
+      if (sRes.status === 403 || sRes.status === 429 || sRes.status >= 500) {
+        throw new Error("YOUTUBE_QUOTA_EXCEEDED");
+      }
+      throw new Error(`YouTube video search ${sRes.status}`);
+    }
+    const sJson = (await sRes.json()) as {
+      items?: Array<{
+        id: { videoId: string };
+        snippet: {
+          title: string;
+          channelId: string;
+          channelTitle: string;
+          publishedAt: string;
+          thumbnails: { default?: { url: string }; medium?: { url: string }; high?: { url: string } };
+        };
+      }>;
+    };
+    const items = sJson.items ?? [];
+    const videoIds = items.map((i) => i.id.videoId).filter(Boolean);
+    if (videoIds.length === 0) {
+      await writeCache([]);
+      return [];
+    }
+
+    // Fetch view counts (statistics) for ranking display.
+    const vRes = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds.join(",")}&key=${key}`,
+    );
+    const viewCountById = new Map<string, number | null>();
+    if (vRes.ok) {
+      const vJson = (await vRes.json()) as {
+        items?: Array<{ id: string; statistics: { viewCount?: string } }>;
+      };
+      for (const it of vJson.items ?? []) {
+        viewCountById.set(it.id, it.statistics.viewCount ? Number(it.statistics.viewCount) : null);
+      }
+    }
+
+    // Fetch channel handles + thumbnails (so the Follow button has good metadata).
+    const channelIds = Array.from(new Set(items.map((i) => i.snippet.channelId)));
+    const cRes = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelIds.join(",")}&key=${key}`,
+    );
+    const channelMetaById = new Map<string, { handle?: string; thumbnail?: string }>();
+    if (cRes.ok) {
+      const cJson = (await cRes.json()) as {
+        items?: Array<{
+          id: string;
+          snippet: {
+            customUrl?: string;
+            thumbnails: { default?: { url: string }; medium?: { url: string }; high?: { url: string } };
+          };
+        }>;
+      };
+      for (const it of cJson.items ?? []) {
+        channelMetaById.set(it.id, {
+          handle: it.snippet.customUrl?.replace(/^@/, ""),
+          thumbnail:
+            it.snippet.thumbnails.medium?.url ??
+            it.snippet.thumbnails.default?.url ??
+            it.snippet.thumbnails.high?.url,
+        });
+      }
+    }
+
+    const results: YTVideoResult[] = items.map((i) => {
+      const meta = channelMetaById.get(i.snippet.channelId) ?? {};
+      return {
+        id: i.id.videoId,
+        title: i.snippet.title,
+        thumbnail:
+          i.snippet.thumbnails.high?.url ??
+          i.snippet.thumbnails.medium?.url ??
+          i.snippet.thumbnails.default?.url ??
+          "",
+        channelId: i.snippet.channelId,
+        channelTitle: i.snippet.channelTitle,
+        channelHandle: meta.handle,
+        channelThumbnail: meta.thumbnail,
+        viewCount: viewCountById.get(i.id.videoId) ?? null,
+        publishedAt: i.snippet.publishedAt,
+      };
+    });
+
+    await writeCache(results);
+    return results;
+  });
+
