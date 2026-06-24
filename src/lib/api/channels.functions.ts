@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { hasYouTubeKey, ytFetch } from "@/lib/youtube-keys";
+
 
 const SubmitInput = z.object({
   channel_url: z.string().url().max(500),
