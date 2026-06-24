@@ -1,11 +1,18 @@
 {
-  "name": "WanderPins",
-  "short_name": "WanderPins",
-  "description": "Discover travel videos on a world map.",
+  "name": "MyWayPins",
+  "short_name": "MyWayPins",
+  "description": "Discover travel YouTube videos pinned to real places.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1f2c",
   "theme_color": "#1a1f2c",
   "orientation": "portrait",
-  "icons": []
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }
