@@ -1,32 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/use-auth";
+import { useChannelSeen } from "./use-channel-seen";
 
-const STORAGE_KEY = "mywaypins:channel_last_seen";
 const DEFAULT_LOOKBACK_MS = 7 * 24 * 3600 * 1000;
 
-type SeenMap = Record<string, string>;
-
-function readSeenMap(): SeenMap {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? (parsed as SeenMap) : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeSeenMap(map: SeenMap) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-  window.dispatchEvent(new Event("mywaypins:seen-updated"));
-}
-
-function lastSeenFor(map: SeenMap, channelId: string): string {
+function lastSeenFor(map: Record<string, string>, channelId: string): string {
   return map[channelId] ?? new Date(Date.now() - DEFAULT_LOOKBACK_MS).toISOString();
 }
 
@@ -43,23 +22,12 @@ export type NotificationItem = {
 };
 
 /**
- * Returns the most recent new videos from followed channels (within the last
- * week) joined with channel info, plus unread state derived from the per-channel
- * lastSeen map in localStorage.
+ * Recent new videos from followed channels (last 7 days). Read state lives
+ * in `public.channel_last_seen` so it persists across logout/login and devices.
  */
 export function useNewVideoNotifications(channelIds: string[]) {
   const { isAuthenticated } = useAuth();
-  const [seenMap, setSeenMap] = useState<SeenMap>(readSeenMap);
-
-  useEffect(() => {
-    const sync = () => setSeenMap(readSeenMap());
-    window.addEventListener("storage", sync);
-    window.addEventListener("mywaypins:seen-updated", sync);
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("mywaypins:seen-updated", sync);
-    };
-  }, []);
+  const { seenMap, markChannelSeen, markChannelsSeen } = useChannelSeen();
 
   const idsKey = channelIds.slice().sort().join(",");
   const lookbackStart = new Date(Date.now() - DEFAULT_LOOKBACK_MS).toISOString();
@@ -104,20 +72,7 @@ export function useNewVideoNotifications(channelIds: string[]) {
 
   const unreadCount = items.filter((i) => i.unread).length;
 
-  const markChannelSeen = useCallback((channelId: string) => {
-    const next = { ...readSeenMap(), [channelId]: new Date().toISOString() };
-    writeSeenMap(next);
-    setSeenMap(next);
-  }, []);
-
-  const markAllSeen = useCallback(() => {
-    const now = new Date().toISOString();
-    const cur = readSeenMap();
-    const next: SeenMap = { ...cur };
-    for (const id of channelIds) next[id] = now;
-    writeSeenMap(next);
-    setSeenMap(next);
-  }, [channelIds]);
+  const markAllSeen = () => markChannelsSeen(channelIds);
 
   return { items, unreadCount, markChannelSeen, markAllSeen, isLoading: q.isLoading };
 }

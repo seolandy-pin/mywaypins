@@ -1,53 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/use-auth";
+import { useChannelSeen } from "./use-channel-seen";
 
-const STORAGE_KEY = "mywaypins:channel_last_seen";
 const DEFAULT_LOOKBACK_MS = 7 * 24 * 3600 * 1000;
 
-type SeenMap = Record<string, string>;
-
-function readSeenMap(): SeenMap {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? (parsed as SeenMap) : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeSeenMap(map: SeenMap) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-  // Notify listeners in the same tab.
-  window.dispatchEvent(new Event("mywaypins:seen-updated"));
-}
-
-function lastSeenFor(map: SeenMap, channelId: string): string {
+function lastSeenFor(map: Record<string, string>, channelId: string): string {
   return map[channelId] ?? new Date(Date.now() - DEFAULT_LOOKBACK_MS).toISOString();
 }
 
 /**
- * Per-channel "new video" indicators. The flag for a channel persists
- * until the user opens that specific channel (markChannelSeen).
+ * Per-channel "new video" indicators. Read state is sourced from the DB
+ * (channel_last_seen) so it persists across logout/login and devices.
  */
 export function useNewVideoFlags(channelIds: string[]) {
   const { isAuthenticated } = useAuth();
-  const [seenMap, setSeenMap] = useState<SeenMap>(readSeenMap);
-
-  useEffect(() => {
-    const sync = () => setSeenMap(readSeenMap());
-    window.addEventListener("storage", sync);
-    window.addEventListener("mywaypins:seen-updated", sync);
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("mywaypins:seen-updated", sync);
-    };
-  }, []);
+  const { seenMap, markChannelSeen } = useChannelSeen();
 
   const idsKey = channelIds.slice().sort().join(",");
   const oldestSeen = channelIds.reduce<string>((min, id) => {
@@ -72,7 +40,6 @@ export function useNewVideoFlags(channelIds: string[]) {
   });
 
   const rows = q.data ?? [];
-  // Only flag the single most recent new video per channel.
   const latestByChannel: Record<string, string> = {};
   for (const r of rows) {
     const prev = latestByChannel[r.channel_id];
@@ -85,12 +52,6 @@ export function useNewVideoFlags(channelIds: string[]) {
     }
   }
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
-
-  const markChannelSeen = useCallback((channelId: string) => {
-    const next = { ...readSeenMap(), [channelId]: new Date().toISOString() };
-    writeSeenMap(next);
-    setSeenMap(next);
-  }, []);
 
   return { counts, total, markChannelSeen };
 }
