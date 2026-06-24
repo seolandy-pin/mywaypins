@@ -34,8 +34,10 @@ function CollectionsScreen() {
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [videosByCol, setVideosByCol] = useState<Record<string, CollectionVideo[]>>({});
+  const [playing, setPlaying] = useState<CollectionVideo | null>(null);
   const deleteCollectionFn = useServerFn(deleteCollection);
   const removeItemFn = useServerFn(removeCollectionItem);
+
 
   async function refresh() {
     if (!user) return;
