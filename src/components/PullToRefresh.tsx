@@ -58,8 +58,20 @@ export function PullToRefresh({
     if (pull >= THRESHOLD && !refreshing) {
       setRefreshing(true);
       setPull(THRESHOLD);
+      // Safety net: never let the spinner spin forever, even if onRefresh
+      // hangs (network stall, never-resolving promise, etc).
+      const timeout = new Promise<void>((resolve) => setTimeout(resolve, 10000));
       try {
-        await onRefresh();
+        await Promise.race([
+          Promise.resolve()
+            .then(() => onRefresh())
+            .catch((e) => {
+              console.warn("[pull-to-refresh] onRefresh failed", e);
+            }),
+          timeout,
+        ]);
+      } catch (e) {
+        console.warn("[pull-to-refresh] unexpected error", e);
       } finally {
         setRefreshing(false);
         setPull(0);
