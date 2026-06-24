@@ -6,9 +6,11 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronDown, ChevronRight, FolderHeart, Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { ChevronLeft, ChevronDown, ChevronRight, FolderHeart, Plus, Trash2, Pencil, Check, X, Play } from "lucide-react";
 import { toast } from "sonner";
 import { deleteCollection, removeCollectionItem } from "@/lib/collections.functions";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
+
 
 export const Route = createFileRoute("/profile_/collections")({
   head: () => ({ meta: [{ title: "Collections — WanderPins" }] }),
