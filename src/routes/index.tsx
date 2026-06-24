@@ -65,6 +65,8 @@ function Home() {
     useNewVideoNotifications(channelIds);
   useRefreshFollowedOnLoad();
   useFcmRegister();
+  const refreshHome = useRefreshHome();
+  useAutoRefreshOnFocus(refreshHome);
 
   function pickChannel(id: string) {
     setSelectedCollectionId(null);
