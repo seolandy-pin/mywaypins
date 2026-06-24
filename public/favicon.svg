@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MyWayPins">
+  <rect width="64" height="64" rx="14" fill="#1a1f2c"/>
+  <path fill="#f7c948" d="M32 7c-9.4 0-17 7.6-17 17 0 12.8 17 33 17 33s17-20.2 17-33C49 14.6 41.4 7 32 7Zm0 25.5A8.5 8.5 0 1 1 32 15a8.5 8.5 0 0 1 0 17.5Z"/>
+  <circle cx="32" cy="23.5" r="5.5" fill="#1a1f2c"/>
+</svg>
