@@ -218,11 +218,19 @@ export const searchYouTubeVideosFn = createServerFn({ method: "GET" })
         );
     };
 
+    // Constrain results to travel + food/restaurant content only — combine the
+    // place query with a topical OR-group so news/entertainment is filtered out.
+    // YouTube search supports boolean OR via the `|` operator inside the q param.
+    const topical = "(travel | vlog | tour | trip | itinerary | food | restaurant | eats | foodie | mukbang)";
+    const filteredQ = `${q} ${topical}`;
     // order=viewCount surfaces the most popular videos for the term first.
+    // videoCategoryId=19 = Travel & Events (broad enough to also include food vlogs travelling there;
+    // we keep it off to avoid over-filtering, the boolean q is the primary filter).
     const sRes = await ytFetch(
       (key) =>
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&maxResults=12&q=${encodeURIComponent(q)}&key=${key}`,
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&maxResults=12&relevanceLanguage=en&q=${encodeURIComponent(filteredQ)}&key=${key}`,
     );
+
     if (!sRes.ok) {
       if (sRes.status === 403 || sRes.status === 429 || sRes.status >= 500) {
         throw new Error("YOUTUBE_QUOTA_EXCEEDED");
