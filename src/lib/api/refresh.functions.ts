@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { hasYouTubeKey, ytFetch } from "@/lib/youtube-keys";
+
 
 /**
  * Refreshes followed channels' videos on demand. Pulls the latest 20 + top 20
@@ -9,8 +11,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const refreshFollowedChannels = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const YT_KEY = process.env.YOUTUBE_API_KEY;
-    if (!YT_KEY) return { ok: false, newVideos: 0, reason: "missing-key" as const };
+    if (!hasYouTubeKey()) return { ok: false, newVideos: 0, reason: "missing-key" as const };
+
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { extractLocations } = await import("@/lib/api/channels.functions");
@@ -37,10 +40,10 @@ export const refreshFollowedChannels = createServerFn({ method: "POST" })
         totalNew += await refreshChannel(
           ch.id,
           ch.youtube_channel_id,
-          YT_KEY,
           supabaseAdmin,
           extractLocations,
         );
+
       } catch (e) {
         console.error("[refreshFollowedChannels] channel failed", ch.id, e);
       }
@@ -64,16 +67,16 @@ async function fetchN(
   order: "date" | "viewCount",
   want: number,
   exclude: Set<string>,
-  apiKey: string,
 ): Promise<SearchItem[]> {
   const out: SearchItem[] = [];
   let pageToken: string | undefined;
   for (let page = 0; page < 3 && out.length < want; page++) {
-    const url =
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}` +
-      `&maxResults=50&order=${order}&type=video&key=${apiKey}` +
-      (pageToken ? `&pageToken=${pageToken}` : "");
-    const r = await fetch(url);
+    const r = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}` +
+        `&maxResults=50&order=${order}&type=video&key=${key}` +
+        (pageToken ? `&pageToken=${pageToken}` : ""),
+    );
     if (!r.ok) break;
     const j = (await r.json()) as SearchResp;
     for (const it of j.items ?? []) {
@@ -92,24 +95,25 @@ async function fetchN(
 async function refreshChannel(
   channelDbId: string,
   ytChannelId: string,
-  YT_KEY: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   extractLocations: (args: { data: { video_id: string } }) => Promise<any>,
 ): Promise<number> {
   const seen = new Set<string>();
-  const latest = await fetchN(ytChannelId, "date", 20, seen, YT_KEY);
-  const top = await fetchN(ytChannelId, "viewCount", 20, seen, YT_KEY);
+  const latest = await fetchN(ytChannelId, "date", 20, seen);
+  const top = await fetchN(ytChannelId, "viewCount", 20, seen);
   const all = [...latest, ...top];
   if (all.length === 0) return 0;
 
   const ids = all.map((v) => v.id.videoId);
-  const statsRes = await fetch(
-    `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${ids.join(",")}&key=${YT_KEY}`,
+  const statsRes = await ytFetch(
+    (key) =>
+      `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${ids.join(",")}&key=${key}`,
   );
   const statsJson = (await statsRes.json()) as {
     items?: Array<{ id: string; statistics: { viewCount?: string; likeCount?: string } }>;
+
   };
   const stats = new Map(statsJson.items?.map((i) => [i.id, i.statistics]) ?? []);
 

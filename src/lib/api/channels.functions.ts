@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { hasYouTubeKey, ytFetch } from "@/lib/youtube-keys";
+
 
 const SubmitInput = z.object({
   channel_url: z.string().url().max(500),
@@ -35,8 +37,7 @@ const ProcessInput = z.object({ submission_id: z.string().uuid() });
 export const processSubmission = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ProcessInput.parse(input))
   .handler(async ({ data }) => {
-    const YT_KEY = process.env.YOUTUBE_API_KEY;
-    if (!YT_KEY) {
+    if (!hasYouTubeKey()) {
       return { ok: false, reason: "YOUTUBE_API_KEY not configured — submission stored for later processing." };
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -49,13 +50,15 @@ export const processSubmission = createServerFn({ method: "POST" })
     if (!sub) throw new Error("Submission not found");
 
     // Resolve channel ID from URL (supports /channel/ID, /@handle, /c/name).
-    const channelId = await resolveYoutubeChannelId(sub.channel_url, YT_KEY);
+    const channelId = await resolveYoutubeChannelId(sub.channel_url);
     if (!channelId) throw new Error("Could not resolve YouTube channel from URL");
 
     // Fetch channel details
-    const chRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${YT_KEY}`,
+    const chRes = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${key}`,
     );
+
     const chJson = (await chRes.json()) as {
       items?: Array<{
         id: string;
@@ -95,8 +98,11 @@ export const processSubmission = createServerFn({ method: "POST" })
       let pageToken: string | undefined;
       // cap pagination to avoid runaway quota use
       for (let page = 0; page < 5 && out.length < want; page++) {
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ch!.id}&maxResults=50&order=${order}&type=video&key=${YT_KEY}${pageToken ? `&pageToken=${pageToken}` : ""}`;
-        const r = await fetch(url);
+        const r = await ytFetch(
+          (key) =>
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ch!.id}&maxResults=50&order=${order}&type=video&key=${key}${pageToken ? `&pageToken=${pageToken}` : ""}`,
+        );
+
         if (!r.ok) break;
         const j = (await r.json()) as SearchResp;
         for (const it of j.items ?? []) {
@@ -232,7 +238,7 @@ export const extractLocations = createServerFn({ method: "POST" })
     return { ok: true, pins: locs.length };
   });
 
-async function resolveYoutubeChannelId(url: string, apiKey: string): Promise<string | null> {
+async function resolveYoutubeChannelId(url: string): Promise<string | null> {
   const channelMatch = url.match(/\/channel\/([^/?#]+)/u);
   if (channelMatch) return channelMatch[1];
   const handleMatch = url.match(/\/@([^/?#]+)/u);
@@ -241,16 +247,19 @@ async function resolveYoutubeChannelId(url: string, apiKey: string): Promise<str
   if (!query) return null;
   if (handleMatch) {
     const handle = query.startsWith("@") ? query : `@${query}`;
-    const handleRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`,
+    const handleRes = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(handle)}&key=${key}`,
     );
     const handleJson = (await handleRes.json()) as { items?: Array<{ id?: string }> };
     const id = handleJson.items?.[0]?.id;
     if (id) return id;
   }
-  const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=1&key=${apiKey}`,
+  const res = await ytFetch(
+    (key) =>
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=1&key=${key}`,
   );
   const json = (await res.json()) as { items?: Array<{ snippet?: { channelId?: string } }> };
   return json.items?.[0]?.snippet?.channelId ?? null;
 }
+
