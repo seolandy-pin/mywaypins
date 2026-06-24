@@ -40,10 +40,10 @@ export const refreshFollowedChannels = createServerFn({ method: "POST" })
         totalNew += await refreshChannel(
           ch.id,
           ch.youtube_channel_id,
-          YT_KEY,
           supabaseAdmin,
           extractLocations,
         );
+
       } catch (e) {
         console.error("[refreshFollowedChannels] channel failed", ch.id, e);
       }
