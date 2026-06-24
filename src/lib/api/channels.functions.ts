@@ -98,8 +98,11 @@ export const processSubmission = createServerFn({ method: "POST" })
       let pageToken: string | undefined;
       // cap pagination to avoid runaway quota use
       for (let page = 0; page < 5 && out.length < want; page++) {
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ch!.id}&maxResults=50&order=${order}&type=video&key=${YT_KEY}${pageToken ? `&pageToken=${pageToken}` : ""}`;
-        const r = await fetch(url);
+        const r = await ytFetch(
+          (key) =>
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ch!.id}&maxResults=50&order=${order}&type=video&key=${key}${pageToken ? `&pageToken=${pageToken}` : ""}`,
+        );
+
         if (!r.ok) break;
         const j = (await r.json()) as SearchResp;
         for (const it of j.items ?? []) {
