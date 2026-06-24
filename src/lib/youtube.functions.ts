@@ -19,10 +19,15 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
     const sUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=8&q=${encodeURIComponent(q)}&key=${apiKey}`;
     const sRes = await fetch(sUrl);
     if (!sRes.ok) {
-      // 429(rate limit) 또는 5xx는 UI가 깨지지 않도록 빈 결과로 폴백.
+      // 403 보통 quota 초과. 클라이언트에서 안내 토스트를 띄울 수 있도록 식별 가능한 메시지로 throw.
+      if (sRes.status === 403) {
+        const body = await sRes.text().catch(() => "");
+        console.warn(`[youtube] quota/forbidden, status=403`, body);
+        throw new Error("YOUTUBE_QUOTA_EXCEEDED");
+      }
       if (sRes.status === 429 || sRes.status >= 500) {
         console.warn(`[youtube] search fallback, status=${sRes.status}`);
-        return [];
+        throw new Error("YOUTUBE_QUOTA_EXCEEDED");
       }
       throw new Error(`YouTube search ${sRes.status}`);
     }
