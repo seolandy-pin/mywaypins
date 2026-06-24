@@ -39,8 +39,19 @@ function SearchScreen() {
     queryKey: ["yt-search", debounced],
     enabled: debounced.length >= 2,
     staleTime: 1000 * 60 * 10,
+    retry: false,
     queryFn: () => ytSearch({ data: { q: debounced } }),
   });
+
+  useEffect(() => {
+    if (!ytQuery.error) return;
+    const msg = (ytQuery.error as Error).message ?? "";
+    if (msg.includes("QUOTA") || msg.includes("403") || msg.includes("429")) {
+      toast.error("유튜브 API 일일 호출량이 초과되었습니다. 잠시 후 다시 시도해 주세요.");
+    } else {
+      toast.error("검색 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+    }
+  }, [ytQuery.error]);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
