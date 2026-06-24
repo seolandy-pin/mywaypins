@@ -302,6 +302,6 @@ function Home() {
           )}
         </section>
       )}
-    </>
+    </PullToRefresh>
   );
 }
