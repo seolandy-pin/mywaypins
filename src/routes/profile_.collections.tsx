@@ -214,7 +214,7 @@ function CollectionsScreen() {
                 {playing && (
                   <iframe
                     className="size-full"
-                    src={`https://www.youtube.com/embed/${playing.videoId}?autoplay=1&playsinline=1&rel=0`}
+                    src={`https://www.youtube.com/embed/${playing.videoId}?playsinline=1&rel=0`}
                     title={playing.title}
                     referrerPolicy="strict-origin-when-cross-origin"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
