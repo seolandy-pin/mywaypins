@@ -32,7 +32,13 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
 
     const dUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${ids.join(",")}&key=${apiKey}`;
     const dRes = await fetch(dUrl);
-    if (!dRes.ok) throw new Error(`YouTube channels ${dRes.status}`);
+    if (!dRes.ok) {
+      if (dRes.status === 429 || dRes.status >= 500) {
+        console.warn(`[youtube] channels fallback, status=${dRes.status}`);
+        return [];
+      }
+      throw new Error(`YouTube channels ${dRes.status}`);
+    }
     const dJson = (await dRes.json()) as {
       items?: Array<{
         id: string;
