@@ -251,8 +251,8 @@ function Home() {
             </span>
             My Folders
           </Link>
-            <Link to="/submit" search={{ tab: "video" } as never} className="flex cursor-pointer items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground">
-              + Save Video
+            <Link to="/profile/collections" className="flex cursor-pointer items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+              View All ›
             </Link>
           </div>
 
