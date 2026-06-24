@@ -117,7 +117,9 @@
 }
 
 /* Mapbox overrides for dark theme */
-.mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo { opacity: 0.5; }
+.mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo { opacity: 0.15; pointer-events: none; }
+.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-logo { opacity: 0.15; }
+.mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-right { z-index: 1; }
 .mapboxgl-popup-content {
   background: var(--card) !important;
   color: var(--card-foreground) !important;
