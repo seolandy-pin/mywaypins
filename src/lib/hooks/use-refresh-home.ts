@@ -19,14 +19,16 @@ export function useRefreshHome() {
       if (isAuthenticated) {
         await refreshFn().catch((e) => console.warn("[refresh-home] fetch failed", e));
       }
+    } catch (e) {
+      console.warn("[refresh-home] unexpected error", e);
     } finally {
-      await Promise.all([
+      await Promise.allSettled([
         qc.invalidateQueries({ queryKey: ["my-followed-channels"] }),
         qc.invalidateQueries({ queryKey: ["my-collections"] }),
         qc.invalidateQueries({ queryKey: ["channel-markers"] }),
         qc.invalidateQueries({ queryKey: ["new-video-flags"] }),
         qc.invalidateQueries({ queryKey: ["new-video-notifications"] }),
-      ]);
+      ]).catch(() => {});
     }
   }, [isAuthenticated, qc, refreshFn]);
 }
