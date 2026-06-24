@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, MapPin, Youtube } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { samplePins, featuredDestinations, popularCreators } from "@/lib/sample-data";
 import { searchYouTubeChannelsFn } from "@/lib/youtube.functions";
 
