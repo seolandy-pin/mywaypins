@@ -91,8 +91,44 @@ function RootComponent() {
         if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
       }
     });
-    return () => sub.subscription.unsubscribe();
+
+    // Capacitor 딥링크: OAuth 콜백(https://mywaypins.lovable.app/... 또는
+    // app.lovable.mywaypins://...)으로 앱이 열리면, 해당 path로 내부 라우팅하고
+    // URL 해시(#access_token=...)를 supabase에 넘겨 세션을 복원한다.
+    let appListenerCleanup: (() => void) | undefined;
+    (async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor.isNativePlatform()) return;
+        const { App } = await import("@capacitor/app");
+        const handle = await App.addListener("appUrlOpen", async ({ url }) => {
+          try {
+            const u = new URL(url);
+            // Supabase는 implicit flow에서 access_token을 URL 해시에 담아 보낸다.
+            // window.location.hash를 세팅한 뒤 supabase가 자동 감지하도록 트리거.
+            if (u.hash && u.hash.includes("access_token")) {
+              window.location.hash = u.hash;
+            }
+            const path = u.pathname + u.search + u.hash;
+            if (path && path !== "/") {
+              router.navigate({ to: path });
+            }
+          } catch (e) {
+            console.error("[deeplink] failed to parse url", url, e);
+          }
+        });
+        appListenerCleanup = () => handle.remove();
+      } catch {
+        // Capacitor가 없는 환경(웹)에서는 무시
+      }
+    })();
+
+    return () => {
+      sub.subscription.unsubscribe();
+      appListenerCleanup?.();
+    };
   }, [router, queryClient]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <MobileShell>
