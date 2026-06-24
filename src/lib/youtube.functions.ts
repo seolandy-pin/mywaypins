@@ -9,6 +9,32 @@ export type YTChannelResult = {
   subscriberCount: number | null;
 };
 
+type ChannelApiItem = {
+  id: string;
+  snippet: {
+    title: string;
+    customUrl?: string;
+    thumbnails: { default?: { url: string }; medium?: { url: string }; high?: { url: string } };
+  };
+  statistics: { subscriberCount?: string; hiddenSubscriberCount?: boolean };
+};
+
+function mapChannel(c: ChannelApiItem): YTChannelResult {
+  return {
+    id: c.id,
+    title: c.snippet.title,
+    customUrl: c.snippet.customUrl?.replace(/^@/, ""),
+    thumbnail: c.snippet.thumbnails.medium?.url ?? c.snippet.thumbnails.default?.url ?? "",
+    subscriberCount: c.statistics.hiddenSubscriberCount ? null : Number(c.statistics.subscriberCount ?? 0),
+  };
+}
+
+// A query "looks like a handle" when it has no spaces and only handle-safe chars.
+// channels?forHandle costs 1 unit vs search.list at 100 units.
+function looksLikeHandle(q: string): boolean {
+  return /^@?[A-Za-z0-9._-]{2,}$/.test(q);
+}
+
 export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
   .inputValidator((d: { q: string }) => d)
   .handler(async ({ data }): Promise<YTChannelResult[]> => {
@@ -16,6 +42,52 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
     if (q.length < 2) return [];
     if (!hasYouTubeKey()) throw new Error("YOUTUBE_API_KEY not configured");
 
+    const cacheKey = q.toLowerCase();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 1) Cache lookup (0 quota units).
+    const { data: cached } = await supabaseAdmin
+      .from("youtube_search_cache")
+      .select("results, expires_at")
+      .eq("query", cacheKey)
+      .maybeSingle();
+    if (cached && new Date(cached.expires_at).getTime() > Date.now()) {
+      return cached.results as YTChannelResult[];
+    }
+
+    const writeCache = async (results: YTChannelResult[]) => {
+      await supabaseAdmin
+        .from("youtube_search_cache")
+        .upsert(
+          {
+            query: cacheKey,
+            results: results as unknown as object,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          },
+          { onConflict: "query" },
+        );
+    };
+
+    // 2) Handle-style queries: try forHandle first (1 unit). If hit, skip search.list entirely.
+    if (looksLikeHandle(q)) {
+      const handle = q.replace(/^@/, "");
+      const hRes = await ytFetch(
+        (key) =>
+          `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&forHandle=${encodeURIComponent(handle)}&key=${key}`,
+      );
+      if (hRes.ok) {
+        const hJson = (await hRes.json()) as { items?: ChannelApiItem[] };
+        const item = hJson.items?.[0];
+        if (item) {
+          const results = [mapChannel(item)];
+          await writeCache(results);
+          return results;
+        }
+      }
+      // Fall through to search.list if handle lookup yielded nothing.
+    }
+
+    // 3) Fallback: search.list (100 units) — only when forHandle didn't resolve.
     const sRes = await ytFetch(
       (key) =>
         `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=8&q=${encodeURIComponent(q)}&key=${key}`,
@@ -30,7 +102,10 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
     }
     const sJson = (await sRes.json()) as { items?: Array<{ id: { channelId: string } }> };
     const ids = (sJson.items ?? []).map((i) => i.id.channelId).filter(Boolean);
-    if (ids.length === 0) return [];
+    if (ids.length === 0) {
+      await writeCache([]);
+      return [];
+    }
 
     const dRes = await ytFetch(
       (key) =>
@@ -43,24 +118,10 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
       }
       throw new Error(`YouTube channels ${dRes.status}`);
     }
-    const dJson = (await dRes.json()) as {
-      items?: Array<{
-        id: string;
-        snippet: {
-          title: string;
-          customUrl?: string;
-          thumbnails: { default?: { url: string }; medium?: { url: string }; high?: { url: string } };
-        };
-        statistics: { subscriberCount?: string; hiddenSubscriberCount?: boolean };
-      }>;
-    };
-    return (dJson.items ?? []).map((c) => ({
-      id: c.id,
-      title: c.snippet.title,
-      customUrl: c.snippet.customUrl?.replace(/^@/, ""),
-      thumbnail: c.snippet.thumbnails.medium?.url ?? c.snippet.thumbnails.default?.url ?? "",
-      subscriberCount: c.statistics.hiddenSubscriberCount ? null : Number(c.statistics.subscriberCount ?? 0),
-    }));
+    const dJson = (await dRes.json()) as { items?: ChannelApiItem[] };
+    const results = (dJson.items ?? []).map(mapChannel);
+    await writeCache(results);
+    return results;
   });
 
 export type YTChannelDetail = {
