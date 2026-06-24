@@ -128,15 +128,16 @@ export const saveVideoToCollection = createServerFn({ method: "POST" })
       throw new Error("Could not find a YouTube video ID. Use a link like https://youtube.com/watch?v=... or https://youtu.be/...");
     }
 
-    const YT_KEY = process.env.YOUTUBE_API_KEY;
-    if (!YT_KEY) throw new Error("YOUTUBE_API_KEY not configured");
+    if (!hasYouTubeKey()) throw new Error("YOUTUBE_API_KEY not configured");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Fetch video metadata.
-    const r = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${videoId}&key=${YT_KEY}`,
+    const r = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${videoId}&key=${key}`,
     );
+
     const j = (await r.json()) as {
       items?: Array<{
         id: string;
