@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { hasYouTubeKey, ytFetch } from "@/lib/youtube-keys";
 
 export type YTChannelResult = {
   id: string;
@@ -13,20 +14,16 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<YTChannelResult[]> => {
     const q = data.q.trim();
     if (q.length < 2) return [];
-    const apiKey = process.env.YOUTUBE_API_KEY;
-    if (!apiKey) throw new Error("YOUTUBE_API_KEY not configured");
+    if (!hasYouTubeKey()) throw new Error("YOUTUBE_API_KEY not configured");
 
-    const sUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=8&q=${encodeURIComponent(q)}&key=${apiKey}`;
-    const sRes = await fetch(sUrl);
+    const sRes = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=8&q=${encodeURIComponent(q)}&key=${key}`,
+    );
     if (!sRes.ok) {
-      // 403 보통 quota 초과. 클라이언트에서 안내 토스트를 띄울 수 있도록 식별 가능한 메시지로 throw.
-      if (sRes.status === 403) {
+      if (sRes.status === 403 || sRes.status === 429 || sRes.status >= 500) {
         const body = await sRes.text().catch(() => "");
-        console.warn(`[youtube] quota/forbidden, status=403`, body);
-        throw new Error("YOUTUBE_QUOTA_EXCEEDED");
-      }
-      if (sRes.status === 429 || sRes.status >= 500) {
-        console.warn(`[youtube] search fallback, status=${sRes.status}`);
+        console.warn(`[youtube] search quota/fallback, status=${sRes.status}`, body);
         throw new Error("YOUTUBE_QUOTA_EXCEEDED");
       }
       throw new Error(`YouTube search ${sRes.status}`);
@@ -35,8 +32,10 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
     const ids = (sJson.items ?? []).map((i) => i.id.channelId).filter(Boolean);
     if (ids.length === 0) return [];
 
-    const dUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${ids.join(",")}&key=${apiKey}`;
-    const dRes = await fetch(dUrl);
+    const dRes = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${ids.join(",")}&key=${key}`,
+    );
     if (!dRes.ok) {
       if (dRes.status === 429 || dRes.status >= 500) {
         console.warn(`[youtube] channels fallback, status=${dRes.status}`);
@@ -76,14 +75,14 @@ export type YTChannelDetail = {
 export const getYouTubeChannelByHandleFn = createServerFn({ method: "GET" })
   .inputValidator((d: { handle: string }) => d)
   .handler(async ({ data }): Promise<YTChannelDetail | null> => {
-    const apiKey = process.env.YOUTUBE_API_KEY;
-    if (!apiKey) throw new Error("YOUTUBE_API_KEY not configured");
+    if (!hasYouTubeKey()) throw new Error("YOUTUBE_API_KEY not configured");
     // Accept either an @handle or a channel ID (starts with "UC").
     const isChannelId = /^UC[\w-]{20,}$/.test(data.handle);
-    const url = isChannelId
-      ? `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${encodeURIComponent(data.handle)}&key=${apiKey}`
-      : `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&forHandle=${encodeURIComponent(data.handle)}&key=${apiKey}`;
-    const res = await fetch(url);
+    const res = await ytFetch((key) =>
+      isChannelId
+        ? `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${encodeURIComponent(data.handle)}&key=${key}`
+        : `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&forHandle=${encodeURIComponent(data.handle)}&key=${key}`,
+    );
     if (!res.ok) throw new Error(`YouTube API ${res.status}`);
     const json = (await res.json()) as {
       items?: Array<{
@@ -108,3 +107,4 @@ export const getYouTubeChannelByHandleFn = createServerFn({ method: "GET" })
       subscriberCount: c.statistics.hiddenSubscriberCount ? null : Number(c.statistics.subscriberCount ?? 0),
     };
   });
+
