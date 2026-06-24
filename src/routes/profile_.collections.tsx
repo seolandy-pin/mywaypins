@@ -175,10 +175,19 @@ function CollectionsScreen() {
                   ) : (
                     vids.map((v) => (
                       <li key={v.videoRowId} className="flex items-center gap-3 rounded-xl bg-card p-2">
-                        <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-black">
-                          {v.thumb ? <img src={v.thumb} alt="" className="size-full object-cover" /> : null}
-                        </div>
-                        <p className="line-clamp-2 flex-1 text-xs font-medium">{v.title}</p>
+                        <button
+                          type="button"
+                          onClick={() => setPlaying(v)}
+                          className="flex flex-1 items-center gap-3 text-left active:opacity-80"
+                        >
+                          <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-black">
+                            {v.thumb ? <img src={v.thumb} alt="" className="size-full object-cover" /> : null}
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <Play className="size-4 fill-white text-white" />
+                            </span>
+                          </div>
+                          <p className="line-clamp-2 flex-1 text-xs font-medium">{v.title}</p>
+                        </button>
                         {editing && (
                           <button
                             onClick={() => removeVideo(c.id, v.videoRowId)}
@@ -197,6 +206,32 @@ function CollectionsScreen() {
           );
         })}
       </ul>
+      <Drawer open={!!playing} onOpenChange={(o) => { if (!o) setPlaying(null); }}>
+        <DrawerContent className="bg-card text-card-foreground border-border max-h-[92vh]">
+          <div className="mx-auto w-full max-w-[520px] overflow-y-auto">
+            <DrawerHeader className="px-0 pt-0">
+              <div className="relative aspect-video w-full overflow-hidden rounded-t-2xl bg-black">
+                {playing && (
+                  <iframe
+                    className="size-full"
+                    src={`https://www.youtube.com/embed/${playing.videoId}?autoplay=1&playsinline=1&rel=0`}
+                    title={playing.title}
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                )}
+              </div>
+              <div className="px-5 pt-4 text-left">
+                <DrawerTitle className="font-display text-base leading-tight">{playing?.title}</DrawerTitle>
+                <DrawerDescription className="sr-only">YouTube video</DrawerDescription>
+              </div>
+            </DrawerHeader>
+            <div className="px-5 pb-6 safe-bottom" />
+          </div>
+        </DrawerContent>
+      </Drawer>
     </>
   );
+
 }
