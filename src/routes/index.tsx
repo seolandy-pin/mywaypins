@@ -78,7 +78,7 @@ function Home() {
   }
 
   return (
-    <>
+    <PullToRefresh onRefresh={refreshHome}>
       <header className="safe-top px-4 pb-3 pt-3">
         <div className="flex items-start justify-between">
           <div>
