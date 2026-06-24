@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { extractLocations } from "@/lib/api/channels.functions";
+import { hasYouTubeKey, ytFetch } from "@/lib/youtube-keys";
+
 
 function parseYoutubeVideoId(url: string): string | null {
   const raw = url.trim();
