@@ -8,7 +8,10 @@ import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
 import { useNewVideoNotifications } from "@/lib/hooks/use-new-video-notifications";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import { useRefreshFollowedOnLoad } from "@/lib/hooks/use-refresh-followed-on-load";
+import { useRefreshHome } from "@/lib/hooks/use-refresh-home";
+import { useAutoRefreshOnFocus } from "@/lib/hooks/use-auto-refresh-on-focus";
 import { useFcmRegister } from "@/lib/hooks/use-fcm-register";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
 import { useDragScroll } from "@/lib/hooks/use-drag-scroll";
@@ -62,6 +65,8 @@ function Home() {
     useNewVideoNotifications(channelIds);
   useRefreshFollowedOnLoad();
   useFcmRegister();
+  const refreshHome = useRefreshHome();
+  useAutoRefreshOnFocus(refreshHome);
 
   function pickChannel(id: string) {
     setSelectedCollectionId(null);
@@ -73,7 +78,7 @@ function Home() {
   }
 
   return (
-    <>
+    <PullToRefresh onRefresh={refreshHome}>
       <header className="safe-top px-4 pb-3 pt-3">
         <div className="flex items-start justify-between">
           <div>
@@ -297,6 +302,6 @@ function Home() {
           )}
         </section>
       )}
-    </>
+    </PullToRefresh>
   );
 }
