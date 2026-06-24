@@ -64,11 +64,18 @@ function AuthScreen() {
 
   async function handleGoogle() {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    // Capacitor 네이티브 앱에서는 window.location.origin이 'https://localhost'가 되어
+    // OAuth provider가 콜백을 보낼 수 없다. 게시된 도메인으로 고정한다.
+    const { Capacitor } = await import("@capacitor/core");
+    const redirectUri = Capacitor.isNativePlatform()
+      ? "https://mywaypins.lovable.app"
+      : window.location.origin;
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirectUri });
     if (result.error) { toast.error("Google sign-in failed"); setLoading(false); return; }
     if (result.redirected) return;
     navigate({ to: "/" });
   }
+
 
   function openForgot() {
     setForgotEmail(email);

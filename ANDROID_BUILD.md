@@ -122,15 +122,70 @@ Android Studio에서:
 
 ---
 
-## 8. 알아두면 좋은 것
+## 8. 🔑 Google 로그인 설정 (테스터 배포 전 필수)
 
-- **로그인 (Lovable Cloud)**: 웹뷰 안에서 그대로 작동합니다. 사용자 기록은
-  계속 Lovable Cloud의 **Users** 탭에서 통합 관리됩니다.
-- **푸시 알림 (FCM)**: 현재 웹 푸시용 `firebase-messaging-sw.js`가 있지만,
-  네이티브 푸시는 별도로 `@capacitor/push-notifications` + Firebase 설정이
-  필요합니다. 출시 후 단계에서 진행하세요.
-- **Mapbox**: 웹뷰에서 정상 작동합니다. Mapbox 토큰의 URL 화이트리스트에
-  `capacitor://localhost`, `https://localhost`를 추가해 두세요.
-- **딥링크/공유**: 필요해지면 `@capacitor/app`의 `appUrlOpen` 이벤트로 처리.
+MyWayPins는 **Lovable Cloud 관리형 Google OAuth(웹 플로우)** 를 사용하므로:
+
+✅ **SHA-1 등록 불필요**
+✅ **Google Cloud Console에서 OAuth Client 만들 필요 없음**
+✅ **Web Client ID / Android Client ID 둘 다 불필요**
+
+→ Lovable이 OAuth 자격증명을 자동 관리합니다.
+
+대신 Capacitor 앱이 OAuth 콜백을 받을 수 있도록 **딥링크(App Link)** 만 설정하면 됩니다.
+
+### `AndroidManifest.xml` 수정 (1회)
+
+`android/app/src/main/AndroidManifest.xml`의 `<activity android:name=".MainActivity" ...>` 안에 추가:
+
+```xml
+<!-- Google OAuth 콜백을 앱으로 라우팅 -->
+<intent-filter android:autoVerify="true">
+  <action android:name="android.intent.action.VIEW" />
+  <category android:name="android.intent.category.DEFAULT" />
+  <category android:name="android.intent.category.BROWSABLE" />
+  <data android:scheme="https"
+        android:host="mywaypins.lovable.app" />
+</intent-filter>
+```
+
+### (선택) App Links 정식 검증
+
+위에서 `autoVerify="true"`로 설정하면, Chrome이 콜백 URL을 자동으로 앱에 전달합니다(중간 다이얼로그 없음). 정식 검증을 받으려면:
+
+1. SHA-256 지문 추출 (Play App Signing 키):
+   - Play Console → 앱 → 테스트 및 출시 → 앱 서명 → **앱 서명 키 인증서 → SHA-256**
+2. 다음 JSON을 `https://mywaypins.lovable.app/.well-known/assetlinks.json`로 서빙:
+
+```json
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.lovable.mywaypins",
+    "sha256_cert_fingerprints": ["AA:BB:CC:...(Play App Signing SHA-256)..."]
+  }
+}]
+```
+
+> 정식 검증 없이도 "이 링크를 어떤 앱으로 열까요?" 다이얼로그로 동작하므로, 테스터 단계에서는 검증 생략 가능합니다.
+
+### 테스트 절차
+
+1. 앱에서 "Continue with Google" 탭
+2. Chrome Custom Tab이 열리며 Google 계정 선택 화면 표시
+3. 계정 선택 → `https://mywaypins.lovable.app/#access_token=...`로 리다이렉트
+4. 안드로이드가 해당 URL을 MyWayPins 앱으로 전달
+5. `__root.tsx`의 `appUrlOpen` 리스너가 세션 복원 → 홈으로 이동
+
+---
+
+## 9. 알아두면 좋은 것
+
+- **로그인 (Lovable Cloud)**: 사용자 기록은 Lovable Cloud의 **Users** 탭에서 통합 관리됩니다.
+- **푸시 알림 (FCM)**: 네이티브 푸시는 별도로 `@capacitor/push-notifications` + Firebase 설정이 필요합니다.
+- **Mapbox**: 토큰 화이트리스트에 `capacitor://localhost`, `https://localhost`, `https://mywaypins.lovable.app` 추가.
+- **딥링크**: `__root.tsx`에 이미 구현됨 — OAuth 콜백 + 일반 path 라우팅 모두 처리.
 
 문제가 생기면 단계별 로그와 함께 다시 알려주세요!
+
