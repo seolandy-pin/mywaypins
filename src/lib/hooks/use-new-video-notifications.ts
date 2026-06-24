@@ -1,13 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/use-auth";
-import { useChannelSeen } from "./use-channel-seen";
 
 const DEFAULT_LOOKBACK_MS = 7 * 24 * 3600 * 1000;
-
-function lastSeenFor(map: Record<string, string>, channelId: string): string {
-  return map[channelId] ?? new Date(Date.now() - DEFAULT_LOOKBACK_MS).toISOString();
-}
 
 export type NotificationItem = {
   videoDbId: string;
@@ -22,18 +18,35 @@ export type NotificationItem = {
 };
 
 /**
- * Recent new videos from followed channels (last 7 days). Read state lives
- * in `public.channel_last_seen` so it persists across logout/login and devices.
+ * Recent new videos from followed channels (last 7 days), excluding any
+ * the user has dismissed (read or X'd). Dismissals live in
+ * `public.dismissed_notifications` so they persist across devices.
  */
 export function useNewVideoNotifications(channelIds: string[]) {
-  const { isAuthenticated } = useAuth();
-  const { seenMap, markChannelSeen, markChannelsSeen } = useChannelSeen();
+  const { isAuthenticated, user } = useAuth();
+  const userId = user?.id;
+  const qc = useQueryClient();
 
   const idsKey = channelIds.slice().sort().join(",");
   const lookbackStart = new Date(Date.now() - DEFAULT_LOOKBACK_MS).toISOString();
 
+  const dismissedKey = ["dismissed-notifications", userId ?? "anon"] as const;
+  const dismissedQuery = useQuery({
+    queryKey: dismissedKey,
+    enabled: isAuthenticated && !!userId,
+    staleTime: 30_000,
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase
+        .from("dismissed_notifications")
+        .select("video_id");
+      if (error) throw error;
+      return new Set((data ?? []).map((r) => r.video_id));
+    },
+  });
+
+  const videosKey = ["new-video-notifications", idsKey] as const;
   const q = useQuery({
-    queryKey: ["new-video-notifications", idsKey],
+    queryKey: videosKey,
     enabled: isAuthenticated && channelIds.length > 0,
     refetchInterval: 60_000,
     queryFn: async () => {
@@ -58,21 +71,64 @@ export function useNewVideoNotifications(channelIds: string[]) {
     },
   });
 
-  const items: NotificationItem[] = (q.data ?? []).map((r) => ({
-    videoDbId: r.id,
-    youtubeId: r.youtube_video_id,
-    title: r.title,
-    thumbnailUrl: r.thumbnail_url,
-    publishedAt: r.published_at,
-    channelId: r.channel_id,
-    channelName: r.youtube_channels?.name ?? "Unknown",
-    channelThumbnail: r.youtube_channels?.thumbnail_url ?? null,
-    unread: r.published_at > lastSeenFor(seenMap, r.channel_id),
-  }));
+  const dismissed = dismissedQuery.data ?? new Set<string>();
 
-  const unreadCount = items.filter((i) => i.unread).length;
+  const items: NotificationItem[] = (q.data ?? [])
+    .filter((r) => !dismissed.has(r.id))
+    .map((r) => ({
+      videoDbId: r.id,
+      youtubeId: r.youtube_video_id,
+      title: r.title,
+      thumbnailUrl: r.thumbnail_url,
+      publishedAt: r.published_at,
+      channelId: r.channel_id,
+      channelName: r.youtube_channels?.name ?? "Unknown",
+      channelThumbnail: r.youtube_channels?.thumbnail_url ?? null,
+      unread: true,
+    }));
 
-  const markAllSeen = () => markChannelsSeen(channelIds);
+  const unreadCount = items.length;
 
-  return { items, unreadCount, markChannelSeen, markAllSeen, isLoading: q.isLoading };
+  const dismissMutation = useMutation({
+    mutationFn: async (videoIds: string[]) => {
+      if (!userId || videoIds.length === 0) return;
+      const rows = videoIds.map((video_id) => ({ user_id: userId, video_id }));
+      const { error } = await supabase
+        .from("dismissed_notifications")
+        .upsert(rows, { onConflict: "user_id,video_id" });
+      if (error) throw error;
+    },
+    onMutate: async (videoIds) => {
+      await qc.cancelQueries({ queryKey: dismissedKey });
+      const prev = qc.getQueryData<Set<string>>(dismissedKey) ?? new Set<string>();
+      const next = new Set(prev);
+      for (const id of videoIds) next.add(id);
+      qc.setQueryData(dismissedKey, next);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(dismissedKey, ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: dismissedKey });
+    },
+  });
+
+  const dismissOne = useCallback(
+    (videoId: string) => dismissMutation.mutate([videoId]),
+    [dismissMutation],
+  );
+  const dismissAll = useCallback(() => {
+    const ids = items.map((i) => i.videoDbId);
+    if (ids.length === 0) return;
+    dismissMutation.mutate(ids);
+  }, [dismissMutation, items]);
+
+  return {
+    items,
+    unreadCount,
+    dismissOne,
+    dismissAll,
+    isLoading: q.isLoading,
+  };
 }

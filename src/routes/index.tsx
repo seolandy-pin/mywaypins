@@ -61,7 +61,7 @@ function Home() {
     ? allMarkers.filter((m) => m.channelId === selectedChannelId)
     : allMarkers;
 
-  const { items: notifications, unreadCount, markChannelSeen, markAllSeen } =
+  const { items: notifications, unreadCount, dismissOne, dismissAll } =
     useNewVideoNotifications(channelIds);
   useRefreshFollowedOnLoad();
   useFcmRegister();
@@ -108,9 +108,10 @@ function Home() {
                 onOpenChange={setNotifOpen}
                 items={notifications}
                 unreadCount={unreadCount}
-                onMarkAllRead={markAllSeen}
+                onClearAll={dismissAll}
+                onDismissItem={(it) => dismissOne(it.videoDbId)}
                 onItemClick={(it) => {
-                  markChannelSeen(it.channelId);
+                  dismissOne(it.videoDbId);
                   setNotifOpen(false);
                   setActivePin({
                     id: it.videoDbId,

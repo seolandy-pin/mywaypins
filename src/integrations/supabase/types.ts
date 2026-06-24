@@ -125,6 +125,24 @@ export type Database = {
         }
         Relationships: []
       }
+      dismissed_notifications: {
+        Row: {
+          dismissed_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          dismissed_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          dismissed_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string

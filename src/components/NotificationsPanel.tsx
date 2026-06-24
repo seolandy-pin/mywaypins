@@ -1,5 +1,5 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Bell, BellOff } from "lucide-react";
+import { Bell, BellOff, X, Trash2 } from "lucide-react";
 import type { NotificationItem } from "@/lib/hooks/use-new-video-notifications";
 
 function relativeTime(iso: string) {
@@ -18,7 +18,8 @@ export function NotificationsPanel({
   items,
   unreadCount,
   onItemClick,
-  onMarkAllRead,
+  onDismissItem,
+  onClearAll,
   open,
   onOpenChange,
 }: {
@@ -26,7 +27,8 @@ export function NotificationsPanel({
   items: NotificationItem[];
   unreadCount: number;
   onItemClick: (item: NotificationItem) => void;
-  onMarkAllRead: () => void;
+  onDismissItem: (item: NotificationItem) => void;
+  onClearAll: () => void;
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
@@ -48,13 +50,14 @@ export function NotificationsPanel({
               </span>
             )}
           </div>
-          {unreadCount > 0 && (
+          {items.length > 0 && (
             <button
               type="button"
-              onClick={onMarkAllRead}
-              className="cursor-pointer text-[11px] font-medium text-primary hover:underline"
+              onClick={onClearAll}
+              className="flex cursor-pointer items-center gap-1 text-[11px] font-medium text-primary hover:underline"
             >
-              Mark all read
+              <Trash2 className="size-3" />
+              Clear all
             </button>
           )}
         </div>
@@ -68,13 +71,11 @@ export function NotificationsPanel({
           ) : (
             <ul className="divide-y divide-border">
               {items.map((it) => (
-                <li key={it.videoDbId}>
+                <li key={it.videoDbId} className="relative group">
                   <button
                     type="button"
                     onClick={() => onItemClick(it)}
-                    className={`flex w-full cursor-pointer items-start gap-3 px-3 py-2.5 text-left transition hover:bg-surface-1 active:scale-[0.99] ${
-                      it.unread ? "bg-primary/5" : ""
-                    }`}
+                    className="flex w-full cursor-pointer items-start gap-3 px-3 py-2.5 pr-9 text-left transition hover:bg-surface-1 active:scale-[0.99] bg-primary/5"
                   >
                     <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-surface-2">
                       {it.thumbnailUrl ? (
@@ -90,9 +91,7 @@ export function NotificationsPanel({
                         <span className="truncate text-[11px] font-semibold text-muted-foreground">
                           {it.channelName}
                         </span>
-                        {it.unread && (
-                          <span className="size-1.5 shrink-0 rounded-full bg-primary" />
-                        )}
+                        <span className="size-1.5 shrink-0 rounded-full bg-primary" />
                       </div>
                       <p className="mt-0.5 line-clamp-2 text-[12px] font-medium leading-tight">
                         {it.title}
@@ -101,6 +100,17 @@ export function NotificationsPanel({
                         {relativeTime(it.publishedAt)}
                       </p>
                     </div>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Dismiss notification"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDismissItem(it);
+                    }}
+                    className="absolute right-2 top-2 flex size-6 cursor-pointer items-center justify-center rounded-full bg-background/80 text-muted-foreground opacity-80 hover:bg-surface-2 hover:text-foreground active:scale-95"
+                  >
+                    <X className="size-3.5" />
                   </button>
                 </li>
               ))}
