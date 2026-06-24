@@ -61,7 +61,7 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
         .upsert(
           {
             query: cacheKey,
-            results: results as unknown as object,
+            results: results as unknown as never,
             expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           },
           { onConflict: "query" },
