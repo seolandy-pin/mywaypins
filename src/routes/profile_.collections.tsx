@@ -122,6 +122,13 @@ function CollectionsScreen() {
       <header className="safe-top flex items-center gap-2 px-5 pt-4">
         <Link to="/profile" className="rounded-full p-1 active:bg-surface-1"><ChevronLeft className="size-5" /></Link>
         <h1 className="flex-1 font-display text-xl font-bold">Collections</h1>
+        <Link
+          to="/submit"
+          search={{ tab: "video" } as never}
+          className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground active:opacity-90"
+        >
+          <Plus className="size-3.5" /> Save Video
+        </Link>
         <button
           onClick={() => setEditing((e) => !e)}
           className="flex items-center gap-1 rounded-full bg-surface-1 px-3 py-1.5 text-xs font-medium active:bg-surface-2"
