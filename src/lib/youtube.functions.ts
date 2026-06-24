@@ -193,7 +193,8 @@ export const searchYouTubeVideosFn = createServerFn({ method: "GET" })
     if (q.length < 2) return [];
     if (!hasYouTubeKey()) throw new Error("YOUTUBE_API_KEY not configured");
 
-    const cacheKey = `videos:${q.toLowerCase()}`;
+    // v2 prefix invalidates pre-filter cached results (travel/food topical filter).
+    const cacheKey = `videos:v2:${q.toLowerCase()}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: cached } = await supabaseAdmin
