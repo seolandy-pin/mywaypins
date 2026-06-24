@@ -37,8 +37,7 @@ const ProcessInput = z.object({ submission_id: z.string().uuid() });
 export const processSubmission = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ProcessInput.parse(input))
   .handler(async ({ data }) => {
-    const YT_KEY = process.env.YOUTUBE_API_KEY;
-    if (!YT_KEY) {
+    if (!hasYouTubeKey()) {
       return { ok: false, reason: "YOUTUBE_API_KEY not configured — submission stored for later processing." };
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -51,13 +50,15 @@ export const processSubmission = createServerFn({ method: "POST" })
     if (!sub) throw new Error("Submission not found");
 
     // Resolve channel ID from URL (supports /channel/ID, /@handle, /c/name).
-    const channelId = await resolveYoutubeChannelId(sub.channel_url, YT_KEY);
+    const channelId = await resolveYoutubeChannelId(sub.channel_url);
     if (!channelId) throw new Error("Could not resolve YouTube channel from URL");
 
     // Fetch channel details
-    const chRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${YT_KEY}`,
+    const chRes = await ytFetch(
+      (key) =>
+        `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${key}`,
     );
+
     const chJson = (await chRes.json()) as {
       items?: Array<{
         id: string;
