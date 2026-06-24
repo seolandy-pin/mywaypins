@@ -11,8 +11,9 @@ import { hasYouTubeKey, ytFetch } from "@/lib/youtube-keys";
 export const refreshFollowedChannels = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const YT_KEY = process.env.YOUTUBE_API_KEY;
-    if (!YT_KEY) return { ok: false, newVideos: 0, reason: "missing-key" as const };
+    if (!hasYouTubeKey()) return { ok: false, newVideos: 0, reason: "missing-key" as const };
+
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { extractLocations } = await import("@/lib/api/channels.functions");
