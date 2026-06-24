@@ -31,6 +31,12 @@ export function PullToRefresh({
       startY.current = null;
       return;
     }
+    // Don't hijack touches that start inside the map or any opt-out element.
+    const target = e.target as HTMLElement | null;
+    if (target && target.closest('.mapboxgl-map, [data-no-pull-refresh]')) {
+      startY.current = null;
+      return;
+    }
     startY.current = e.touches[0].clientY;
   }
 
