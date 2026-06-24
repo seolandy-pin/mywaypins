@@ -67,15 +67,27 @@ function SearchScreen() {
     <>
       <header className="safe-top px-5 pt-4">
         <h1 className="font-display text-2xl font-bold">Search</h1>
-        <div className="relative mt-3">
-          <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setDebounced(q.trim());
+          }}
+          className="relative mt-3"
+        >
+          <button
+            type="submit"
+            aria-label="Search"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          >
+            <SearchIcon className="size-4" />
+          </button>
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search YouTube channels, places…"
             className="h-12 rounded-2xl bg-surface-1 pl-10 text-base"
           />
-        </div>
+        </form>
         <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Youtube className="size-3.5 text-primary" /> Tip: type a creator's name to find &amp; follow their channel.
         </p>
