@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, MapPin, Youtube } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { samplePins, featuredDestinations, popularCreators } from "@/lib/sample-data";
 import { searchYouTubeChannelsFn } from "@/lib/youtube.functions";
 
@@ -38,8 +39,19 @@ function SearchScreen() {
     queryKey: ["yt-search", debounced],
     enabled: debounced.length >= 2,
     staleTime: 1000 * 60 * 10,
+    retry: false,
     queryFn: () => ytSearch({ data: { q: debounced } }),
   });
+
+  useEffect(() => {
+    if (!ytQuery.error) return;
+    const msg = (ytQuery.error as Error).message ?? "";
+    if (msg.includes("QUOTA") || msg.includes("403") || msg.includes("429")) {
+      toast.error("유튜브 API 일일 호출량이 초과되었습니다. 잠시 후 다시 시도해 주세요.");
+    } else {
+      toast.error("검색 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+    }
+  }, [ytQuery.error]);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -55,15 +67,27 @@ function SearchScreen() {
     <>
       <header className="safe-top px-5 pt-4">
         <h1 className="font-display text-2xl font-bold">Search</h1>
-        <div className="relative mt-3">
-          <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setDebounced(q.trim());
+          }}
+          className="relative mt-3"
+        >
+          <button
+            type="submit"
+            aria-label="Search"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          >
+            <SearchIcon className="size-4" />
+          </button>
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search YouTube channels, places…"
             className="h-12 rounded-2xl bg-surface-1 pl-10 text-base"
           />
-        </div>
+        </form>
         <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Youtube className="size-3.5 text-primary" /> Tip: type a creator's name to find &amp; follow their channel.
         </p>
