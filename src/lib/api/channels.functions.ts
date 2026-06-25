@@ -217,7 +217,9 @@ export const extractLocations = createServerFn({ method: "POST" })
     const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const text = json.choices?.[0]?.message?.content ?? "{}";
     let parsed: { locations?: Array<{ name: string; city?: string; country?: string; latitude: number; longitude: number }> } = {};
-    try { parsed = JSON.parse(text); } catch {}
+    let parseOk = false;
+    try { parsed = JSON.parse(text); parseOk = true; } catch { parseOk = false; }
+    if (!parseOk) throw new Error("AI response JSON parse failed");
 
     const locs = parsed.locations ?? [];
     for (let i = 0; i < locs.length; i++) {
