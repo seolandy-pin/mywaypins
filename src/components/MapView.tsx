@@ -24,74 +24,6 @@ async function fetchSavedPinIds(): Promise<Set<string>> {
   return new Set(((data ?? []).map((r) => r.pin_id).filter(Boolean)) as string[]);
 }
 
-// Load every pin associated with the user's bookmarks, bypassing any
-// channel-follow filter. Handles both:
-//   • target_type='pin'   → fetch that pin directly
-//   • target_type='video' → fetch any pins linked to that video
-async function fetchSavedOnlyPins(): Promise<MapPin[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-  const { data: favs } = await supabase
-    .from("favorites")
-    .select("pin_id, video_id, target_type")
-    .eq("user_id", user.id);
-  if (!favs || favs.length === 0) return [];
-  const pinIds = new Set<string>();
-  const videoIds = new Set<string>();
-  for (const f of favs) {
-    if (f.target_type === "pin" && f.pin_id) pinIds.add(f.pin_id as string);
-    if (f.target_type === "video" && f.video_id) videoIds.add(f.video_id as string);
-  }
-  const selectCols =
-    "id, latitude, longitude, label, pin_type, channel_id, youtube_channels(name, thumbnail_url), videos(youtube_video_id, title, thumbnail_url, published_at), places(city_name, country_name)";
-  const queries: Promise<{ data: unknown[] | null }>[] = [];
-  if (pinIds.size > 0) {
-    queries.push(
-      supabase.from("pins").select(selectCols).in("id", Array.from(pinIds)) as unknown as Promise<{ data: unknown[] | null }>,
-    );
-  }
-  if (videoIds.size > 0) {
-    queries.push(
-      supabase.from("pins").select(selectCols).in("video_id", Array.from(videoIds)) as unknown as Promise<{ data: unknown[] | null }>,
-    );
-  }
-  if (queries.length === 0) return [];
-  const results = await Promise.all(queries);
-  const rows: Record<string, unknown>[] = [];
-  const seen = new Set<string>();
-  for (const r of results) {
-    for (const row of (r.data ?? []) as Record<string, unknown>[]) {
-      const id = row.id as string;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      rows.push(row);
-    }
-  }
-  return rows
-    .filter((p) => typeof p.latitude === "number" && typeof p.longitude === "number")
-    .map((p): MapPin => {
-      const v = (p as { videos: { youtube_video_id?: string; title?: string; thumbnail_url?: string; published_at?: string } | null }).videos;
-      const ch = (p as { youtube_channels: { name?: string; thumbnail_url?: string } | null }).youtube_channels;
-      const place = (p as { places: { city_name?: string; country_name?: string } | null }).places;
-      const type = (ALLOWED_PIN_TYPES as string[]).includes(p.pin_type as string) ? (p.pin_type as PinType) : "new";
-      return {
-        id: p.id as string,
-        lat: p.latitude as number,
-        lng: p.longitude as number,
-        type,
-        title: v?.title ?? (p.label as string) ?? "Untitled",
-        creator: ch?.name ?? "Unknown",
-        thumbnail: v?.thumbnail_url ?? "",
-        location: [place?.city_name, place?.country_name].filter(Boolean).join(", ") || ((p.label as string) ?? ""),
-        views: "",
-        uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
-        youtubeId: v?.youtube_video_id ?? "",
-        avatar: ch?.thumbnail_url ?? null,
-      };
-    });
-}
-
-
 // Pin enriched with the owning channel's avatar so map markers can show it.
 export type MapPin = SamplePin & { avatar?: string | null };
 
@@ -381,51 +313,37 @@ let fetchSeq = 0;
 // Cache fetched pin sets per filter signature so re-selecting a channel shows
 // its markers instantly (no blank flash while the network request is in flight).
 const pinCache = new Map<string, MapPin[]>();
-function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[], onlySaved?: boolean) {
-  // Saved-only mode bypasses the channel/video filter entirely so every
-  // bookmark (incl. unfollowed channels and video-only bookmarks) shows up.
-  if (onlySaved) {
-    const sig = "saved-only";
-    const cached = pinCache.get(sig);
-    if (cached) {
-      const allSaved = new Set(cached.map((p) => p.id));
-      setPinData(map, cached, allSaved);
-    } else {
-      setPinData(map, []);
-    }
-    lastFetchSig = sig;
-    const mySeq = ++fetchSeq;
-    fetchSavedOnlyPins()
-      .then((pins) => {
-        if (mySeq !== fetchSeq) return;
-        pinCache.set(sig, pins);
-        const allSaved = new Set(pins.map((p) => p.id));
-        setPinData(map, pins, allSaved);
-      })
-      .catch((e) => console.warn("[map] failed to load saved pins", e));
-    return;
-  }
-
+function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[]) {
   const base = !channelIds && !videoIds ? [...samplePins] : [];
   // Sort IDs so the signature is order-independent — a re-ordered (but
   // identical) filter list must not trigger a refetch/marker swap.
   const sig = `c:${channelIds ? [...channelIds].sort().join(",") : "*"}|v:${videoIds ? [...videoIds].sort().join(",") : "*"}`;
+  // Same filter as last fetch and we already have data → just ensure markers
+  // exist on this map instance (route remount) without re-fetching/re-flickering.
   if (sig === lastFetchSig && currentPins.length > 0) {
     renderHtmlMarkers(map);
     return;
   }
   if (sig !== lastFetchSig) {
+    // Filter changed. If we have cached pins for this filter, swap to them
+    // immediately. Otherwise KEEP the previous markers visible while the new
+    // fetch is in flight — clearing first causes a visible blank/flicker.
+    // `renderHtmlMarkers` diffs old → new when the fetch resolves, so pins
+    // not in the new filter are removed in a single seamless swap.
     const cached = pinCache.get(sig);
     if (cached) {
       setPinData(map, cached);
     } else if (channelIds?.length === 0 || videoIds?.length === 0) {
+      // Nothing to fetch (no filter selected) → clear right away.
       setPinData(map, base);
     }
+    // else: leave existing markers in place until the fetch completes.
   }
   lastFetchSig = sig;
   const mySeq = ++fetchSeq;
   Promise.all([fetchIngestedPins(channelIds, videoIds), fetchSavedPinIds()])
     .then(([pins, savedIds]) => {
+      // Drop stale responses if another filter change happened in the meantime.
       if (mySeq !== fetchSeq) return;
       const all = [...base, ...pins];
       pinCache.set(sig, all);
@@ -433,7 +351,6 @@ function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[
     })
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
 }
-
 
 function refreshSavedHighlight(map: mapboxgl.Map) {
   fetchSavedPinIds()
@@ -545,17 +462,8 @@ export function MapView({
     if (div.parentElement !== host) host.appendChild(div);
     requestAnimationFrame(() => map.resize());
 
-    const onFavoritesChanged = () => {
-      if (onlySavedMode) {
-        pinCache.delete("saved-only");
-        renderPins(map, undefined, undefined, true);
-      } else {
-        refreshSavedHighlight(map);
-      }
-    };
+    const onFavoritesChanged = () => refreshSavedHighlight(map);
     window.addEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
-
-
 
     return () => {
       window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
@@ -571,7 +479,7 @@ export function MapView({
 
     const render = () => {
       setupPinLayers(map);
-      renderPins(map, followedChannelIds, videoIdsFilter, onlySaved);
+      renderPins(map, followedChannelIds, videoIdsFilter);
     };
     if (!loadedRef.current && !map.loaded()) {
       map.once("load", () => {
@@ -583,8 +491,7 @@ export function MapView({
       render();
     }
     // Sorted joins: a re-ordered (but identical) ID list must not re-run this effect.
-  }, [token, followedChannelIds ? [...followedChannelIds].sort().join(",") : "", videoIdsFilter ? [...videoIdsFilter].sort().join(",") : "", pinsRefreshKey, onlySaved]);
-
+  }, [token, followedChannelIds ? [...followedChannelIds].sort().join(",") : "", videoIdsFilter ? [...videoIdsFilter].sort().join(",") : "", pinsRefreshKey]);
 
   // Toggle "saved-only" mode and refresh markers without refetching.
   useEffect(() => {

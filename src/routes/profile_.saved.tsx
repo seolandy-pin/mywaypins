@@ -16,7 +16,6 @@ export const Route = createFileRoute("/profile_/saved")({
 });
 
 type VideoRow = {
-  id?: string;
   youtube_video_id: string | null;
   title: string | null;
   thumbnail_url: string | null;
@@ -91,7 +90,6 @@ function SavedScreen() {
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<SamplePin | null>(null);
   const [open, setOpen] = useState(false);
-  const [viewedVideoIds, setViewedVideoIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -99,7 +97,7 @@ function SavedScreen() {
     supabase
       .from("favorites")
       .select(
-        "id, pin_id, video_id, target_type, created_at, pins(id, latitude, longitude, label, pin_type, videos(id, youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name)), places(city_name, country_name)), videos(id, youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name))",
+        "id, pin_id, video_id, target_type, created_at, pins(id, latitude, longitude, label, pin_type, videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name)), places(city_name, country_name)), videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name))",
       )
       .eq("user_id", user.id)
       .in("target_type", ["pin", "video"])
@@ -109,34 +107,7 @@ function SavedScreen() {
         setRows((data ?? []) as unknown as FavoriteRow[]);
         setLoading(false);
       });
-    supabase
-      .from("dismissed_notifications")
-      .select("video_id")
-      .eq("user_id", user.id)
-      .then(({ data }) => {
-        setViewedVideoIds(new Set((data ?? []).map((r) => r.video_id)));
-      });
   }, [user]);
-
-  function videoUuidOf(r: FavoriteRow): string | null {
-    if (r.target_type === "video") return r.videos?.id ?? r.video_id ?? null;
-    if (r.target_type === "pin") return r.pins?.videos?.id ?? null;
-    return null;
-  }
-
-  async function markViewed(r: FavoriteRow) {
-    if (!user) return;
-    const vid = videoUuidOf(r);
-    if (!vid || viewedVideoIds.has(vid)) return;
-    setViewedVideoIds((s) => {
-      const n = new Set(s);
-      n.add(vid);
-      return n;
-    });
-    await supabase
-      .from("dismissed_notifications")
-      .upsert({ user_id: user.id, video_id: vid }, { onConflict: "user_id,video_id" });
-  }
 
   async function remove(id: string) {
     const { error } = await supabase.from("favorites").delete().eq("id", id);
@@ -178,26 +149,22 @@ function SavedScreen() {
           {rows.map((r) => {
             const pin = rowToPin(r);
             if (!pin) return null;
-            const vid = videoUuidOf(r);
-            const isViewed = vid ? viewedVideoIds.has(vid) : true;
             return (
               <li key={r.id} className="overflow-hidden rounded-2xl bg-card border border-border">
                 <button
-                  onClick={() => { setActive(pin); setOpen(true); void markViewed(r); }}
+                  onClick={() => { setActive(pin); setOpen(true); }}
                   className="flex w-full gap-3 text-left active:bg-surface-1"
                 >
                   <div className="relative size-24 shrink-0 bg-black">
                     {pin.thumbnail ? (
                       <img src={pin.thumbnail} alt="" className="size-full object-cover" />
                     ) : null}
-                    {!isViewed && (
-                      <span
-                        className="absolute left-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
-                        style={{ background: PIN_TYPE_COLORS[pin.type] }}
-                      >
-                        {pin.type}
-                      </span>
-                    )}
+                    <span
+                      className="absolute left-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                      style={{ background: PIN_TYPE_COLORS[pin.type] }}
+                    >
+                      {pin.type}
+                    </span>
                   </div>
                   <div className="min-w-0 flex-1 py-2 pr-2">
                     <p className="line-clamp-2 text-sm font-medium">{pin.title}</p>
