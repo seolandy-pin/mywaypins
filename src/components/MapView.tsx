@@ -414,6 +414,7 @@ export function MapView({
   followedChannelIds,
   videoIdsFilter,
   pinsRefreshKey = 0,
+  onlySaved = false,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
@@ -421,6 +422,7 @@ export function MapView({
   pinsRefreshKey?: number;
   channelMarkers?: ChannelMarkerData[];
   onChannelMarkerClick?: (channelId: string) => void;
+  onlySaved?: boolean;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [token, setToken] = useState<string>("");
