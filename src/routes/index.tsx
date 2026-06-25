@@ -42,6 +42,7 @@ function Home() {
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [onlySaved, setOnlySaved] = useState(false);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const { channels: followed, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
