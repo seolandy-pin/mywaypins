@@ -178,22 +178,26 @@ function SavedScreen() {
           {rows.map((r) => {
             const pin = rowToPin(r);
             if (!pin) return null;
+            const vid = videoUuidOf(r);
+            const isViewed = vid ? viewedVideoIds.has(vid) : true;
             return (
               <li key={r.id} className="overflow-hidden rounded-2xl bg-card border border-border">
                 <button
-                  onClick={() => { setActive(pin); setOpen(true); }}
+                  onClick={() => { setActive(pin); setOpen(true); void markViewed(r); }}
                   className="flex w-full gap-3 text-left active:bg-surface-1"
                 >
                   <div className="relative size-24 shrink-0 bg-black">
                     {pin.thumbnail ? (
                       <img src={pin.thumbnail} alt="" className="size-full object-cover" />
                     ) : null}
-                    <span
-                      className="absolute left-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
-                      style={{ background: PIN_TYPE_COLORS[pin.type] }}
-                    >
-                      {pin.type}
-                    </span>
+                    {!isViewed && (
+                      <span
+                        className="absolute left-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                        style={{ background: PIN_TYPE_COLORS[pin.type] }}
+                      >
+                        {pin.type}
+                      </span>
+                    )}
                   </div>
                   <div className="min-w-0 flex-1 py-2 pr-2">
                     <p className="line-clamp-2 text-sm font-medium">{pin.title}</p>
