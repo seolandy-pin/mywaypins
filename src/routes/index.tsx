@@ -110,9 +110,9 @@ function Home() {
                 items={notifications}
                 unreadCount={unreadCount}
                 onClearAll={dismissAll}
-                onDismissItem={(it) => dismissOne(it.videoDbId)}
+                onDismissItem={(it) => dismissOne(it.youtubeId)}
                 onItemClick={(it) => {
-                  dismissOne(it.videoDbId);
+                  dismissOne(it.youtubeId);
                   setNotifOpen(false);
                   setActivePin({
                     id: it.videoDbId,
