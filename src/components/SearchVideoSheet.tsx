@@ -86,8 +86,55 @@ export function SearchVideoSheet({
     },
   });
 
+  const savedStatus = useQuery({
+    queryKey: ["search-video-saved", videoId],
+    enabled: Boolean(videoId) && isAuthenticated && open,
+    queryFn: () => savedStatusFn({ data: { youtubeVideoId: videoId! } }),
+  });
+  const saved = savedStatus.data?.saved ?? false;
+
+  const saveToggle = useMutation({
+    mutationFn: async () => {
+      if (!video) throw new Error("no video");
+      if (saved) {
+        return unsaveFn({ data: { youtubeVideoId: video.id } });
+      }
+      return saveFn({
+        data: {
+          youtubeVideoId: video.id,
+          title: video.title,
+          thumbnailUrl: video.thumbnail ?? null,
+          publishedAt: video.publishedAt ?? null,
+          viewCount: video.viewCount ?? null,
+          youtubeChannelId: video.channelId,
+          channelName: video.channelTitle,
+          channelThumbnailUrl: video.channelThumbnail ?? null,
+          channelUrl: video.channelHandle
+            ? `https://www.youtube.com/@${video.channelHandle}`
+            : `https://www.youtube.com/channel/${video.channelId}`,
+        },
+      });
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["search-video-saved", videoId] });
+      window.dispatchEvent(new Event("wanderpins:favorites-changed"));
+      if (result && "saved" in result && result.saved) {
+        toast.success("Saved to your places");
+      } else {
+        toast.success("Removed from your saved places");
+      }
+    },
+    onError: (e) => {
+      console.error(e);
+      toast.error("Couldn't save — please try again");
+    },
+  });
+
   useEffect(() => {
-    if (!open) toggle.reset();
+    if (!open) {
+      toggle.reset();
+      saveToggle.reset();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
