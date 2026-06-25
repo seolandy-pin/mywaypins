@@ -174,11 +174,6 @@ function SearchScreen() {
         </div>
       )}
 
-      <SearchVideoSheet
-        video={activeVideo}
-        open={!!activeVideo}
-        onOpenChange={(o) => { if (!o) setActiveVideo(null); }}
-      />
     </>
   );
 }
