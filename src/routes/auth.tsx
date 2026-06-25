@@ -64,16 +64,53 @@ function AuthScreen() {
 
   async function handleGoogle() {
     setLoading(true);
-    // Capacitor 네이티브 앱에서는 window.location.origin이 'https://localhost'가 되어
-    // OAuth provider가 콜백을 보낼 수 없다. 게시된 도메인으로 고정한다.
-    const { Capacitor } = await import("@capacitor/core");
-    const redirectUri = Capacitor.isNativePlatform()
-      ? "https://mywaypins.lovable.app"
-      : window.location.origin;
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirectUri });
-    if (result.error) { toast.error("Google sign-in failed"); setLoading(false); return; }
-    if (result.redirected) return;
-    navigate({ to: "/" });
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+
+      // 📱 네이티브(안드로이드/iOS): Google Sign-In SDK → idToken → Supabase
+      if (Capacitor.isNativePlatform()) {
+        const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
+        try {
+          // 플러그인은 한 번만 initialize 해도 무방하지만, 재호출은 안전합니다.
+          await GoogleAuth.initialize({
+            clientId: "628775940516-vblak5ql52dtrfhm77ba0a05f83ln891.apps.googleusercontent.com",
+            scopes: ["profile", "email"],
+            grantOfflineAccess: true,
+          });
+        } catch {
+          // 이미 초기화된 경우 무시
+        }
+        const result = await GoogleAuth.signIn();
+        const idToken = result?.authentication?.idToken;
+        if (!idToken) {
+          toast.error("Google sign-in failed (no idToken)");
+          setLoading(false);
+          return;
+        }
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: idToken,
+        });
+        if (error) {
+          toast.error(error.message);
+          setLoading(false);
+          return;
+        }
+        toast.success("Welcome!");
+        navigate({ to: "/" });
+        return;
+      }
+
+      // 🌐 웹/브라우저: 기존 Lovable OAuth 브로커 사용
+      const redirectUri = window.location.origin;
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirectUri });
+      if (result.error) { toast.error("Google sign-in failed"); setLoading(false); return; }
+      if (result.redirected) return;
+      navigate({ to: "/" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Google sign-in failed");
+      setLoading(false);
+    }
   }
 
 
