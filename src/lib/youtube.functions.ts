@@ -13,6 +13,7 @@ type ChannelApiItem = {
   id: string;
   snippet: {
     title: string;
+    description?: string;
     customUrl?: string;
     thumbnails: { default?: { url: string }; medium?: { url: string }; high?: { url: string } };
   };
@@ -29,11 +30,23 @@ function mapChannel(c: ChannelApiItem): YTChannelResult {
   };
 }
 
+// Travel / food (mukbang, restaurant tour) keyword filter. Applied to the
+// channel title + description so generic news/music/gaming channels are
+// excluded from search results.
+const TRAVEL_FOOD_RE =
+  /\b(travel|traveler|traveller|traveling|travelling|tourist|tourism|tour|tours|touring|trip|trips|journey|journeys|adventure|adventures|wander|wanderlust|explore|explorer|exploring|expedition|nomad|backpack|backpacker|backpacking|vlog|vlogger|vlogs|itinerary|destination|destinations|holiday|holidays|vacation|vacations|getaway|cruise|safari|hiking|trekking|road\s*trip|world|globe|abroad|overseas|country|countries|city\s*guide|food|foodie|foods|eat|eats|eating|eater|restaurant|restaurants|cuisine|culinary|chef|cook|cooking|recipe|recipes|kitchen|street\s*food|mukbang|asmr\s*eating|tasting|taste\s*test|dining|gourmet|delicious|yummy|bbq|brunch|breakfast|lunch|dinner|cafe|coffee|bakery|dessert|drinks)\b/i;
+
+function looksLikeTravelOrFood(c: ChannelApiItem): boolean {
+  const text = `${c.snippet.title ?? ""} ${c.snippet.description ?? ""}`;
+  return TRAVEL_FOOD_RE.test(text);
+}
+
 // A query "looks like a handle" when it has no spaces and only handle-safe chars.
 // channels?forHandle costs 1 unit vs search.list at 100 units.
 function looksLikeHandle(q: string): boolean {
   return /^@?[A-Za-z0-9._-]{2,}$/.test(q);
 }
+
 
 export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
   .inputValidator((d: { q: string }) => d)
