@@ -30,9 +30,7 @@ function formatNum(n: number | null | undefined) {
 function SearchScreen() {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [activeVideo, setActiveVideo] = useState<YTVideoResult | null>(null);
   const ytSearch = useServerFn(searchYouTubeChannelsFn);
-  const ytVideosSearch = useServerFn(searchYouTubeVideosFn);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 400);
@@ -47,16 +45,8 @@ function SearchScreen() {
     queryFn: () => ytSearch({ data: { q: debounced } }),
   });
 
-  const ytVideosQuery = useQuery({
-    queryKey: ["yt-videos-search", debounced],
-    enabled: debounced.length >= 2,
-    staleTime: 1000 * 60 * 30,
-    retry: false,
-    queryFn: () => ytVideosSearch({ data: { q: debounced } }),
-  });
-
   useEffect(() => {
-    const err = ytQuery.error || ytVideosQuery.error;
+    const err = ytQuery.error;
     if (!err) return;
     const msg = (err as Error).message ?? "";
     if (msg.includes("QUOTA") || msg.includes("403") || msg.includes("429")) {
@@ -64,7 +54,8 @@ function SearchScreen() {
     } else {
       toast.error("Something went wrong while searching. Please try again later.");
     }
-  }, [ytQuery.error, ytVideosQuery.error]);
+  }, [ytQuery.error]);
+
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
