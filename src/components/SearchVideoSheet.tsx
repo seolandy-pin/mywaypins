@@ -211,6 +211,23 @@ export function SearchVideoSheet({
                 <ExternalLink className="size-4" />
               </a>
             </Button>
+            <Button
+              variant={saved ? "default" : "outline"}
+              size="lg"
+              onClick={() => {
+                if (!isAuthenticated) {
+                  toast.error("Sign in to save places", {
+                    action: { label: "Sign in", onClick: () => (window.location.href = "/auth") },
+                  });
+                  return;
+                }
+                saveToggle.mutate();
+              }}
+              disabled={saveToggle.isPending || savedStatus.isLoading}
+              aria-label={saved ? "Remove from saved" : "Save video"}
+            >
+              <Bookmark className={saved ? "size-4 fill-current" : "size-4"} />
+            </Button>
           </div>
           {!following && (
             <p className="px-5 pb-6 text-center text-[11px] text-muted-foreground">
