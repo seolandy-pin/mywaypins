@@ -152,6 +152,7 @@ export type Database = {
           target_type: string
           user_id: string
           video_id: string | null
+          viewed_at: string | null
         }
         Insert: {
           created_at?: string
@@ -161,6 +162,7 @@ export type Database = {
           target_type: string
           user_id: string
           video_id?: string | null
+          viewed_at?: string | null
         }
         Update: {
           created_at?: string
@@ -170,6 +172,7 @@ export type Database = {
           target_type?: string
           user_id?: string
           video_id?: string | null
+          viewed_at?: string | null
         }
         Relationships: [
           {

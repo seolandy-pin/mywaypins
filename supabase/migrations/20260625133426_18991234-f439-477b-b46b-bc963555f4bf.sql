@@ -1,0 +1,1 @@
+ALTER TABLE public.favorites ADD COLUMN IF NOT EXISTS viewed_at timestamptz;
