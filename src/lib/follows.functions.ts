@@ -59,9 +59,21 @@ export const followChannel = createServerFn({ method: "POST" })
       .insert({ user_id: userId, channel_id: ch.id });
     if (followErr && followErr.code !== "23505") throw followErr;
 
-    // Auto-ingest: if channel has no videos yet, kick off the same pipeline as Submit.
+    // Auto-ingest: kick off the same pipeline as Submit when the channel has
+    // no videos yet OR when no pins have ever been generated for it (covers
+    // channels that were inserted via another path but never had locations
+    // extracted — e.g. Travel Thirsty had 41 videos but 0 pins).
     let ingestionStarted = false;
-    if (!ch.video_count && data.channelUrl) {
+    let needsIngest = !ch.video_count;
+    if (!needsIngest && data.channelUrl) {
+      const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+      const { count: pinCount } = await admin
+        .from("pins")
+        .select("id", { count: "exact", head: true })
+        .eq("channel_id", ch.id);
+      if ((pinCount ?? 0) === 0) needsIngest = true;
+    }
+    if (needsIngest && data.channelUrl) {
       try {
         const { data: sub, error: subErr } = await supabase
           .from("submitted_channels")
