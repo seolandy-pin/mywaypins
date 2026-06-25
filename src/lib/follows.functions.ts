@@ -26,7 +26,8 @@ export const followChannel = createServerFn({ method: "POST" })
     if (existingChannel) {
       ch = existingChannel;
     } else {
-      const { data: insertedChannel, error: insertErr } = await supabase
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: insertedChannel, error: insertErr } = await supabaseAdmin
       .from("youtube_channels")
         .insert({
           youtube_channel_id: data.youtubeChannelId,
