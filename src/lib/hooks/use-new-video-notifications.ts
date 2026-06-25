@@ -38,9 +38,9 @@ export function useNewVideoNotifications(channelIds: string[]) {
     queryFn: async (): Promise<Set<string>> => {
       const { data, error } = await supabase
         .from("dismissed_notifications")
-        .select("video_id");
+        .select("youtube_video_id");
       if (error) throw error;
-      return new Set((data ?? []).map((r) => r.video_id));
+      return new Set((data ?? []).map((r) => r.youtube_video_id));
     },
   });
 
@@ -74,7 +74,7 @@ export function useNewVideoNotifications(channelIds: string[]) {
   const dismissed = dismissedQuery.data ?? new Set<string>();
 
   const items: NotificationItem[] = (q.data ?? [])
-    .filter((r) => !dismissed.has(r.id))
+    .filter((r) => !dismissed.has(r.youtube_video_id))
     .map((r) => ({
       videoDbId: r.id,
       youtubeId: r.youtube_video_id,
@@ -90,19 +90,22 @@ export function useNewVideoNotifications(channelIds: string[]) {
   const unreadCount = items.length;
 
   const dismissMutation = useMutation({
-    mutationFn: async (videoIds: string[]) => {
-      if (!userId || videoIds.length === 0) return;
-      const rows = videoIds.map((video_id) => ({ user_id: userId, video_id }));
+    mutationFn: async (youtubeIds: string[]) => {
+      if (!userId || youtubeIds.length === 0) return;
+      const rows = youtubeIds.map((youtube_video_id) => ({
+        user_id: userId,
+        youtube_video_id,
+      }));
       const { error } = await supabase
         .from("dismissed_notifications")
-        .upsert(rows, { onConflict: "user_id,video_id" });
+        .upsert(rows, { onConflict: "user_id,youtube_video_id" });
       if (error) throw error;
     },
-    onMutate: async (videoIds) => {
+    onMutate: async (youtubeIds) => {
       await qc.cancelQueries({ queryKey: dismissedKey });
       const prev = qc.getQueryData<Set<string>>(dismissedKey) ?? new Set<string>();
       const next = new Set(prev);
-      for (const id of videoIds) next.add(id);
+      for (const id of youtubeIds) next.add(id);
       qc.setQueryData(dismissedKey, next);
       return { prev };
     },
@@ -115,11 +118,11 @@ export function useNewVideoNotifications(channelIds: string[]) {
   });
 
   const dismissOne = useCallback(
-    (videoId: string) => dismissMutation.mutate([videoId]),
+    (youtubeId: string) => dismissMutation.mutate([youtubeId]),
     [dismissMutation],
   );
   const dismissAll = useCallback(() => {
-    const ids = items.map((i) => i.videoDbId);
+    const ids = items.map((i) => i.youtubeId);
     if (ids.length === 0) return;
     dismissMutation.mutate(ids);
   }, [dismissMutation, items]);
