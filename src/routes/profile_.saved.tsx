@@ -30,6 +30,7 @@ type FavoriteRow = {
   video_id: string | null;
   target_type: string;
   created_at: string;
+  viewed_at: string | null;
   pins: {
     id: string;
     latitude: number | null;
@@ -97,7 +98,7 @@ function SavedScreen() {
     supabase
       .from("favorites")
       .select(
-        "id, pin_id, video_id, target_type, created_at, pins(id, latitude, longitude, label, pin_type, videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name)), places(city_name, country_name)), videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name))",
+        "id, pin_id, video_id, target_type, created_at, viewed_at, pins(id, latitude, longitude, label, pin_type, videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name)), places(city_name, country_name)), videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name))",
       )
       .eq("user_id", user.id)
       .in("target_type", ["pin", "video"])
@@ -118,6 +119,23 @@ function SavedScreen() {
     setRows((r) => r.filter((x) => x.id !== id));
     toast.success("Removed");
   }
+
+  async function markViewed(id: string) {
+    const row = rows.find((x) => x.id === id);
+    if (!row || row.viewed_at) return;
+    const nowIso = new Date().toISOString();
+    setRows((r) => r.map((x) => (x.id === id ? { ...x, viewed_at: nowIso } : x)));
+    const { error } = await supabase
+      .from("favorites")
+      // viewed_at column exists in DB but may not be in generated types yet
+      .update({ viewed_at: nowIso } as never)
+      .eq("id", id);
+    if (error) {
+      console.error(error);
+      setRows((r) => r.map((x) => (x.id === id ? { ...x, viewed_at: null } : x)));
+    }
+  }
+
 
   return (
     <>
@@ -152,19 +170,21 @@ function SavedScreen() {
             return (
               <li key={r.id} className="overflow-hidden rounded-2xl bg-card border border-border">
                 <button
-                  onClick={() => { setActive(pin); setOpen(true); }}
+                  onClick={() => { setActive(pin); setOpen(true); markViewed(r.id); }}
                   className="flex w-full gap-3 text-left active:bg-surface-1"
                 >
                   <div className="relative size-24 shrink-0 bg-black">
                     {pin.thumbnail ? (
                       <img src={pin.thumbnail} alt="" className="size-full object-cover" />
                     ) : null}
-                    <span
-                      className="absolute left-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
-                      style={{ background: PIN_TYPE_COLORS[pin.type] }}
-                    >
-                      {pin.type}
-                    </span>
+                    {!r.viewed_at ? (
+                      <span
+                        className="absolute left-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                        style={{ background: PIN_TYPE_COLORS[pin.type] }}
+                      >
+                        {pin.type}
+                      </span>
+                    ) : null}
                   </div>
                   <div className="min-w-0 flex-1 py-2 pr-2">
                     <p className="line-clamp-2 text-sm font-medium">{pin.title}</p>
