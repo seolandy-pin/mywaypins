@@ -47,6 +47,10 @@ function looksLikeHandle(q: string): boolean {
   return /^@?[A-Za-z0-9._-]{2,}$/.test(q);
 }
 
+function isTemporaryYouTubeFailure(status: number): boolean {
+  return status === 403 || status === 429 || status >= 500;
+}
+
 
 export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
   .inputValidator((d: { q: string }) => d)
@@ -100,6 +104,11 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
           return results;
         }
       }
+      if (isTemporaryYouTubeFailure(hRes.status)) {
+        const body = await hRes.text().catch(() => "");
+        console.warn(`[youtube] channel handle lookup unavailable, status=${hRes.status}`, body);
+        return [];
+      }
       // Fall through to search.list if handle lookup yielded nothing.
     }
 
@@ -112,10 +121,10 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
         `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=15&q=${encodeURIComponent(filteredQ)}&key=${key}`,
     );
     if (!sRes.ok) {
-      if (sRes.status === 403 || sRes.status === 429 || sRes.status >= 500) {
+      if (isTemporaryYouTubeFailure(sRes.status)) {
         const body = await sRes.text().catch(() => "");
         console.warn(`[youtube] search quota/fallback, status=${sRes.status}`, body);
-        throw new Error("YOUTUBE_QUOTA_EXCEEDED");
+        return [];
       }
       throw new Error(`YouTube search ${sRes.status}`);
     }
@@ -131,7 +140,7 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
         `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${ids.join(",")}&key=${key}`,
     );
     if (!dRes.ok) {
-      if (dRes.status === 429 || dRes.status >= 500) {
+      if (isTemporaryYouTubeFailure(dRes.status)) {
         console.warn(`[youtube] channels fallback, status=${dRes.status}`);
         return [];
       }
@@ -256,8 +265,9 @@ export const searchYouTubeVideosFn = createServerFn({ method: "GET" })
     );
 
     if (!sRes.ok) {
-      if (sRes.status === 403 || sRes.status === 429 || sRes.status >= 500) {
-        throw new Error("YOUTUBE_QUOTA_EXCEEDED");
+      if (isTemporaryYouTubeFailure(sRes.status)) {
+        console.warn(`[youtube] video search unavailable, status=${sRes.status}`);
+        return [];
       }
       throw new Error(`YouTube video search ${sRes.status}`);
     }
