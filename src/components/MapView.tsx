@@ -24,6 +24,74 @@ async function fetchSavedPinIds(): Promise<Set<string>> {
   return new Set(((data ?? []).map((r) => r.pin_id).filter(Boolean)) as string[]);
 }
 
+// Load every pin associated with the user's bookmarks, bypassing any
+// channel-follow filter. Handles both:
+//   • target_type='pin'   → fetch that pin directly
+//   • target_type='video' → fetch any pins linked to that video
+async function fetchSavedOnlyPins(): Promise<MapPin[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data: favs } = await supabase
+    .from("favorites")
+    .select("pin_id, video_id, target_type")
+    .eq("user_id", user.id);
+  if (!favs || favs.length === 0) return [];
+  const pinIds = new Set<string>();
+  const videoIds = new Set<string>();
+  for (const f of favs) {
+    if (f.target_type === "pin" && f.pin_id) pinIds.add(f.pin_id as string);
+    if (f.target_type === "video" && f.video_id) videoIds.add(f.video_id as string);
+  }
+  const selectCols =
+    "id, latitude, longitude, label, pin_type, channel_id, youtube_channels(name, thumbnail_url), videos(youtube_video_id, title, thumbnail_url, published_at), places(city_name, country_name)";
+  const queries: Promise<{ data: unknown[] | null }>[] = [];
+  if (pinIds.size > 0) {
+    queries.push(
+      supabase.from("pins").select(selectCols).in("id", Array.from(pinIds)) as unknown as Promise<{ data: unknown[] | null }>,
+    );
+  }
+  if (videoIds.size > 0) {
+    queries.push(
+      supabase.from("pins").select(selectCols).in("video_id", Array.from(videoIds)) as unknown as Promise<{ data: unknown[] | null }>,
+    );
+  }
+  if (queries.length === 0) return [];
+  const results = await Promise.all(queries);
+  const rows: Record<string, unknown>[] = [];
+  const seen = new Set<string>();
+  for (const r of results) {
+    for (const row of (r.data ?? []) as Record<string, unknown>[]) {
+      const id = row.id as string;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      rows.push(row);
+    }
+  }
+  return rows
+    .filter((p) => typeof p.latitude === "number" && typeof p.longitude === "number")
+    .map((p): MapPin => {
+      const v = (p as { videos: { youtube_video_id?: string; title?: string; thumbnail_url?: string; published_at?: string } | null }).videos;
+      const ch = (p as { youtube_channels: { name?: string; thumbnail_url?: string } | null }).youtube_channels;
+      const place = (p as { places: { city_name?: string; country_name?: string } | null }).places;
+      const type = (ALLOWED_PIN_TYPES as string[]).includes(p.pin_type as string) ? (p.pin_type as PinType) : "new";
+      return {
+        id: p.id as string,
+        lat: p.latitude as number,
+        lng: p.longitude as number,
+        type,
+        title: v?.title ?? (p.label as string) ?? "Untitled",
+        creator: ch?.name ?? "Unknown",
+        thumbnail: v?.thumbnail_url ?? "",
+        location: [place?.city_name, place?.country_name].filter(Boolean).join(", ") || ((p.label as string) ?? ""),
+        views: "",
+        uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
+        youtubeId: v?.youtube_video_id ?? "",
+        avatar: ch?.thumbnail_url ?? null,
+      };
+    });
+}
+
+
 // Pin enriched with the owning channel's avatar so map markers can show it.
 export type MapPin = SamplePin & { avatar?: string | null };
 
