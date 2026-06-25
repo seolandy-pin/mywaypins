@@ -164,11 +164,26 @@ function Home() {
             pinsRefreshKey={pinsVersion}
             channelMarkers={visibleMarkers}
             onChannelMarkerClick={(id) => pickChannel(id)}
+            onlySaved={onlySaved}
             onPinClick={(p) => {
               setActivePin(p);
               setSheetOpen(true);
             }}
           />
+
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={() => setOnlySaved((v) => !v)}
+              aria-pressed={onlySaved}
+              title={onlySaved ? "Showing saved pins only" : "Show saved pins only"}
+              className={`absolute right-2.5 top-[88px] z-10 flex size-[29px] items-center justify-center rounded-[4px] shadow-[0_0_0_2px_rgba(0,0,0,0.1)] transition active:scale-95 ${
+                onlySaved ? "bg-primary text-white" : "bg-white text-gray-800 hover:bg-gray-50"
+              }`}
+            >
+              <Bookmark className={`size-4 ${onlySaved ? "fill-white" : ""}`} />
+            </button>
+          )}
 
           <button
             type="button"
@@ -177,6 +192,7 @@ function Home() {
           >
             <Maximize2 className="size-3.5" /> Explore Full Map
           </button>
+
         </div>
         <VideoSheet pin={activePin} open={sheetOpen} onOpenChange={setSheetOpen} />
       </section>
