@@ -562,7 +562,7 @@ export function MapView({
 
     const render = () => {
       setupPinLayers(map);
-      renderPins(map, followedChannelIds, videoIdsFilter);
+      renderPins(map, followedChannelIds, videoIdsFilter, onlySaved);
     };
     if (!loadedRef.current && !map.loaded()) {
       map.once("load", () => {
@@ -574,7 +574,8 @@ export function MapView({
       render();
     }
     // Sorted joins: a re-ordered (but identical) ID list must not re-run this effect.
-  }, [token, followedChannelIds ? [...followedChannelIds].sort().join(",") : "", videoIdsFilter ? [...videoIdsFilter].sort().join(",") : "", pinsRefreshKey]);
+  }, [token, followedChannelIds ? [...followedChannelIds].sort().join(",") : "", videoIdsFilter ? [...videoIdsFilter].sort().join(",") : "", pinsRefreshKey, onlySaved]);
+
 
   // Toggle "saved-only" mode and refresh markers without refetching.
   useEffect(() => {
