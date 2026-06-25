@@ -78,8 +78,8 @@ function MapScreen() {
           onClick={() => setOnlySaved((v) => !v)}
           aria-pressed={onlySaved}
           title={onlySaved ? "Showing saved pins only" : "Show saved pins only"}
-          className={`absolute right-2.5 top-[140px] z-10 flex size-9 items-center justify-center rounded-md shadow-md ring-1 ring-black/10 backdrop-blur transition active:scale-95 ${
-            onlySaved ? "bg-primary text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+          className={`absolute right-2.5 top-[88px] z-10 flex size-[29px] items-center justify-center rounded-[4px] shadow-[0_0_0_2px_rgba(0,0,0,0.1)] transition active:scale-95 ${
+            onlySaved ? "bg-primary text-white" : "bg-white text-gray-800 hover:bg-gray-50"
           }`}
         >
           <Bookmark className={`size-4 ${onlySaved ? "fill-white" : ""}`} />
