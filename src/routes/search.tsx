@@ -116,37 +116,8 @@ function SearchScreen() {
 
       {results && (
         <div className="mt-4 space-y-6 px-5 pb-6">
-          <Group title="Popular videos">
-            {debounced.length < 2 && <p className="text-xs text-muted-foreground">Type at least 2 characters…</p>}
-            {debounced.length >= 2 && ytVideosQuery.isLoading && <p className="text-sm text-muted-foreground">Searching popular videos…</p>}
-            {ytVideosQuery.data && ytVideosQuery.data.length === 0 && <Empty />}
-            <div className="grid grid-cols-2 gap-3">
-              {ytVideosQuery.data?.map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => setActiveVideo(v)}
-                  className="overflow-hidden rounded-2xl bg-card text-left active:scale-[0.98]"
-                >
-                  <div className="relative aspect-video w-full overflow-hidden bg-black">
-                    <img src={v.thumbnail} alt="" className="size-full object-cover" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition group-hover:opacity-100">
-                      <Play className="size-8 fill-white text-white" />
-                    </div>
-                    {v.viewCount != null && (
-                      <span className="absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium text-white">
-                        <Eye className="size-3" />
-                        {formatNum(v.viewCount)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="px-2.5 py-2">
-                    <p className="line-clamp-2 text-xs font-semibold leading-snug">{v.title}</p>
-                    <p className="mt-1 line-clamp-1 text-[10px] text-muted-foreground">{v.channelTitle}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </Group>
+
+
 
           <Group title="YouTube channels">
             {debounced.length >= 2 && ytQuery.isLoading && <p className="text-sm text-muted-foreground">Searching…</p>}
