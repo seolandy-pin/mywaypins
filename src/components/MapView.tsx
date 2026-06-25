@@ -493,6 +493,18 @@ export function MapView({
     // Sorted joins: a re-ordered (but identical) ID list must not re-run this effect.
   }, [token, followedChannelIds ? [...followedChannelIds].sort().join(",") : "", videoIdsFilter ? [...videoIdsFilter].sort().join(",") : "", pinsRefreshKey]);
 
+  // Toggle "saved-only" mode and refresh markers without refetching.
+  useEffect(() => {
+    onlySavedMode = onlySaved;
+    const map = sharedMap;
+    if (!map) return;
+    const src = map.getSource(PIN_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+    if (src) src.setData(pinsToGeoJSON(visiblePins(), currentSavedIds));
+    renderHtmlMarkers(map);
+    // Also refresh saved ids in case favorites changed elsewhere.
+    if (onlySaved) refreshSavedHighlight(map);
+  }, [onlySaved]);
+
   if (!token) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
