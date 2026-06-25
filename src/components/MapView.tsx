@@ -83,6 +83,7 @@ let sharedMap: mapboxgl.Map | null = null;
 const sharedHandlerRef: { current: PinHandler } = { current: () => {} };
 let currentPins: MapPin[] = [];
 let currentSavedIds: Set<string> = new Set();
+let onlySavedMode = false;
 const PIN_SOURCE_ID = "wanderpins-source";
 
 function pinsToGeoJSON(pins: SamplePin[], savedIds: Set<string>): GeoJSON.FeatureCollection {
