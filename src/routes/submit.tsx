@@ -14,10 +14,10 @@ import {
 } from "@/lib/collections.functions";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import { toast } from "sonner";
-import { ChevronLeft, Youtube, Sparkles, FolderPlus, Film, Search as SearchIcon, MapPin, Eye, Play } from "lucide-react";
-import { searchYouTubeChannelsFn, searchYouTubeVideosFn, type YTVideoResult } from "@/lib/youtube.functions";
-import { SearchVideoSheet } from "@/components/SearchVideoSheet";
+import { ChevronLeft, Youtube, Sparkles, FolderPlus, Film, Search as SearchIcon, MapPin } from "lucide-react";
+import { searchYouTubeChannelsFn } from "@/lib/youtube.functions";
 import { samplePins, featuredDestinations, popularCreators } from "@/lib/sample-data";
+
 
 function formatNum(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
