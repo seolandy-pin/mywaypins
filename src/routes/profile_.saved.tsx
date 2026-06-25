@@ -90,6 +90,7 @@ function SavedScreen() {
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<SamplePin | null>(null);
   const [open, setOpen] = useState(false);
+  const [viewedVideoIds, setViewedVideoIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -107,7 +108,31 @@ function SavedScreen() {
         setRows((data ?? []) as unknown as FavoriteRow[]);
         setLoading(false);
       });
+    supabase
+      .from("dismissed_notifications")
+      .select("video_id")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        setViewedVideoIds(new Set((data ?? []).map((r) => r.video_id)));
+      });
   }, [user]);
+
+  async function markViewed(r: FavoriteRow) {
+    if (!user) return;
+    const videoUuid = r.target_type === "video" ? r.video_id : r.pins?.videos ? (r.pins as unknown as { videos: { id?: string } | null }).videos?.id : null;
+    // pins.videos shape doesn't include id in our select; fall back to video_id field for video favorites only.
+    const vid = r.target_type === "video" ? r.video_id : null;
+    if (!vid || viewedVideoIds.has(vid)) return;
+    setViewedVideoIds((s) => {
+      const n = new Set(s);
+      n.add(vid);
+      return n;
+    });
+    await supabase
+      .from("dismissed_notifications")
+      .upsert({ user_id: user.id, video_id: vid }, { onConflict: "user_id,video_id" });
+    void videoUuid;
+  }
 
   async function remove(id: string) {
     const { error } = await supabase.from("favorites").delete().eq("id", id);
