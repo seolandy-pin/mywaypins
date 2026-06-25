@@ -129,17 +129,17 @@ export type Database = {
         Row: {
           dismissed_at: string
           user_id: string
-          video_id: string
+          youtube_video_id: string
         }
         Insert: {
           dismissed_at?: string
           user_id: string
-          video_id: string
+          youtube_video_id: string
         }
         Update: {
           dismissed_at?: string
           user_id?: string
-          video_id?: string
+          youtube_video_id?: string
         }
         Relationships: []
       }
