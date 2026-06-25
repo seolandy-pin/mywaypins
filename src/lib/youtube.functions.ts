@@ -33,13 +33,18 @@ function mapChannel(c: ChannelApiItem): YTChannelResult {
 // Travel / food (mukbang, restaurant tour) keyword filter. Applied to the
 // channel title + description so generic news/music/gaming channels are
 // excluded from search results.
-const TRAVEL_FOOD_RE =
+const TRAVEL_FOOD_RE_EN =
   /\b(travel|traveler|traveller|traveling|travelling|tourist|tourism|tour|tours|touring|trip|trips|journey|journeys|adventure|adventures|wander|wanderlust|explore|explorer|exploring|expedition|nomad|backpack|backpacker|backpacking|vlog|vlogger|vlogs|itinerary|destination|destinations|holiday|holidays|vacation|vacations|getaway|cruise|safari|hiking|trekking|road\s*trip|world|globe|abroad|overseas|country|countries|city\s*guide|food|foodie|foods|eat|eats|eating|eater|restaurant|restaurants|cuisine|culinary|chef|cook|cooking|recipe|recipes|kitchen|street\s*food|mukbang|asmr\s*eating|tasting|taste\s*test|dining|gourmet|delicious|yummy|bbq|brunch|breakfast|lunch|dinner|cafe|coffee|bakery|dessert|drinks)\b/i;
+
+// Korean keywords — \b word boundaries don't work for Hangul, so match without them.
+const TRAVEL_FOOD_RE_KO =
+  /(여행|세계여행|해외여행|국내여행|배낭여행|자유여행|여행기|여행지|관광|투어|브이로그|브이로거|탐험|모험|유랑|방랑|순례|기차여행|캠핑|등산|트레킹|크루즈|호텔|숙소|맛집|먹방|먹스타그램|미식|식당|레스토랑|카페|디저트|베이커리|요리|쿡방|레시피|길거리음식|야시장|시장|술집|와인|커피)/;
 
 function looksLikeTravelOrFood(c: ChannelApiItem): boolean {
   const text = `${c.snippet.title ?? ""} ${c.snippet.description ?? ""}`;
-  return TRAVEL_FOOD_RE.test(text);
+  return TRAVEL_FOOD_RE_EN.test(text) || TRAVEL_FOOD_RE_KO.test(text);
 }
+
 
 // A query "looks like a handle" when it has no spaces and only handle-safe chars.
 // channels?forHandle costs 1 unit vs search.list at 100 units.
@@ -60,7 +65,7 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
     if (!hasYouTubeKey()) throw new Error("YOUTUBE_API_KEY not configured");
 
     // v3 prefix: results are now filtered to travel/food channels only.
-    const cacheKey = `channels:v3:${q.toLowerCase()}`;
+    const cacheKey = `channels:v4:${q.toLowerCase()}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1) Cache lookup (0 quota units).
