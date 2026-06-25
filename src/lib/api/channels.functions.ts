@@ -157,12 +157,27 @@ export const processSubmission = createServerFn({ method: "POST" })
       return sum + (result.value?.pins ?? 0);
     }, 0);
 
+    // Among candidates, keep only the final set: latest 20 + top-viewed 5
+    // restricted to videos that ended up with extracted pins. Drop the rest
+    // (no favorites/collections yet at submission time).
+    const { selectFinalVideoIds } = await import("@/lib/api/refresh.functions");
+    const candidateYtIds = allVideos.map((v) => v.id.videoId);
+    const finalKeepIds = await selectFinalVideoIds(
+      supabaseAdmin,
+      chRow!.id,
+      candidateYtIds,
+    );
+    const toDelete = videoIdsToExtract.filter((id) => !finalKeepIds.has(id));
+    if (toDelete.length > 0) {
+      await supabaseAdmin.from("videos").delete().in("id", toDelete);
+    }
+
     await supabaseAdmin
       .from("submitted_channels")
       .update({ status: "processed", resolved_channel_id: chRow!.id })
       .eq("id", sub.id);
 
-    return { ok: true, channel_id: chRow!.id, videos: allVideos.length, pins: extractedPins };
+    return { ok: true, channel_id: chRow!.id, videos: finalKeepIds.size, pins: extractedPins };
   });
 
 const ExtractInput = z.object({ video_id: z.string().uuid() });

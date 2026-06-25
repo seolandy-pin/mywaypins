@@ -156,11 +156,16 @@ async function refreshChannel(
     newDbIds.map((id) => extractLocations({ data: { video_id: id } })),
   );
 
-  const currentYt = new Set(ids);
+  // Select the FINAL set among candidates that actually have extracted
+  // locations (pins): latest 20 + top-viewed 5, deduped.
+  const finalKeepIds = await selectFinalVideoIds(db, channelDbId, ids);
+
+  // Stale trim: drop any existing video NOT in the final keep set,
+  // preserving favorites/collections.
   const staleIds = (
     (existing ?? []) as Array<{ id: string; youtube_video_id: string }>
   )
-    .filter((r) => !currentYt.has(r.youtube_video_id))
+    .filter((r) => !finalKeepIds.has(r.id))
     .map((r) => r.id);
   if (staleIds.length > 0) {
     const [{ data: favRefs }, { data: colRefs }] = await Promise.all([
@@ -182,4 +187,45 @@ async function refreshChannel(
   }
 
   return newDbIds.length;
+}
+
+/**
+ * Among the candidate YouTube video IDs for a channel, picks the final set
+ * we want to surface as map pins: the 20 most recently published + the 5
+ * most viewed, restricted to videos that have at least one extracted pin.
+ */
+export async function selectFinalVideoIds(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  channelDbId: string,
+  candidateYtIds: string[],
+): Promise<Set<string>> {
+  if (candidateYtIds.length === 0) return new Set();
+  const { data: rows } = await db
+    .from("videos")
+    .select("id, view_count, published_at")
+    .eq("channel_id", channelDbId)
+    .in("youtube_video_id", candidateYtIds);
+  const candidates =
+    (rows ?? []) as Array<{ id: string; view_count: number | null; published_at: string | null }>;
+  if (candidates.length === 0) return new Set();
+
+  const { data: pinRows } = await db
+    .from("pins")
+    .select("video_id")
+    .in("video_id", candidates.map((r) => r.id));
+  const hasPin = new Set(
+    ((pinRows ?? []) as Array<{ video_id: string | null }>)
+      .map((r) => r.video_id)
+      .filter((v): v is string => Boolean(v)),
+  );
+
+  const withPins = candidates.filter((r) => hasPin.has(r.id));
+  const latest = [...withPins]
+    .sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""))
+    .slice(0, 20);
+  const top = [...withPins]
+    .sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0))
+    .slice(0, 5);
+  return new Set<string>([...latest, ...top].map((r) => r.id));
 }
