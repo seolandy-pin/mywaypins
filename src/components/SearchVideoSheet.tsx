@@ -1,12 +1,17 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, UserPlus, UserCheck, Eye, Play } from "lucide-react";
+import { ExternalLink, UserPlus, UserCheck, Eye, Play, Bookmark } from "lucide-react";
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import type { YTVideoResult } from "@/lib/youtube.functions";
 import { followChannel, unfollowChannel, getFollowStatus } from "@/lib/follows.functions";
+import {
+  saveSearchVideo,
+  unsaveSearchVideo,
+  getSearchVideoSavedStatus,
+} from "@/lib/search-favorites.functions";
 import { useAuth } from "@/lib/auth/use-auth";
 
 function formatNum(n: number | null | undefined) {
@@ -30,8 +35,12 @@ export function SearchVideoSheet({
   const statusFn = useServerFn(getFollowStatus);
   const followFn = useServerFn(followChannel);
   const unfollowFn = useServerFn(unfollowChannel);
+  const savedStatusFn = useServerFn(getSearchVideoSavedStatus);
+  const saveFn = useServerFn(saveSearchVideo);
+  const unsaveFn = useServerFn(unsaveSearchVideo);
 
   const channelId = video?.channelId;
+  const videoId = video?.id;
 
   const followStatus = useQuery({
     queryKey: ["follow-status", channelId],
@@ -77,8 +86,55 @@ export function SearchVideoSheet({
     },
   });
 
+  const savedStatus = useQuery({
+    queryKey: ["search-video-saved", videoId],
+    enabled: Boolean(videoId) && isAuthenticated && open,
+    queryFn: () => savedStatusFn({ data: { youtubeVideoId: videoId! } }),
+  });
+  const saved = savedStatus.data?.saved ?? false;
+
+  const saveToggle = useMutation({
+    mutationFn: async () => {
+      if (!video) throw new Error("no video");
+      if (saved) {
+        return unsaveFn({ data: { youtubeVideoId: video.id } });
+      }
+      return saveFn({
+        data: {
+          youtubeVideoId: video.id,
+          title: video.title,
+          thumbnailUrl: video.thumbnail ?? null,
+          publishedAt: video.publishedAt ?? null,
+          viewCount: video.viewCount ?? null,
+          youtubeChannelId: video.channelId,
+          channelName: video.channelTitle,
+          channelThumbnailUrl: video.channelThumbnail ?? null,
+          channelUrl: video.channelHandle
+            ? `https://www.youtube.com/@${video.channelHandle}`
+            : `https://www.youtube.com/channel/${video.channelId}`,
+        },
+      });
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["search-video-saved", videoId] });
+      window.dispatchEvent(new Event("wanderpins:favorites-changed"));
+      if (result && "saved" in result && result.saved) {
+        toast.success("Saved to your places");
+      } else {
+        toast.success("Removed from your saved places");
+      }
+    },
+    onError: (e) => {
+      console.error(e);
+      toast.error("Couldn't save — please try again");
+    },
+  });
+
   useEffect(() => {
-    if (!open) toggle.reset();
+    if (!open) {
+      toggle.reset();
+      saveToggle.reset();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -154,6 +210,23 @@ export function SearchVideoSheet({
               >
                 <ExternalLink className="size-4" />
               </a>
+            </Button>
+            <Button
+              variant={saved ? "default" : "outline"}
+              size="lg"
+              onClick={() => {
+                if (!isAuthenticated) {
+                  toast.error("Sign in to save places", {
+                    action: { label: "Sign in", onClick: () => (window.location.href = "/auth") },
+                  });
+                  return;
+                }
+                saveToggle.mutate();
+              }}
+              disabled={saveToggle.isPending || savedStatus.isLoading}
+              aria-label={saved ? "Remove from saved" : "Save video"}
+            >
+              <Bookmark className={saved ? "size-4 fill-current" : "size-4"} />
             </Button>
           </div>
           {!following && (

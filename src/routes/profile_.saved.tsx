@@ -15,9 +15,20 @@ export const Route = createFileRoute("/profile_/saved")({
   component: SavedScreen,
 });
 
+type VideoRow = {
+  youtube_video_id: string | null;
+  title: string | null;
+  thumbnail_url: string | null;
+  published_at: string | null;
+  view_count: number | null;
+  youtube_channels: { name: string | null } | null;
+};
+
 type FavoriteRow = {
   id: string;
   pin_id: string | null;
+  video_id: string | null;
+  target_type: string;
   created_at: string;
   pins: {
     id: string;
@@ -25,37 +36,52 @@ type FavoriteRow = {
     longitude: number | null;
     label: string | null;
     pin_type: string | null;
-    videos: {
-      youtube_video_id: string | null;
-      title: string | null;
-      thumbnail_url: string | null;
-      published_at: string | null;
-      youtube_channels: { name: string | null } | null;
-    } | null;
+    videos: VideoRow | null;
     places: { city_name: string | null; country_name: string | null } | null;
   } | null;
+  videos: VideoRow | null;
 };
 
 function rowToPin(r: FavoriteRow): SamplePin | null {
-  if (!r.pins) return null;
-  const p = r.pins;
-  const v = p.videos;
-  const place = p.places;
-  const allowed = ["trending", "new", "featured", "traveling"];
-  const type = (allowed.includes(p.pin_type ?? "") ? p.pin_type : "new") as SamplePin["type"];
-  return {
-    id: p.id,
-    lat: p.latitude ?? 0,
-    lng: p.longitude ?? 0,
-    type,
-    title: v?.title ?? p.label ?? "Untitled",
-    creator: v?.youtube_channels?.name ?? "Unknown",
-    thumbnail: v?.thumbnail_url ?? "",
-    location: [place?.city_name, place?.country_name].filter(Boolean).join(", ") || (p.label ?? ""),
-    views: "",
-    uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
-    youtubeId: v?.youtube_video_id ?? "",
-  };
+  // Pin-backed favorite (existing behaviour)
+  if (r.target_type === "pin" && r.pins) {
+    const p = r.pins;
+    const v = p.videos;
+    const place = p.places;
+    const allowed = ["trending", "new", "featured", "traveling"];
+    const type = (allowed.includes(p.pin_type ?? "") ? p.pin_type : "new") as SamplePin["type"];
+    return {
+      id: p.id,
+      lat: p.latitude ?? 0,
+      lng: p.longitude ?? 0,
+      type,
+      title: v?.title ?? p.label ?? "Untitled",
+      creator: v?.youtube_channels?.name ?? "Unknown",
+      thumbnail: v?.thumbnail_url ?? "",
+      location: [place?.city_name, place?.country_name].filter(Boolean).join(", ") || (p.label ?? ""),
+      views: "",
+      uploaded: v?.published_at ? new Date(v.published_at).toLocaleDateString() : "",
+      youtubeId: v?.youtube_video_id ?? "",
+    };
+  }
+  // Video-only favorite (saved from search results)
+  if (r.target_type === "video" && r.videos) {
+    const v = r.videos;
+    return {
+      id: r.id,
+      lat: 0,
+      lng: 0,
+      type: "new",
+      title: v.title ?? "Untitled",
+      creator: v.youtube_channels?.name ?? "Unknown",
+      thumbnail: v.thumbnail_url ?? "",
+      location: "",
+      views: "",
+      uploaded: v.published_at ? new Date(v.published_at).toLocaleDateString() : "",
+      youtubeId: v.youtube_video_id ?? "",
+    };
+  }
+  return null;
 }
 
 function SavedScreen() {
@@ -71,10 +97,10 @@ function SavedScreen() {
     supabase
       .from("favorites")
       .select(
-        "id, pin_id, created_at, pins(id, latitude, longitude, label, pin_type, videos(youtube_video_id, title, thumbnail_url, published_at, youtube_channels(name)), places(city_name, country_name))",
+        "id, pin_id, video_id, target_type, created_at, pins(id, latitude, longitude, label, pin_type, videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name)), places(city_name, country_name)), videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name))",
       )
       .eq("user_id", user.id)
-      .eq("target_type", "pin")
+      .in("target_type", ["pin", "video"])
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (error) console.error(error);
