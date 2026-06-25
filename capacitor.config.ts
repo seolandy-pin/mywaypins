@@ -24,6 +24,16 @@ const config: CapacitorConfig = {
       style: 'DARK',
       backgroundColor: '#1a1f2c',
     },
+    GoogleAuth: {
+      // ⚠️ serverClientId 는 반드시 "웹 애플리케이션" 유형의 OAuth 클라이언트 ID여야 합니다.
+      // (Supabase Auth → Google Provider 에 등록된 Client ID 와 동일한 값)
+      // 안드로이드 클라이언트 ID(628775940516-vblak...)는 SHA-1 지문으로 자동 매칭되므로
+      // 여기 넣지 않습니다. 아직 웹 클라이언트 ID가 없다면 Google Cloud Console에서
+      // "웹 애플리케이션" 유형으로 하나 더 만들어서 그 값을 아래에 넣어주세요.
+      serverClientId: '628775940516-vblak5ql52dtrfhm77ba0a05f83ln891.apps.googleusercontent.com',
+      forceCodeForRefreshToken: true,
+      scopes: ['profile', 'email'],
+    },
   },
 };
 
