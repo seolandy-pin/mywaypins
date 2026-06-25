@@ -184,9 +184,9 @@ export function SearchVideoSheet({
               </div>
             </div>
           </DrawerHeader>
-          <div className="flex gap-2 px-5 pb-6 pt-4 safe-bottom">
+          <div className="flex items-center gap-2 px-5 pb-6 pt-4 safe-bottom">
             <Button
-              className="flex-1"
+              className="min-w-0 flex-1"
               size="lg"
               variant={following ? "outline" : "default"}
               onClick={handleFollowClick}
@@ -194,15 +194,17 @@ export function SearchVideoSheet({
             >
               {following ? (
                 <>
-                  <UserCheck className="size-4" /> Following
+                  <UserCheck className="size-4 shrink-0" />
+                  <span className="truncate">Following</span>
                 </>
               ) : (
                 <>
-                  <UserPlus className="size-4" /> Follow & pin to map
+                  <UserPlus className="size-4 shrink-0" />
+                  <span className="truncate">Follow & pin to map</span>
                 </>
               )}
             </Button>
-            <Button variant="outline" size="lg" asChild aria-label="Open on YouTube">
+            <Button variant="outline" size="lg" asChild aria-label="Open on YouTube" className="shrink-0 px-3">
               <a
                 href={`https://www.youtube.com/watch?v=${video.id}`}
                 target="_blank"
@@ -214,6 +216,7 @@ export function SearchVideoSheet({
             <Button
               variant={saved ? "default" : "outline"}
               size="lg"
+              className="shrink-0 px-3"
               onClick={() => {
                 if (!isAuthenticated) {
                   toast.error("Sign in to save places", {
