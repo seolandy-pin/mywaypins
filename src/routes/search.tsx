@@ -3,12 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, MapPin, Youtube, Eye, Play } from "lucide-react";
+import { Search as SearchIcon, MapPin, Youtube } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { samplePins, featuredDestinations, popularCreators } from "@/lib/sample-data";
-import { searchYouTubeChannelsFn, searchYouTubeVideosFn, type YTVideoResult } from "@/lib/youtube.functions";
-import { SearchVideoSheet } from "@/components/SearchVideoSheet";
+import { searchYouTubeChannelsFn } from "@/lib/youtube.functions";
+
 
 export const Route = createFileRoute("/search")({
   head: () => ({
