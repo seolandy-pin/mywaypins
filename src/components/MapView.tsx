@@ -134,7 +134,8 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
   // present, only remove ones that have gone away and add genuinely new ones.
   // This avoids the full remove/re-add cycle that causes a visible blink when
   // selecting a channel filter.
-  const nextIds = new Set(currentPins.map((p) => p.id));
+  const pins = visiblePins();
+  const nextIds = new Set(pins.map((p) => p.id));
 
   // Remove markers no longer present.
   for (const [id, entry] of htmlMarkerMap) {
@@ -144,7 +145,7 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
     }
   }
 
-  for (const p of currentPins) {
+  for (const p of pins) {
     const saved = currentSavedIds.has(p.id);
     const existing = htmlMarkerMap.get(p.id);
     if (existing) {
