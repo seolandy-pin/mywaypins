@@ -65,7 +65,7 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
     if (!hasYouTubeKey()) throw new Error("YOUTUBE_API_KEY not configured");
 
     // v3 prefix: results are now filtered to travel/food channels only.
-    const cacheKey = `channels:v3:${q.toLowerCase()}`;
+    const cacheKey = `channels:v4:${q.toLowerCase()}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1) Cache lookup (0 quota units).
