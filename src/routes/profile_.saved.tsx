@@ -16,6 +16,7 @@ export const Route = createFileRoute("/profile_/saved")({
 });
 
 type VideoRow = {
+  id?: string;
   youtube_video_id: string | null;
   title: string | null;
   thumbnail_url: string | null;
