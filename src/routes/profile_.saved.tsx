@@ -99,7 +99,7 @@ function SavedScreen() {
     supabase
       .from("favorites")
       .select(
-        "id, pin_id, video_id, target_type, created_at, pins(id, latitude, longitude, label, pin_type, videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name)), places(city_name, country_name)), videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name))",
+        "id, pin_id, video_id, target_type, created_at, pins(id, latitude, longitude, label, pin_type, videos(id, youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name)), places(city_name, country_name)), videos(id, youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name))",
       )
       .eq("user_id", user.id)
       .in("target_type", ["pin", "video"])
@@ -118,11 +118,15 @@ function SavedScreen() {
       });
   }, [user]);
 
+  function videoUuidOf(r: FavoriteRow): string | null {
+    if (r.target_type === "video") return r.videos?.id ?? r.video_id ?? null;
+    if (r.target_type === "pin") return r.pins?.videos?.id ?? null;
+    return null;
+  }
+
   async function markViewed(r: FavoriteRow) {
     if (!user) return;
-    const videoUuid = r.target_type === "video" ? r.video_id : r.pins?.videos ? (r.pins as unknown as { videos: { id?: string } | null }).videos?.id : null;
-    // pins.videos shape doesn't include id in our select; fall back to video_id field for video favorites only.
-    const vid = r.target_type === "video" ? r.video_id : null;
+    const vid = videoUuidOf(r);
     if (!vid || viewedVideoIds.has(vid)) return;
     setViewedVideoIds((s) => {
       const n = new Set(s);
@@ -132,7 +136,6 @@ function SavedScreen() {
     await supabase
       .from("dismissed_notifications")
       .upsert({ user_id: user.id, video_id: vid }, { onConflict: "user_id,video_id" });
-    void videoUuid;
   }
 
   async function remove(id: string) {
