@@ -83,6 +83,7 @@ let sharedMap: mapboxgl.Map | null = null;
 const sharedHandlerRef: { current: PinHandler } = { current: () => {} };
 let currentPins: MapPin[] = [];
 let currentSavedIds: Set<string> = new Set();
+let onlySavedMode = false;
 const PIN_SOURCE_ID = "wanderpins-source";
 
 function pinsToGeoJSON(pins: SamplePin[], savedIds: Set<string>): GeoJSON.FeatureCollection {
@@ -104,11 +105,15 @@ function pinsToGeoJSON(pins: SamplePin[], savedIds: Set<string>): GeoJSON.Featur
   };
 }
 
+function visiblePins(): MapPin[] {
+  return onlySavedMode ? currentPins.filter((p) => currentSavedIds.has(p.id)) : currentPins;
+}
+
 function setPinData(map: mapboxgl.Map, pins: MapPin[], savedIds?: Set<string>) {
   currentPins = pins;
   if (savedIds) currentSavedIds = savedIds;
   const src = map.getSource(PIN_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
-  if (src) src.setData(pinsToGeoJSON(pins, currentSavedIds));
+  if (src) src.setData(pinsToGeoJSON(visiblePins(), currentSavedIds));
   renderHtmlMarkers(map);
 }
 
@@ -129,7 +134,8 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
   // present, only remove ones that have gone away and add genuinely new ones.
   // This avoids the full remove/re-add cycle that causes a visible blink when
   // selecting a channel filter.
-  const nextIds = new Set(currentPins.map((p) => p.id));
+  const pins = visiblePins();
+  const nextIds = new Set(pins.map((p) => p.id));
 
   // Remove markers no longer present.
   for (const [id, entry] of htmlMarkerMap) {
@@ -139,7 +145,7 @@ function renderHtmlMarkers(map: mapboxgl.Map) {
     }
   }
 
-  for (const p of currentPins) {
+  for (const p of pins) {
     const saved = currentSavedIds.has(p.id);
     const existing = htmlMarkerMap.get(p.id);
     if (existing) {
@@ -408,6 +414,7 @@ export function MapView({
   followedChannelIds,
   videoIdsFilter,
   pinsRefreshKey = 0,
+  onlySaved = false,
 }: {
   onPinClick: (pin: SamplePin) => void;
   followedChannelIds?: string[];
@@ -415,6 +422,7 @@ export function MapView({
   pinsRefreshKey?: number;
   channelMarkers?: ChannelMarkerData[];
   onChannelMarkerClick?: (channelId: string) => void;
+  onlySaved?: boolean;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [token, setToken] = useState<string>("");
@@ -484,6 +492,18 @@ export function MapView({
     }
     // Sorted joins: a re-ordered (but identical) ID list must not re-run this effect.
   }, [token, followedChannelIds ? [...followedChannelIds].sort().join(",") : "", videoIdsFilter ? [...videoIdsFilter].sort().join(",") : "", pinsRefreshKey]);
+
+  // Toggle "saved-only" mode and refresh markers without refetching.
+  useEffect(() => {
+    onlySavedMode = onlySaved;
+    const map = sharedMap;
+    if (!map) return;
+    const src = map.getSource(PIN_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+    if (src) src.setData(pinsToGeoJSON(visiblePins(), currentSavedIds));
+    renderHtmlMarkers(map);
+    // Also refresh saved ids in case favorites changed elsewhere.
+    if (onlySaved) refreshSavedHighlight(map);
+  }, [onlySaved]);
 
   if (!token) {
     return (

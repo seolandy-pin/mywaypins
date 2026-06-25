@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { MapView } from "@/components/MapView";
 import { VideoSheet } from "@/components/VideoSheet";
 import { useState } from "react";
-import { Youtube, MapPin, FolderHeart } from "lucide-react";
+import { Youtube, MapPin, FolderHeart, Bookmark } from "lucide-react";
 import type { SamplePin } from "@/lib/sample-data";
 import { useFollowedChannels } from "@/lib/hooks/use-followed-channels";
 import { useChannelMarkers } from "@/lib/hooks/use-channel-marker-data";
@@ -28,6 +28,7 @@ function formatNum(n: number) {
 function MapScreen() {
   const [active, setActive] = useState<SamplePin | null>(null);
   const [open, setOpen] = useState(false);
+  const [onlySaved, setOnlySaved] = useState(false);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const { channels, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
@@ -64,11 +65,27 @@ function MapScreen() {
         pinsRefreshKey={pinsVersion}
         channelMarkers={visibleMarkers}
         onChannelMarkerClick={(id) => pickChannel(id)}
+        onlySaved={onlySaved}
         onPinClick={(p) => {
           setActive(p);
           setOpen(true);
         }}
       />
+
+      {isAuthenticated && (
+        <button
+          type="button"
+          onClick={() => setOnlySaved((v) => !v)}
+          aria-pressed={onlySaved}
+          title={onlySaved ? "Showing saved pins only" : "Show saved pins only"}
+          className={`absolute right-2.5 top-[140px] z-10 flex size-9 items-center justify-center rounded-md shadow-md ring-1 ring-black/10 backdrop-blur transition active:scale-95 ${
+            onlySaved ? "bg-primary text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          <Bookmark className={`size-4 ${onlySaved ? "fill-white" : ""}`} />
+        </button>
+      )}
+
 
       {isAuthenticated && (channels.length > 0 || collections.length > 0) && (
         <div className="absolute inset-x-0 bottom-3 z-10 flex flex-col gap-2">
