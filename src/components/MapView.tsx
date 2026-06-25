@@ -381,37 +381,51 @@ let fetchSeq = 0;
 // Cache fetched pin sets per filter signature so re-selecting a channel shows
 // its markers instantly (no blank flash while the network request is in flight).
 const pinCache = new Map<string, MapPin[]>();
-function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[]) {
+function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[], onlySaved?: boolean) {
+  // Saved-only mode bypasses the channel/video filter entirely so every
+  // bookmark (incl. unfollowed channels and video-only bookmarks) shows up.
+  if (onlySaved) {
+    const sig = "saved-only";
+    const cached = pinCache.get(sig);
+    if (cached) {
+      const allSaved = new Set(cached.map((p) => p.id));
+      setPinData(map, cached, allSaved);
+    } else {
+      setPinData(map, []);
+    }
+    lastFetchSig = sig;
+    const mySeq = ++fetchSeq;
+    fetchSavedOnlyPins()
+      .then((pins) => {
+        if (mySeq !== fetchSeq) return;
+        pinCache.set(sig, pins);
+        const allSaved = new Set(pins.map((p) => p.id));
+        setPinData(map, pins, allSaved);
+      })
+      .catch((e) => console.warn("[map] failed to load saved pins", e));
+    return;
+  }
+
   const base = !channelIds && !videoIds ? [...samplePins] : [];
   // Sort IDs so the signature is order-independent — a re-ordered (but
   // identical) filter list must not trigger a refetch/marker swap.
   const sig = `c:${channelIds ? [...channelIds].sort().join(",") : "*"}|v:${videoIds ? [...videoIds].sort().join(",") : "*"}`;
-  // Same filter as last fetch and we already have data → just ensure markers
-  // exist on this map instance (route remount) without re-fetching/re-flickering.
   if (sig === lastFetchSig && currentPins.length > 0) {
     renderHtmlMarkers(map);
     return;
   }
   if (sig !== lastFetchSig) {
-    // Filter changed. If we have cached pins for this filter, swap to them
-    // immediately. Otherwise KEEP the previous markers visible while the new
-    // fetch is in flight — clearing first causes a visible blank/flicker.
-    // `renderHtmlMarkers` diffs old → new when the fetch resolves, so pins
-    // not in the new filter are removed in a single seamless swap.
     const cached = pinCache.get(sig);
     if (cached) {
       setPinData(map, cached);
     } else if (channelIds?.length === 0 || videoIds?.length === 0) {
-      // Nothing to fetch (no filter selected) → clear right away.
       setPinData(map, base);
     }
-    // else: leave existing markers in place until the fetch completes.
   }
   lastFetchSig = sig;
   const mySeq = ++fetchSeq;
   Promise.all([fetchIngestedPins(channelIds, videoIds), fetchSavedPinIds()])
     .then(([pins, savedIds]) => {
-      // Drop stale responses if another filter change happened in the meantime.
       if (mySeq !== fetchSeq) return;
       const all = [...base, ...pins];
       pinCache.set(sig, all);
@@ -419,6 +433,7 @@ function renderPins(map: mapboxgl.Map, channelIds?: string[], videoIds?: string[
     })
     .catch((e) => console.warn("[map] failed to load ingested pins", e));
 }
+
 
 function refreshSavedHighlight(map: mapboxgl.Map) {
   fetchSavedPinIds()
