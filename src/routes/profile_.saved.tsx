@@ -30,6 +30,7 @@ type FavoriteRow = {
   video_id: string | null;
   target_type: string;
   created_at: string;
+  viewed_at: string | null;
   pins: {
     id: string;
     latitude: number | null;
