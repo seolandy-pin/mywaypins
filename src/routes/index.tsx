@@ -15,7 +15,7 @@ import { PullToRefresh } from "@/components/PullToRefresh";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
 import { useDragScroll } from "@/lib/hooks/use-drag-scroll";
-import { Plus, Maximize2, Bell, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
+import { Plus, Maximize2, Bell, MapPin, Plane, Youtube, FolderHeart, Bookmark } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
