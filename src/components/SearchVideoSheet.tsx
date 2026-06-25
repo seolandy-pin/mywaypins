@@ -1,12 +1,17 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, UserPlus, UserCheck, Eye, Play } from "lucide-react";
+import { ExternalLink, UserPlus, UserCheck, Eye, Play, Bookmark } from "lucide-react";
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import type { YTVideoResult } from "@/lib/youtube.functions";
 import { followChannel, unfollowChannel, getFollowStatus } from "@/lib/follows.functions";
+import {
+  saveSearchVideo,
+  unsaveSearchVideo,
+  getSearchVideoSavedStatus,
+} from "@/lib/search-favorites.functions";
 import { useAuth } from "@/lib/auth/use-auth";
 
 function formatNum(n: number | null | undefined) {
