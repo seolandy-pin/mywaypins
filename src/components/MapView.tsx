@@ -547,14 +547,14 @@ export function MapView({
 
     const onFavoritesChanged = () => {
       if (onlySavedMode) {
-        // Invalidate cache so a fresh saved-only fetch runs.
         pinCache.delete("saved-only");
-        renderPins(map, followedChannelIds, videoIdsFilter, true);
+        renderPins(map, undefined, undefined, true);
       } else {
         refreshSavedHighlight(map);
       }
     };
     window.addEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
+
 
 
     return () => {
