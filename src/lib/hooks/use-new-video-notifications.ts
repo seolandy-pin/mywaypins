@@ -38,9 +38,9 @@ export function useNewVideoNotifications(channelIds: string[]) {
     queryFn: async (): Promise<Set<string>> => {
       const { data, error } = await supabase
         .from("dismissed_notifications")
-        .select("video_id");
+        .select("youtube_video_id");
       if (error) throw error;
-      return new Set((data ?? []).map((r) => r.video_id));
+      return new Set((data ?? []).map((r) => r.youtube_video_id));
     },
   });
 
