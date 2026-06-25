@@ -98,7 +98,7 @@ function SavedScreen() {
     supabase
       .from("favorites")
       .select(
-        "id, pin_id, video_id, target_type, created_at, pins(id, latitude, longitude, label, pin_type, videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name)), places(city_name, country_name)), videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name))",
+        "id, pin_id, video_id, target_type, created_at, viewed_at, pins(id, latitude, longitude, label, pin_type, videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name)), places(city_name, country_name)), videos(youtube_video_id, title, thumbnail_url, published_at, view_count, youtube_channels(name))",
       )
       .eq("user_id", user.id)
       .in("target_type", ["pin", "video"])
@@ -119,6 +119,23 @@ function SavedScreen() {
     setRows((r) => r.filter((x) => x.id !== id));
     toast.success("Removed");
   }
+
+  async function markViewed(id: string) {
+    const row = rows.find((x) => x.id === id);
+    if (!row || row.viewed_at) return;
+    const nowIso = new Date().toISOString();
+    setRows((r) => r.map((x) => (x.id === id ? { ...x, viewed_at: nowIso } : x)));
+    const { error } = await supabase
+      .from("favorites")
+      // viewed_at column exists in DB but may not be in generated types yet
+      .update({ viewed_at: nowIso } as never)
+      .eq("id", id);
+    if (error) {
+      console.error(error);
+      setRows((r) => r.map((x) => (x.id === id ? { ...x, viewed_at: null } : x)));
+    }
+  }
+
 
   return (
     <>
