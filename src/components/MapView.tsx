@@ -105,11 +105,15 @@ function pinsToGeoJSON(pins: SamplePin[], savedIds: Set<string>): GeoJSON.Featur
   };
 }
 
+function visiblePins(): MapPin[] {
+  return onlySavedMode ? currentPins.filter((p) => currentSavedIds.has(p.id)) : currentPins;
+}
+
 function setPinData(map: mapboxgl.Map, pins: MapPin[], savedIds?: Set<string>) {
   currentPins = pins;
   if (savedIds) currentSavedIds = savedIds;
   const src = map.getSource(PIN_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
-  if (src) src.setData(pinsToGeoJSON(pins, currentSavedIds));
+  if (src) src.setData(pinsToGeoJSON(visiblePins(), currentSavedIds));
   renderHtmlMarkers(map);
 }
 
