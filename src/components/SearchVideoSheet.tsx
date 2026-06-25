@@ -35,8 +35,12 @@ export function SearchVideoSheet({
   const statusFn = useServerFn(getFollowStatus);
   const followFn = useServerFn(followChannel);
   const unfollowFn = useServerFn(unfollowChannel);
+  const savedStatusFn = useServerFn(getSearchVideoSavedStatus);
+  const saveFn = useServerFn(saveSearchVideo);
+  const unsaveFn = useServerFn(unsaveSearchVideo);
 
   const channelId = video?.channelId;
+  const videoId = video?.id;
 
   const followStatus = useQuery({
     queryKey: ["follow-status", channelId],
