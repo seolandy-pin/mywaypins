@@ -545,8 +545,17 @@ export function MapView({
     if (div.parentElement !== host) host.appendChild(div);
     requestAnimationFrame(() => map.resize());
 
-    const onFavoritesChanged = () => refreshSavedHighlight(map);
+    const onFavoritesChanged = () => {
+      if (onlySavedMode) {
+        // Invalidate cache so a fresh saved-only fetch runs.
+        pinCache.delete("saved-only");
+        renderPins(map, followedChannelIds, videoIdsFilter, true);
+      } else {
+        refreshSavedHighlight(map);
+      }
+    };
     window.addEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
+
 
     return () => {
       window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
