@@ -84,9 +84,7 @@ function SubmitScreen() {
 function ChannelSearchPanel() {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [activeVideo, setActiveVideo] = useState<YTVideoResult | null>(null);
   const ytSearch = useServerFn(searchYouTubeChannelsFn);
-  const ytVideosSearch = useServerFn(searchYouTubeVideosFn);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 400);
@@ -101,22 +99,15 @@ function ChannelSearchPanel() {
     queryFn: () => ytSearch({ data: { q: debounced } }),
   });
 
-  const ytVideosQuery = useQuery({
-    queryKey: ["yt-videos-search", debounced],
-    enabled: debounced.length >= 2,
-    staleTime: 1000 * 60 * 30,
-    retry: false,
-    queryFn: () => ytVideosSearch({ data: { q: debounced } }),
-  });
-
   useEffect(() => {
-    const err = ytQuery.error || ytVideosQuery.error;
+    const err = ytQuery.error;
     if (!err) return;
     const msg = (err as Error).message ?? "";
     if (msg.includes("QUOTA") || msg.includes("403") || msg.includes("429")) {
       toast.error("YouTube API daily quota exceeded. Please try again later.");
     }
-  }, [ytQuery.error, ytVideosQuery.error]);
+  }, [ytQuery.error]);
+
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
