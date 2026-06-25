@@ -224,13 +224,17 @@ async function refreshChannel(
     newDbIds.map((id) => extractLocations({ data: { video_id: id } })),
   );
 
-  // Trim: drop videos no longer in latest-20 + top-20, but preserve any the
-  // user has favorited or saved to a collection.
-  const currentYt = new Set(ids);
+  // Final selection: latest 20 + top-viewed 5 among candidates that ended
+  // up with at least one extracted pin.
+  const { selectFinalVideoIds } = await import("@/lib/api/refresh.functions");
+  const finalKeepIds = await selectFinalVideoIds(db, channelDbId, ids);
+
+  // Trim: drop existing videos NOT in the final keep set, preserving
+  // favorites/collections.
   const staleIds = (
     (existing ?? []) as Array<{ id: string; youtube_video_id: string }>
   )
-    .filter((r) => !currentYt.has(r.youtube_video_id))
+    .filter((r) => !finalKeepIds.has(r.id))
     .map((r) => r.id);
   if (staleIds.length > 0) {
     const [{ data: favRefs }, { data: colRefs }] = await Promise.all([
@@ -251,5 +255,6 @@ async function refreshChannel(
     }
   }
 
-  return newVideos;
+  // Only announce "new videos" that survived the final selection.
+  return newVideos.filter((v) => finalKeepIds.has(v.id));
 }
