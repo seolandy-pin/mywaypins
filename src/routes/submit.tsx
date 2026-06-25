@@ -14,10 +14,10 @@ import {
 } from "@/lib/collections.functions";
 import { useMyCollections } from "@/lib/hooks/use-my-collections";
 import { toast } from "sonner";
-import { ChevronLeft, Youtube, Sparkles, FolderPlus, Film, Search as SearchIcon, MapPin, Eye, Play } from "lucide-react";
-import { searchYouTubeChannelsFn, searchYouTubeVideosFn, type YTVideoResult } from "@/lib/youtube.functions";
-import { SearchVideoSheet } from "@/components/SearchVideoSheet";
+import { ChevronLeft, Youtube, Sparkles, FolderPlus, Film, Search as SearchIcon, MapPin } from "lucide-react";
+import { searchYouTubeChannelsFn } from "@/lib/youtube.functions";
 import { samplePins, featuredDestinations, popularCreators } from "@/lib/sample-data";
+
 
 function formatNum(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
@@ -84,9 +84,7 @@ function SubmitScreen() {
 function ChannelSearchPanel() {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [activeVideo, setActiveVideo] = useState<YTVideoResult | null>(null);
   const ytSearch = useServerFn(searchYouTubeChannelsFn);
-  const ytVideosSearch = useServerFn(searchYouTubeVideosFn);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 400);
@@ -101,22 +99,15 @@ function ChannelSearchPanel() {
     queryFn: () => ytSearch({ data: { q: debounced } }),
   });
 
-  const ytVideosQuery = useQuery({
-    queryKey: ["yt-videos-search", debounced],
-    enabled: debounced.length >= 2,
-    staleTime: 1000 * 60 * 30,
-    retry: false,
-    queryFn: () => ytVideosSearch({ data: { q: debounced } }),
-  });
-
   useEffect(() => {
-    const err = ytQuery.error || ytVideosQuery.error;
+    const err = ytQuery.error;
     if (!err) return;
     const msg = (err as Error).message ?? "";
     if (msg.includes("QUOTA") || msg.includes("403") || msg.includes("429")) {
       toast.error("YouTube API daily quota exceeded. Please try again later.");
     }
-  }, [ytQuery.error, ytVideosQuery.error]);
+  }, [ytQuery.error]);
+
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -164,37 +155,8 @@ function ChannelSearchPanel() {
 
       {results && (
         <div className="mt-4 space-y-6 px-5 pb-6">
-          <SearchGroup title="Popular videos">
-            {debounced.length < 2 && <p className="text-xs text-muted-foreground">Type at least 2 characters…</p>}
-            {debounced.length >= 2 && ytVideosQuery.isLoading && <p className="text-sm text-muted-foreground">Searching popular videos…</p>}
-            {ytVideosQuery.data && ytVideosQuery.data.length === 0 && <SearchEmpty />}
-            <div className="grid grid-cols-2 gap-3">
-              {ytVideosQuery.data?.map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => setActiveVideo(v)}
-                  className="overflow-hidden rounded-2xl bg-card text-left active:scale-[0.98]"
-                >
-                  <div className="relative aspect-video w-full overflow-hidden bg-black">
-                    <img src={v.thumbnail} alt="" className="size-full object-cover" />
-                    {v.viewCount != null && (
-                      <span className="absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium text-white">
-                        <Eye className="size-3" />
-                        {formatNum(v.viewCount)}
-                      </span>
-                    )}
-                    <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                      <Play className="size-3 fill-white" />
-                    </span>
-                  </div>
-                  <div className="px-2.5 py-2">
-                    <p className="line-clamp-2 text-xs font-semibold leading-snug">{v.title}</p>
-                    <p className="mt-1 line-clamp-1 text-[10px] text-muted-foreground">{v.channelTitle}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </SearchGroup>
+
+
 
           <SearchGroup title="YouTube channels">
             {debounced.length < 2 && <p className="text-xs text-muted-foreground">Type at least 2 characters…</p>}
@@ -259,11 +221,6 @@ function ChannelSearchPanel() {
         </div>
       )}
 
-      <SearchVideoSheet
-        video={activeVideo}
-        open={!!activeVideo}
-        onOpenChange={(o) => { if (!o) setActiveVideo(null); }}
-      />
     </>
   );
 }

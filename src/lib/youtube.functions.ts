@@ -13,6 +13,7 @@ type ChannelApiItem = {
   id: string;
   snippet: {
     title: string;
+    description?: string;
     customUrl?: string;
     thumbnails: { default?: { url: string }; medium?: { url: string }; high?: { url: string } };
   };
@@ -29,11 +30,23 @@ function mapChannel(c: ChannelApiItem): YTChannelResult {
   };
 }
 
+// Travel / food (mukbang, restaurant tour) keyword filter. Applied to the
+// channel title + description so generic news/music/gaming channels are
+// excluded from search results.
+const TRAVEL_FOOD_RE =
+  /\b(travel|traveler|traveller|traveling|travelling|tourist|tourism|tour|tours|touring|trip|trips|journey|journeys|adventure|adventures|wander|wanderlust|explore|explorer|exploring|expedition|nomad|backpack|backpacker|backpacking|vlog|vlogger|vlogs|itinerary|destination|destinations|holiday|holidays|vacation|vacations|getaway|cruise|safari|hiking|trekking|road\s*trip|world|globe|abroad|overseas|country|countries|city\s*guide|food|foodie|foods|eat|eats|eating|eater|restaurant|restaurants|cuisine|culinary|chef|cook|cooking|recipe|recipes|kitchen|street\s*food|mukbang|asmr\s*eating|tasting|taste\s*test|dining|gourmet|delicious|yummy|bbq|brunch|breakfast|lunch|dinner|cafe|coffee|bakery|dessert|drinks)\b/i;
+
+function looksLikeTravelOrFood(c: ChannelApiItem): boolean {
+  const text = `${c.snippet.title ?? ""} ${c.snippet.description ?? ""}`;
+  return TRAVEL_FOOD_RE.test(text);
+}
+
 // A query "looks like a handle" when it has no spaces and only handle-safe chars.
 // channels?forHandle costs 1 unit vs search.list at 100 units.
 function looksLikeHandle(q: string): boolean {
   return /^@?[A-Za-z0-9._-]{2,}$/.test(q);
 }
+
 
 export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
   .inputValidator((d: { q: string }) => d)
@@ -42,7 +55,8 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
     if (q.length < 2) return [];
     if (!hasYouTubeKey()) throw new Error("YOUTUBE_API_KEY not configured");
 
-    const cacheKey = q.toLowerCase();
+    // v3 prefix: results are now filtered to travel/food channels only.
+    const cacheKey = `channels:v3:${q.toLowerCase()}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1) Cache lookup (0 quota units).
@@ -68,7 +82,9 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
         );
     };
 
-    // 2) Handle-style queries: try forHandle first (1 unit). If hit, skip search.list entirely.
+    // 2) Handle-style queries: try forHandle first (1 unit). An exact handle
+    //    match is a deliberate lookup, so we still apply the travel/food filter
+    //    afterwards to keep the surface consistent across all three search UIs.
     if (looksLikeHandle(q)) {
       const handle = q.replace(/^@/, "");
       const hRes = await ytFetch(
@@ -78,7 +94,7 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
       if (hRes.ok) {
         const hJson = (await hRes.json()) as { items?: ChannelApiItem[] };
         const item = hJson.items?.[0];
-        if (item) {
+        if (item && looksLikeTravelOrFood(item)) {
           const results = [mapChannel(item)];
           await writeCache(results);
           return results;
@@ -88,9 +104,12 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
     }
 
     // 3) Fallback: search.list (100 units) — only when forHandle didn't resolve.
+    //    Bias the query toward travel/food channels via boolean OR keywords.
+    const topical = "(travel | vlog | tour | trip | itinerary | food | restaurant | mukbang | foodie)";
+    const filteredQ = `${q} ${topical}`;
     const sRes = await ytFetch(
       (key) =>
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=8&q=${encodeURIComponent(q)}&key=${key}`,
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=15&q=${encodeURIComponent(filteredQ)}&key=${key}`,
     );
     if (!sRes.ok) {
       if (sRes.status === 403 || sRes.status === 429 || sRes.status >= 500) {
@@ -119,10 +138,14 @@ export const searchYouTubeChannelsFn = createServerFn({ method: "GET" })
       throw new Error(`YouTube channels ${dRes.status}`);
     }
     const dJson = (await dRes.json()) as { items?: ChannelApiItem[] };
-    const results = (dJson.items ?? []).map(mapChannel);
+    // Post-filter on title + description to drop anything that slipped past
+    // the q-side boolean (e.g. matched "tour" in a music tour).
+    const filteredItems = (dJson.items ?? []).filter(looksLikeTravelOrFood);
+    const results = filteredItems.slice(0, 8).map(mapChannel);
     await writeCache(results);
     return results;
   });
+
 
 export type YTChannelDetail = {
   id: string;
