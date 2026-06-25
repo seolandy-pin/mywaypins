@@ -28,6 +28,7 @@ function formatNum(n: number) {
 function MapScreen() {
   const [active, setActive] = useState<SamplePin | null>(null);
   const [open, setOpen] = useState(false);
+  const [onlySaved, setOnlySaved] = useState(false);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const { channels, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
