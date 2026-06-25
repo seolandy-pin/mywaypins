@@ -183,20 +183,43 @@ export const extractLocations = createServerFn({ method: "POST" })
 
     const prompt = `Extract every real-world geographic location mentioned in this YouTube travel video — pay special attention to place names, city names, region names, and country names that appear in the TITLE (titles are the most reliable signal). Also include locations from the description. Translate non-English place names to their common English form. For COUNTRY-only mentions, use the country's capital or most iconic city coordinates and set city=country capital. Return JSON: { "locations": [ { "name": "...", "city": "...", "country": "...", "latitude": <num>, "longitude": <num> } ] }. Deduplicate. If truly none, return an empty array.\n\nTitle: ${video.title}\n\nDescription: ${(video.description ?? "").slice(0, 2000)}`;
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": KEY },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (!res.ok) throw new Error(`AI gateway ${res.status}`);
+    // Retry with exponential backoff on transient AI gateway failures
+    // (network errors, 429 rate limits, or 5xx upstream errors).
+    let res: Response | null = null;
+    let lastErr: unknown = null;
+    const maxAttempts = 4;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Lovable-API-Key": KEY },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+          }),
+        });
+        if (res.ok) { lastErr = null; break; }
+        // Only retry rate-limits and 5xx; other 4xx are terminal.
+        if (res.status !== 429 && res.status < 500) {
+          throw new Error(`AI gateway ${res.status}`);
+        }
+        lastErr = new Error(`AI gateway ${res.status}`);
+      } catch (e) {
+        lastErr = e;
+      }
+      if (attempt < maxAttempts - 1) {
+        const delay = 500 * Math.pow(2, attempt); // 0.5s, 1s, 2s
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+    if (lastErr || !res || !res.ok) throw lastErr ?? new Error("AI gateway failed");
     const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const text = json.choices?.[0]?.message?.content ?? "{}";
     let parsed: { locations?: Array<{ name: string; city?: string; country?: string; latitude: number; longitude: number }> } = {};
-    try { parsed = JSON.parse(text); } catch {}
+    let parseOk = false;
+    try { parsed = JSON.parse(text); parseOk = true; } catch { parseOk = false; }
+    if (!parseOk) throw new Error("AI response JSON parse failed");
 
     const locs = parsed.locations ?? [];
     for (let i = 0; i < locs.length; i++) {

@@ -24,6 +24,7 @@ import { Route as ProfileHelpRouteImport } from './routes/profile_.help'
 import { Route as ProfileCollectionsRouteImport } from './routes/profile_.collections'
 import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 import { Route as ApiPublicHooksRefreshFollowedRouteImport } from './routes/api/public/hooks/refresh-followed'
+import { Route as ApiPublicHooksBackfillLocationsRouteImport } from './routes/api/public/hooks/backfill-locations'
 
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
@@ -101,6 +102,12 @@ const ApiPublicHooksRefreshFollowedRoute =
     path: '/api/public/hooks/refresh-followed',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBackfillLocationsRoute =
+  ApiPublicHooksBackfillLocationsRouteImport.update({
+    id: '/api/public/hooks/backfill-locations',
+    path: '/api/public/hooks/backfill-locations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/profile/help': typeof ProfileHelpRoute
   '/profile/saved': typeof ProfileSavedRoute
   '/profile/settings': typeof ProfileSettingsRoute
+  '/api/public/hooks/backfill-locations': typeof ApiPublicHooksBackfillLocationsRoute
   '/api/public/hooks/refresh-followed': typeof ApiPublicHooksRefreshFollowedRoute
 }
 export interface FileRoutesByTo {
@@ -134,6 +142,7 @@ export interface FileRoutesByTo {
   '/profile/help': typeof ProfileHelpRoute
   '/profile/saved': typeof ProfileSavedRoute
   '/profile/settings': typeof ProfileSettingsRoute
+  '/api/public/hooks/backfill-locations': typeof ApiPublicHooksBackfillLocationsRoute
   '/api/public/hooks/refresh-followed': typeof ApiPublicHooksRefreshFollowedRoute
 }
 export interface FileRoutesById {
@@ -152,6 +161,7 @@ export interface FileRoutesById {
   '/profile_/help': typeof ProfileHelpRoute
   '/profile_/saved': typeof ProfileSavedRoute
   '/profile_/settings': typeof ProfileSettingsRoute
+  '/api/public/hooks/backfill-locations': typeof ApiPublicHooksBackfillLocationsRoute
   '/api/public/hooks/refresh-followed': typeof ApiPublicHooksRefreshFollowedRoute
 }
 export interface FileRouteTypes {
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/profile/help'
     | '/profile/saved'
     | '/profile/settings'
+    | '/api/public/hooks/backfill-locations'
     | '/api/public/hooks/refresh-followed'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/profile/help'
     | '/profile/saved'
     | '/profile/settings'
+    | '/api/public/hooks/backfill-locations'
     | '/api/public/hooks/refresh-followed'
   id:
     | '__root__'
@@ -205,6 +217,7 @@ export interface FileRouteTypes {
     | '/profile_/help'
     | '/profile_/saved'
     | '/profile_/settings'
+    | '/api/public/hooks/backfill-locations'
     | '/api/public/hooks/refresh-followed'
   fileRoutesById: FileRoutesById
 }
@@ -223,6 +236,7 @@ export interface RootRouteChildren {
   ProfileHelpRoute: typeof ProfileHelpRoute
   ProfileSavedRoute: typeof ProfileSavedRoute
   ProfileSettingsRoute: typeof ProfileSettingsRoute
+  ApiPublicHooksBackfillLocationsRoute: typeof ApiPublicHooksBackfillLocationsRoute
   ApiPublicHooksRefreshFollowedRoute: typeof ApiPublicHooksRefreshFollowedRoute
 }
 
@@ -333,6 +347,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRefreshFollowedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backfill-locations': {
+      id: '/api/public/hooks/backfill-locations'
+      path: '/api/public/hooks/backfill-locations'
+      fullPath: '/api/public/hooks/backfill-locations'
+      preLoaderRoute: typeof ApiPublicHooksBackfillLocationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -351,6 +372,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileHelpRoute: ProfileHelpRoute,
   ProfileSavedRoute: ProfileSavedRoute,
   ProfileSettingsRoute: ProfileSettingsRoute,
+  ApiPublicHooksBackfillLocationsRoute: ApiPublicHooksBackfillLocationsRoute,
   ApiPublicHooksRefreshFollowedRoute: ApiPublicHooksRefreshFollowedRoute,
 }
 export const routeTree = rootRouteImport
