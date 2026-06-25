@@ -15,7 +15,7 @@ import { PullToRefresh } from "@/components/PullToRefresh";
 import type { SamplePin } from "@/lib/sample-data";
 import { useState } from "react";
 import { useDragScroll } from "@/lib/hooks/use-drag-scroll";
-import { Plus, Maximize2, Bell, MapPin, Plane, Youtube, FolderHeart } from "lucide-react";
+import { Plus, Maximize2, Bell, MapPin, Plane, Youtube, FolderHeart, Bookmark } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -42,6 +42,7 @@ function Home() {
   const [activePin, setActivePin] = useState<SamplePin | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [onlySaved, setOnlySaved] = useState(false);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const { channels: followed, channelIds, pinsVersion, isAuthenticated } = useFollowedChannels();
@@ -163,11 +164,26 @@ function Home() {
             pinsRefreshKey={pinsVersion}
             channelMarkers={visibleMarkers}
             onChannelMarkerClick={(id) => pickChannel(id)}
+            onlySaved={onlySaved}
             onPinClick={(p) => {
               setActivePin(p);
               setSheetOpen(true);
             }}
           />
+
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={() => setOnlySaved((v) => !v)}
+              aria-pressed={onlySaved}
+              title={onlySaved ? "Showing saved pins only" : "Show saved pins only"}
+              className={`absolute right-2.5 top-[88px] z-10 flex size-[29px] items-center justify-center rounded-[4px] shadow-[0_0_0_2px_rgba(0,0,0,0.1)] transition active:scale-95 ${
+                onlySaved ? "bg-primary text-white" : "bg-white text-gray-800 hover:bg-gray-50"
+              }`}
+            >
+              <Bookmark className={`size-4 ${onlySaved ? "fill-white" : ""}`} />
+            </button>
+          )}
 
           <button
             type="button"
@@ -176,6 +192,7 @@ function Home() {
           >
             <Maximize2 className="size-3.5" /> Explore Full Map
           </button>
+
         </div>
         <VideoSheet pin={activePin} open={sheetOpen} onOpenChange={setSheetOpen} />
       </section>
