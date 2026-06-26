@@ -102,6 +102,24 @@ function RootComponent() {
       try {
         const { Capacitor } = await import("@capacitor/core");
         if (!Capacitor.isNativePlatform()) return;
+
+        // 네이티브(안드로이드/iOS) 한정: Google Sign-In SDK 사전 초기화.
+        // 초기화가 누락되면 플러그인이 네이티브 팝업 대신 외부 브라우저로
+        // 폴백되어 앱이 크롬/삼성 인터넷으로 튕겨 나가는 현상이 발생한다.
+        try {
+          const { GoogleAuth } = await import(
+            "@codetrix-studio/capacitor-google-auth"
+          );
+          await GoogleAuth.initialize({
+            clientId:
+              "628775940516-nqk7vblak5ql52dtrfhm77ba0a05f83l.apps.googleusercontent.com",
+            scopes: ["profile", "email"],
+            grantOfflineAccess: true,
+          });
+        } catch (e) {
+          console.warn("[GoogleAuth] initialize skipped/failed", e);
+        }
+
         const { App } = await import("@capacitor/app");
         const handle = await App.addListener("appUrlOpen", async ({ url }) => {
           try {
