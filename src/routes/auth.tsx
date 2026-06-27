@@ -117,13 +117,7 @@ function AuthScreen() {
           </Button>
         </form>
 
-        <div className="flex w-full max-w-sm items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> OR <span className="h-px flex-1 bg-border" />
-        </div>
 
-        <Button variant="outline" size="lg" className="w-full max-w-sm" onClick={handleGoogle} disabled={loading}>
-          Continue with Google
-        </Button>
 
         <button onClick={() => setMode(mode === "signin" ? "signup" : "signin")} className="text-sm text-muted-foreground">
           {mode === "signin" ? "New here? Create an account" : "Have an account? Sign in"}
