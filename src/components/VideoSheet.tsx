@@ -73,9 +73,9 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
       toast.success("Removed from your saved places");
       return;
     }
-    const payload = isRealPin
-      ? { user_id: user.id, target_type: "pin" as const, pin_id: pinId! }
-      : { user_id: user.id, target_type: "video" as const, video_id: videoDbId! };
+    const payload: { user_id: string; target_type: string; pin_id?: string; video_id?: string } = isRealPin
+      ? { user_id: user.id, target_type: "pin", pin_id: pinId! }
+      : { user_id: user.id, target_type: "video", video_id: videoDbId! };
     const { error } = await supabase.from("favorites").insert(payload);
     setSaving(false);
     if (error && error.code !== "23505") {
