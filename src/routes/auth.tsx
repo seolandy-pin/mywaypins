@@ -73,7 +73,7 @@ function AuthScreen() {
         try {
           // 플러그인은 한 번만 initialize 해도 무방하지만, 재호출은 안전합니다.
           await GoogleAuth.initialize({
-            clientId: "628775940516-nqk7vblak5ql52dtrfhm77ba0a05f83l.apps.googleusercontent.com",
+            clientId: "628775940516-nqk72u5q2tl5qi127f9r8uh24nb0c8t9.apps.googleusercontent.com",
             scopes: ["profile", "email"],
             grantOfflineAccess: true,
           });

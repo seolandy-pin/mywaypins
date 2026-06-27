@@ -31,7 +31,7 @@ const config: CapacitorConfig = {
       // 안드로이드 클라이언트 ID(628775940516-vblak...)는 SHA-1 지문으로 자동 매칭되므로
       // 여기 넣지 않습니다. 아직 웹 클라이언트 ID가 없다면 Google Cloud Console에서
       // "웹 애플리케이션" 유형으로 하나 더 만들어서 그 값을 아래에 넣어주세요.
-      serverClientId: "628775940516-nqk7vblak5ql52dtrfhm77ba0a05f83l.apps.googleusercontent.com",
+      serverClientId: "628775940516-nqk72u5q2tl5qi127f9r8uh24nb0c8t9.apps.googleusercontent.com",
       forceCodeForRefreshToken: true,
       scopes: ["profile", "email"],
     },
