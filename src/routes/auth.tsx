@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { Compass, Mail } from "lucide-react";
 
@@ -62,56 +61,6 @@ function AuthScreen() {
     navigate({ to: "/" });
   }
 
-  async function handleGoogle() {
-    setLoading(true);
-    try {
-      const { Capacitor } = await import("@capacitor/core");
-
-      // 📱 네이티브(안드로이드/iOS): Google Sign-In SDK → idToken → Supabase
-      if (Capacitor.isNativePlatform()) {
-        const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
-        try {
-          // 플러그인은 한 번만 initialize 해도 무방하지만, 재호출은 안전합니다.
-          await GoogleAuth.initialize({
-            clientId: "628775940516-nqk72u5q2tl5qi127f9r8uh24nb0c8t9.apps.googleusercontent.com",
-            scopes: ["profile", "email"],
-            grantOfflineAccess: true,
-          });
-        } catch {
-          // 이미 초기화된 경우 무시
-        }
-        const result = await GoogleAuth.signIn();
-        const idToken = result?.authentication?.idToken;
-        if (!idToken) {
-          toast.error("Google sign-in failed (no idToken)");
-          setLoading(false);
-          return;
-        }
-        const { error } = await supabase.auth.signInWithIdToken({
-          provider: "google",
-          token: idToken,
-        });
-        if (error) {
-          toast.error(error.message);
-          setLoading(false);
-          return;
-        }
-        toast.success("Welcome!");
-        navigate({ to: "/" });
-        return;
-      }
-
-      // 🌐 웹/브라우저: 기존 Lovable OAuth 브로커 사용
-      const redirectUri = window.location.origin;
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirectUri });
-      if (result.error) { toast.error("Google sign-in failed"); setLoading(false); return; }
-      if (result.redirected) return;
-      navigate({ to: "/" });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Google sign-in failed");
-      setLoading(false);
-    }
-  }
 
 
   function openForgot() {
@@ -168,13 +117,7 @@ function AuthScreen() {
           </Button>
         </form>
 
-        <div className="flex w-full max-w-sm items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> OR <span className="h-px flex-1 bg-border" />
-        </div>
 
-        <Button variant="outline" size="lg" className="w-full max-w-sm" onClick={handleGoogle} disabled={loading}>
-          Continue with Google
-        </Button>
 
         <button onClick={() => setMode(mode === "signin" ? "signup" : "signin")} className="text-sm text-muted-foreground">
           {mode === "signin" ? "New here? Create an account" : "Have an account? Sign in"}
