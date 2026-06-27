@@ -15,26 +15,33 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const pinId = pin?.id ?? null;
+  const videoDbId = pin?.videoDbId ?? null;
+  const noPin = !!pin?.noPin;
+  // A real map-pin id is a UUID and not explicitly marked noPin.
+  const isRealPin = !!pinId && !noPin && UUID_RE.test(pinId);
+  // Video-only favorite is possible whenever we have a video DB UUID.
+  const isVideoFav = !!videoDbId && UUID_RE.test(videoDbId);
+  const canSave = isRealPin || isVideoFav;
 
-  // Check whether this pin is already saved when the sheet opens
+  // Check whether this video/pin is already saved when the sheet opens
   useEffect(() => {
     let cancelled = false;
     setSaved(false);
-    if (!open || !pinId || !UUID_RE.test(pinId)) return;
+    if (!open || !canSave) return;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
-      const { data } = await supabase
+      const q = supabase
         .from("favorites")
         .select("id")
-        .eq("user_id", user.id)
-        .eq("target_type", "pin")
-        .eq("pin_id", pinId)
-        .maybeSingle();
+        .eq("user_id", user.id);
+      const { data } = isRealPin
+        ? await q.eq("target_type", "pin").eq("pin_id", pinId!).maybeSingle()
+        : await q.eq("target_type", "video").eq("video_id", videoDbId!).maybeSingle();
       if (!cancelled) setSaved(!!data);
     })();
     return () => { cancelled = true; };
-  }, [open, pinId]);
+  }, [open, pinId, videoDbId, isRealPin, canSave]);
 
   if (!pin) return null;
 
@@ -45,19 +52,16 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
       toast.error("Sign in to save places", { action: { label: "Sign in", onClick: () => (window.location.href = "/auth") } });
       return;
     }
-    // Real ingested pins have UUID ids; sample pins ("1","2"...) can't be saved.
-    if (!UUID_RE.test(pin.id)) {
+    if (!canSave) {
       toast.error("This is a sample pin and can't be saved yet.");
       return;
     }
     setSaving(true);
     if (saved) {
-      const { error } = await supabase
-        .from("favorites")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("target_type", "pin")
-        .eq("pin_id", pin.id);
+      const del = supabase.from("favorites").delete().eq("user_id", user.id);
+      const { error } = isRealPin
+        ? await del.eq("target_type", "pin").eq("pin_id", pinId!)
+        : await del.eq("target_type", "video").eq("video_id", videoDbId!);
       setSaving(false);
       if (error) {
         console.error(error);
@@ -69,9 +73,10 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
       toast.success("Removed from your saved places");
       return;
     }
-    const { error } = await supabase
-      .from("favorites")
-      .insert({ user_id: user.id, target_type: "pin", pin_id: pin.id });
+    const payload: { user_id: string; target_type: string; pin_id?: string; video_id?: string } = isRealPin
+      ? { user_id: user.id, target_type: "pin", pin_id: pinId! }
+      : { user_id: user.id, target_type: "video", video_id: videoDbId! };
+    const { error } = await supabase.from("favorites").insert(payload);
     setSaving(false);
     if (error && error.code !== "23505") {
       console.error(error);
@@ -134,7 +139,14 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
               <DrawerTitle className="font-display text-xl leading-tight">{pin.title}</DrawerTitle>
               <DrawerDescription className="sr-only">{pin.location || pin.creator}</DrawerDescription>
               <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{pin.creator}</span>
+                <MapPin className="size-3.5 shrink-0" />
+                {noPin ? (
+                  <span className="text-muted-foreground">Vlog (No Map Pin)</span>
+                ) : pin.location ? (
+                  <span className="truncate">{pin.location}</span>
+                ) : null}
+                <span className="mx-1">·</span>
+                <span className="font-medium text-foreground truncate">{pin.creator}</span>
               </div>
             </div>
           </DrawerHeader>

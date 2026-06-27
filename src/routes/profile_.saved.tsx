@@ -65,7 +65,7 @@ function rowToPin(r: FavoriteRow): SamplePin | null {
       youtubeId: v?.youtube_video_id ?? "",
     };
   }
-  // Video-only favorite (saved from search results)
+  // Video-only favorite (saved from search results, notifications, or vlogs with no pin)
   if (r.target_type === "video" && r.videos) {
     const v = r.videos;
     return {
@@ -80,6 +80,8 @@ function rowToPin(r: FavoriteRow): SamplePin | null {
       views: "",
       uploaded: v.published_at ? new Date(v.published_at).toLocaleDateString() : "",
       youtubeId: v.youtube_video_id ?? "",
+      videoDbId: r.video_id ?? undefined,
+      noPin: true,
     };
   }
   return null;

@@ -12,6 +12,12 @@ export type SamplePin = {
   views: string;
   uploaded: string;
   youtubeId: string;
+  /** Video DB UUID — set when the modal is opened for a video without a real map pin
+   *  (e.g. notifications, vlogs with no AI-extracted location). Used to save the
+   *  favorite as `target_type: 'video'` instead of `target_type: 'pin'`. */
+  videoDbId?: string;
+  /** True when this entry has no associated map pin (vlog / no location). */
+  noPin?: boolean;
 };
 
 export const samplePins: SamplePin[] = [

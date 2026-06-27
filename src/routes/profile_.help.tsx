@@ -102,6 +102,10 @@ function HelpSupportScreen() {
                   q="How do I request a new feature?"
                   a="Send your suggestions to mywaypins.help@gmail.com."
                 />
+                <Qa
+                  q="Why doesn't this video show a location on the map, and can I still save it?"
+                  a="Some everyday vlogs or general content do not contain clear geographical names, so our AI cannot generate map pins for them. However, you can still save these videos without any issues! Simply click the Save button, and they will be safely stored and fully accessible in your [Saved] tab list view."
+                />
               </div>
             </AccordionContent>
           </CardWrap>
