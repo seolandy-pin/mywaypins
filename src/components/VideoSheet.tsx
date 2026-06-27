@@ -139,7 +139,14 @@ export function VideoSheet({ pin, open, onOpenChange }: { pin: SamplePin | null;
               <DrawerTitle className="font-display text-xl leading-tight">{pin.title}</DrawerTitle>
               <DrawerDescription className="sr-only">{pin.location || pin.creator}</DrawerDescription>
               <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{pin.creator}</span>
+                <MapPin className="size-3.5 shrink-0" />
+                {noPin ? (
+                  <span className="text-muted-foreground">Vlog (No Map Pin)</span>
+                ) : pin.location ? (
+                  <span className="truncate">{pin.location}</span>
+                ) : null}
+                <span className="mx-1">·</span>
+                <span className="font-medium text-foreground truncate">{pin.creator}</span>
               </div>
             </div>
           </DrawerHeader>
