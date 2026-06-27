@@ -44,7 +44,7 @@ npx cap sync android         # ← 이 단계가 핵심. 플러그인을 android
     <string name="custom_url_scheme">app.lovable.mywaypins</string>
 
     <!-- 🔽 추가: Google Sign-In 웹 클라이언트 ID (Supabase Google Provider 와 동일) -->
-    <string name="server_client_id">628775940516-nqk7vblak5ql52dtrfhm77ba0a05f83l.apps.googleusercontent.com</string>
+    <string name="server_client_id">628775940516-nqk72u5q2tl5qi127f9r8uh24nb0c8t9.apps.googleusercontent.com</string>
 </resources>
 ```
 
@@ -78,7 +78,7 @@ public class MainActivity extends BridgeActivity {
 ## 4) Google Cloud Console 체크리스트
 
 - **웹 애플리케이션** 유형 OAuth 클라이언트 ID
-  `628775940516-nqk7vblak5ql52dtrfhm77ba0a05f83l.apps.googleusercontent.com`
+  `628775940516-nqk72u5q2tl5qi127f9r8uh24nb0c8t9.apps.googleusercontent.com`
   가 Supabase(Lovable Cloud) Google Provider 에 등록되어 있어야 합니다.
 - **안드로이드** 유형 OAuth 클라이언트 ID
   (`628775940516-vblak5ql52dtrfhm77ba0a05f83ln891....`) 에는
