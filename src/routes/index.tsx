@@ -126,6 +126,8 @@ function Home() {
                     views: "",
                     uploaded: new Date(it.publishedAt).toLocaleDateString(),
                     youtubeId: it.youtubeId,
+                    videoDbId: it.videoDbId,
+                    noPin: true,
                   });
                   setSheetOpen(true);
                 }}
