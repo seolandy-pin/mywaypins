@@ -10,7 +10,7 @@ const tabs = [
   { to: "/profile", label: "Profile", icon: User, match: (p: string) => p === "/profile" || (p.startsWith("/profile") && !p.includes("/saved")) },
 ] as const;
 
-const HIDE_NAV_ROUTES = ["/auth"];
+const HIDE_NAV_ROUTES: string[] = [];
 
 export function MobileShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
