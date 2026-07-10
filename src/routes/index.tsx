@@ -80,7 +80,7 @@ function Home() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-[calc(100dvh-6rem)] flex-col overflow-hidden">
       <div className="shrink-0">
         <header className="safe-top px-4 pb-3 pt-3">
           <div className="flex items-start justify-between">
