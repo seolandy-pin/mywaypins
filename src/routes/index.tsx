@@ -296,7 +296,7 @@ function Home() {
                   <Link to="/submit" search={{ tab: "video" } as never} className="text-primary underline">Save a video</Link>.
                 </p>
               ) : (
-                <div ref={collectionsScrollRef} className="no-scrollbar -mx-4 flex cursor-grab gap-2 overflow-x-auto px-4 pb-4 select-none">
+                <div ref={collectionsScrollRef} className="no-scrollbar -mx-4 flex cursor-grab gap-2 overflow-x-auto px-4 pb-2 select-none">
                   {collections.map((c) => {
                     const isSelected = selectedCollectionId === c.id;
                     return (
@@ -305,22 +305,22 @@ function Home() {
                         type="button"
                         onClick={() => pickCollection(c.id)}
                         aria-pressed={isSelected}
-                        className={`group relative flex w-[70px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 text-left ring-1 active:scale-95 ${
+                        className={`group relative flex h-24 w-20 shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 text-left ring-1 active:scale-95 ${
                           isSelected ? "ring-2 ring-primary" : "ring-border"
                         }`}
                       >
-                        <div className="relative aspect-square w-full overflow-hidden bg-surface-2">
+                        <div className="relative h-14 w-full shrink-0 overflow-hidden bg-surface-2">
                           {c.cover_image_url ? (
                             <img src={c.cover_image_url} alt={c.name} className="size-full object-cover" />
                           ) : (
                             <div className="flex size-full items-center justify-center text-primary">
-                              <FolderHeart className="size-5" />
+                              <FolderHeart className="size-4" />
                             </div>
                           )}
                         </div>
-                        <div className="p-1">
-                          <p className="line-clamp-1 text-[9px] font-semibold leading-tight">{c.name}</p>
-                          <p className="line-clamp-1 text-[8px] leading-tight text-muted-foreground">
+                        <div className="p-0.5">
+                          <p className="line-clamp-1 text-[8px] font-semibold leading-tight">{c.name}</p>
+                          <p className="line-clamp-1 text-[7px] leading-tight text-muted-foreground">
                             {c.item_count} {c.item_count === 1 ? "video" : "videos"}
                           </p>
                         </div>
