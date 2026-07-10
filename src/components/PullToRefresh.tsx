@@ -96,6 +96,7 @@ export function PullToRefresh({
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
+      className={className}
       style={{
         transform: `translateY(${pull}px)`,
         transition: startY.current == null ? "transform 200ms ease" : "none",
