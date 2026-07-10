@@ -35,10 +35,10 @@ export function MobileShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-[520px] flex-col bg-background">
-      <main className={`flex-1 ${hideNav ? "" : "pb-24"}`}>{children}</main>
+      <main className={`flex-1 ${hideNav ? "" : "pb-20"}`}>{children}</main>
       {!hideNav && (
         <nav className="glass fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[520px] border-t border-border/60 safe-bottom">
-          <ul className="grid grid-cols-6 px-2 pt-2">
+          <ul className="grid grid-cols-6 px-2 pt-1">
             {left.map((t) => {
               const Icon = t.icon;
               const active = t.match(pathname);
@@ -47,7 +47,7 @@ export function MobileShell({ children }: { children: ReactNode }) {
                   <Link
                     to={t.to}
                     preload="intent"
-                    className={`flex cursor-pointer flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-colors ${
+                    className={`flex cursor-pointer flex-col items-center gap-0.5 rounded-xl py-1 text-[10px] font-medium transition-colors ${
                       active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -62,7 +62,7 @@ export function MobileShell({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={handleRefresh}
                 aria-label="Refresh"
-                className="flex w-full cursor-pointer flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="flex w-full cursor-pointer flex-col items-center gap-0.5 rounded-xl py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 <RefreshCw
                   className={`size-[22px] ${spinning ? "animate-spin" : ""}`}
@@ -79,7 +79,7 @@ export function MobileShell({ children }: { children: ReactNode }) {
                   <Link
                     to={t.to}
                     preload="intent"
-                    className={`flex cursor-pointer flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-colors ${
+                    className={`flex cursor-pointer flex-col items-center gap-0.5 rounded-xl py-1 text-[10px] font-medium transition-colors ${
                       active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >

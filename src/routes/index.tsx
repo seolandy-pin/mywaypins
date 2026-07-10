@@ -80,7 +80,7 @@ function Home() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-6rem)] flex-col overflow-hidden">
+    <div className="flex h-[calc(100dvh-5rem)] flex-col overflow-hidden">
       <div className="shrink-0">
         <header className="safe-top px-4 pb-3 pt-3">
           <div className="flex items-start justify-between">
@@ -240,7 +240,7 @@ function Home() {
                       type="button"
                       onClick={() => pickChannel(c.id)}
                       aria-pressed={isSelected}
-                      className={`group relative flex w-14 shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 text-left ring-1 active:scale-95 ${
+                      className={`group relative flex w-11 shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 text-left ring-1 active:scale-95 ${
                         isSelected ? "ring-2 ring-primary" : "ring-border"
                       }`}
                     >
@@ -254,12 +254,12 @@ function Home() {
                         )}
                       </div>
                       <div className="p-0.5">
-                        <p className="line-clamp-1 text-[8px] font-semibold leading-tight">{c.name}</p>
-                        <p className="line-clamp-1 text-[7px] leading-tight text-muted-foreground">
+                        <p className="line-clamp-1 text-[7px] font-semibold leading-tight">{c.name}</p>
+                        <p className="line-clamp-1 text-[6px] leading-tight text-muted-foreground">
                           {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : "—"}
                         </p>
                         {c.current_location && (
-                          <p className="mt-0.5 flex items-center gap-0.5 text-[7px] leading-tight text-muted-foreground">
+                          <p className="mt-0.5 flex items-center gap-0.5 text-[6px] leading-tight text-muted-foreground">
                             <MapPin className="size-1.5" />
                             <span className="line-clamp-1">{c.current_location}</span>
                           </p>
@@ -305,22 +305,22 @@ function Home() {
                         type="button"
                         onClick={() => pickCollection(c.id)}
                         aria-pressed={isSelected}
-                        className={`group relative flex h-24 w-20 shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 text-left ring-1 active:scale-95 ${
+                        className={`group relative flex h-20 w-16 shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 text-left ring-1 active:scale-95 ${
                           isSelected ? "ring-2 ring-primary" : "ring-border"
                         }`}
                       >
-                        <div className="relative h-14 w-full shrink-0 overflow-hidden bg-surface-2">
+                        <div className="relative h-11 w-full shrink-0 overflow-hidden bg-surface-2">
                           {c.cover_image_url ? (
                             <img src={c.cover_image_url} alt={c.name} className="size-full object-cover" />
                           ) : (
                             <div className="flex size-full items-center justify-center text-primary">
-                              <FolderHeart className="size-4" />
+                              <FolderHeart className="size-3" />
                             </div>
                           )}
                         </div>
                         <div className="p-0.5">
-                          <p className="line-clamp-1 text-[8px] font-semibold leading-tight">{c.name}</p>
-                          <p className="line-clamp-1 text-[7px] leading-tight text-muted-foreground">
+                          <p className="line-clamp-1 text-[7px] font-semibold leading-tight">{c.name}</p>
+                          <p className="line-clamp-1 text-[6px] leading-tight text-muted-foreground">
                             {c.item_count} {c.item_count === 1 ? "video" : "videos"}
                           </p>
                         </div>
