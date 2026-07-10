@@ -12,9 +12,13 @@ const MAX_PULL = 120;
 export function PullToRefresh({
   onRefresh,
   children,
+  className,
+  scrollContainerRef,
 }: {
   onRefresh: () => Promise<unknown> | void;
   children: ReactNode;
+  className?: string;
+  scrollContainerRef?: React.RefObject<HTMLElement | null>;
 }) {
   const startY = useRef<number | null>(null);
   const [pull, setPull] = useState(0);
@@ -22,6 +26,8 @@ export function PullToRefresh({
 
   function atTop() {
     if (typeof window === "undefined") return false;
+    const el = scrollContainerRef?.current;
+    if (el) return el.scrollTop <= 0;
     return (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
   }
 
@@ -90,6 +96,7 @@ export function PullToRefresh({
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
+      className={className}
       style={{
         transform: `translateY(${pull}px)`,
         transition: startY.current == null ? "transform 200ms ease" : "none",
