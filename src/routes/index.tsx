@@ -230,7 +230,7 @@ function Home() {
                 No channels yet. <Link to="/search" className="text-primary underline">Find creators</Link>.
               </p>
             ) : (
-              <div ref={channelsScrollRef} className="no-scrollbar -mx-4 flex cursor-grab gap-2 overflow-x-auto px-4 pb-4 select-none">
+              <div ref={channelsScrollRef} className="no-scrollbar -mx-4 flex cursor-grab gap-2 overflow-x-auto px-4 pb-2 select-none">
 
                 {followed.slice(0, 24).map((c) => {
                   const isSelected = selectedChannelId === c.id;
@@ -240,7 +240,7 @@ function Home() {
                       type="button"
                       onClick={() => pickChannel(c.id)}
                       aria-pressed={isSelected}
-                      className={`group relative flex w-[70px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 text-left ring-1 active:scale-95 ${
+                      className={`group relative flex w-14 shrink-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-1 text-left ring-1 active:scale-95 ${
                         isSelected ? "ring-2 ring-primary" : "ring-border"
                       }`}
                     >
@@ -249,18 +249,18 @@ function Home() {
                           <img src={c.thumbnail_url} alt={c.name} className="size-full object-cover" />
                         ) : (
                           <div className="flex size-full items-center justify-center text-muted-foreground">
-                            <Youtube className="size-4" />
+                            <Youtube className="size-3" />
                           </div>
                         )}
                       </div>
-                      <div className="p-1">
-                        <p className="line-clamp-1 text-[9px] font-semibold leading-tight">{c.name}</p>
-                        <p className="line-clamp-1 text-[8px] leading-tight text-muted-foreground">
+                      <div className="p-0.5">
+                        <p className="line-clamp-1 text-[8px] font-semibold leading-tight">{c.name}</p>
+                        <p className="line-clamp-1 text-[7px] leading-tight text-muted-foreground">
                           {c.subscriber_count ? `${formatNum(Number(c.subscriber_count))} subs` : "—"}
                         </p>
                         {c.current_location && (
-                          <p className="mt-0.5 flex items-center gap-0.5 text-[8px] leading-tight text-muted-foreground">
-                            <MapPin className="size-2" />
+                          <p className="mt-0.5 flex items-center gap-0.5 text-[7px] leading-tight text-muted-foreground">
+                            <MapPin className="size-1.5" />
                             <span className="line-clamp-1">{c.current_location}</span>
                           </p>
                         )}
