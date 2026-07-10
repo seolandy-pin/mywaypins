@@ -205,7 +205,7 @@ function Home() {
             <span className="flex size-6 items-center justify-center rounded-md bg-primary/15 text-primary">
               <Youtube className="size-4" />
             </span>
-            Recently Saved Channels
+            Favorite Creators
           </h2>
           <Link to="/following" className="flex cursor-pointer items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground">
             View All ›
@@ -274,7 +274,7 @@ function Home() {
             <span className="flex size-6 items-center justify-center rounded-md bg-primary/15 text-primary">
               <FolderHeart className="size-4" />
             </span>
-            My Folders
+            Travel Logs
           </Link>
             <Link to="/profile/collections" className="flex cursor-pointer items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground">
               View All ›
